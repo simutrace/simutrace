@@ -1,0 +1,16 @@
+Following is a list of issues we are aware of, but did not have had any time 
+to fix, yet. We are looking into fixing these issues in future releases.
+
++ In rare cases the server may enter a state in which it stops processing 
+  (read/write) data from a memory stream, that is a stream which uses the 
+  built-in memory trace compressor. The server will usually timeout while 
+  waiting for resources to perform the desired operation. The problem surfaces,
+  when the configured resource limits (memory, number of worker threads) are 
+  not sufficient to process the sequence (and rate) of incoming calls.
+  Increasing the resource limits or reducing the read/write rate of the client
+  usually avoids the problem.
+
++ The server may crash if an open store is located on a network share and the
+  connection to the share is lost. The crash is caused by not handling page-in
+  (SIGBUS) exceptions when reading or writing memory-mapped parts of the store.
+  Placing the store on a local device avoids the problem.

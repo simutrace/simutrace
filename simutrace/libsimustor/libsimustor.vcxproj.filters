@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{cdf913bb-0ee2-4791-9fa3-7e49005becad}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{7d2095e3-b9d1-4b02-9070-458e8a6e87d0}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{32d936af-968f-40d7-b2b5-6e25650a0736}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Header files\Public">
+      <UniqueIdentifier>{42ce7325-cf33-4321-98e2-4dfb55eddc4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Public\Communication">
+      <UniqueIdentifier>{1ef30720-b3ae-4789-89fc-c9050c0d2ecb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Public\Stream">
+      <UniqueIdentifier>{4a2918b8-4243-48db-85b4-cdc69ea8baf8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Public\Session">
+      <UniqueIdentifier>{66ab90da-aea7-4537-84a3-9f11687b60a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Public\Storage">
+      <UniqueIdentifier>{d9012355-1f8d-41eb-93ca-713b35c3cf2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\Session">
+      <UniqueIdentifier>{4a7ac903-9b43-437c-9bce-c26d63285994}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\Stream">
+      <UniqueIdentifier>{f2b2a135-0233-415d-81b0-a4ea05b3c446}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\Storage">
+      <UniqueIdentifier>{dbe69355-feda-48cd-ac41-ef6becaf1844}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\SimuStor.h">
+      <Filter>Header files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\RpcProtocol.h">
+      <Filter>Header files\Public\Communication</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\Session.h">
+      <Filter>Header files\Public\Session</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\Store.h">
+      <Filter>Header files\Public\Storage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\Stream.h">
+      <Filter>Header files\Public\Stream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\StreamBuffer.h">
+      <Filter>Header files\Public\Stream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\SimuStorTypes.h">
+      <Filter>Header files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\SessionManager.h">
+      <Filter>Header files\Public\Session</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\DataPool.h">
+      <Filter>Header files\Public\Stream</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\SimuStorOptions.h">
+      <Filter>Header files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\simustor\KeyValuePool.h">
+      <Filter>Header files\Public\Stream</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="flags.mak" />
+    <None Include="Makefile" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Session.cpp">
+      <Filter>Source files\Session</Filter>
+    </ClCompile>
+    <ClCompile Include="Store.cpp">
+      <Filter>Source files\Storage</Filter>
+    </ClCompile>
+    <ClCompile Include="StreamBuffer.cpp">
+      <Filter>Source files\Stream</Filter>
+    </ClCompile>
+    <ClCompile Include="Stream.cpp">
+      <Filter>Source files\Stream</Filter>
+    </ClCompile>
+    <ClCompile Include="SessionManager.cpp">
+      <Filter>Source files\Session</Filter>
+    </ClCompile>
+    <ClCompile Include="DataPool.cpp">
+      <Filter>Source files\Stream</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,241 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-Windows|x64">
+      <Configuration>Debug-Windows</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-Windows|x64">
+      <Configuration>Release-Windows</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6A710EAF-E971-4D71-953E-0FCF23B814F2}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <NuGetPackageImportStamp>00c3bf98</NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">
+    <IncludePath>$(ProjectDir)..\include\;$(ProjectDir)..\include\simubase;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)\build\$(Configuration)\</OutDir>
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <Linkage-libconfig>dynamic</Linkage-libconfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">
+    <IncludePath>$(ProjectDir)..\include\;$(ProjectDir)..\include\simubase;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)\build\$(Configuration)\</OutDir>
+    <IntDir>build\$(Platform)\$(Configuration)\</IntDir>
+    <Linkage-libconfig>dynamic</Linkage-libconfig>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderFile>SimuPlatform.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <PrecompiledHeaderFile>SimuPlatform.h</PrecompiledHeaderFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Channel.cpp" />
+    <ClCompile Include="ChannelProvider.cpp" />
+    <ClCompile Include="ClientPort.cpp" />
+    <ClCompile Include="Clock.cpp" />
+    <ClCompile Include="Compression.cpp" />
+    <ClCompile Include="ConditionVariable.cpp" />
+    <ClCompile Include="Configuration.cpp" />
+    <ClCompile Include="CriticalSection.cpp" />
+    <ClCompile Include="Directory.cpp" />
+    <ClCompile Include="Environment.cpp" />
+    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="Exceptions.cpp" />
+    <ClCompile Include="File.cpp" />
+    <ClCompile Include="FileBackedMemorySegment.cpp" />
+    <ClCompile Include="Hash.cpp" />
+    <ClCompile Include="Interlocked.cpp" />
+    <ClCompile Include="LocalChannel.cpp" />
+    <ClCompile Include="LogAppender.cpp" />
+    <ClCompile Include="LogCategory.cpp" />
+    <ClCompile Include="LogEvent.cpp" />
+    <ClCompile Include="LogPriority.cpp" />
+    <ClCompile Include="lzma\Alloc.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="lzma\LzFind.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaDec.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaEnc.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="lzma\LzmaLib.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="MemoryHelpers.cpp" />
+    <ClCompile Include="MemorySegment.cpp" />
+    <ClCompile Include="murmurhash3\MurmurHash3.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-Windows|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release-Windows|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="OstreamLogAppender.cpp" />
+    <ClCompile Include="PatternLogLayout.cpp" />
+    <ClCompile Include="Port.cpp" />
+    <ClCompile Include="PrivateMemorySegment.cpp" />
+    <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="ReaderWriterLock.cpp" />
+    <ClCompile Include="RpcInterface.cpp" />
+    <ClCompile Include="SafeHandle.cpp" />
+    <ClCompile Include="ServerPort.cpp" />
+    <ClCompile Include="SharedMemorySegment.cpp" />
+    <ClCompile Include="SimpleLogLayout.cpp" />
+    <ClCompile Include="SocketChannel.cpp" />
+    <ClCompile Include="StopWatch.cpp" />
+    <ClCompile Include="TerminalLogAppender.cpp" />
+    <ClCompile Include="ThreadBase.cpp" />
+    <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\SimuBaseLibraries.h" />
+    <ClInclude Include="..\include\SimuBaseTypes.h" />
+    <ClInclude Include="..\include\simubase\ClientPort.h" />
+    <ClInclude Include="..\include\simubase\Clock.h" />
+    <ClInclude Include="..\include\simubase\Compression.h" />
+    <ClInclude Include="..\include\simubase\ConditionVariable.h" />
+    <ClInclude Include="..\include\simubase\Configuration.h" />
+    <ClInclude Include="..\include\simubase\CriticalSection.h" />
+    <ClInclude Include="..\include\simubase\Directory.h" />
+    <ClInclude Include="..\include\simubase\Environment.h" />
+    <ClInclude Include="..\include\simubase\Event.h" />
+    <ClInclude Include="..\include\simubase\Exceptions.h" />
+    <ClInclude Include="..\include\simubase\FastDelegate.h" />
+    <ClInclude Include="..\include\simubase\File.h" />
+    <ClInclude Include="..\include\simubase\FileBackedMemorySegment.h" />
+    <ClInclude Include="..\include\simubase\Hash.h" />
+    <ClInclude Include="..\include\simubase\IdAllocator.h" />
+    <ClInclude Include="..\include\simubase\Interlocked.h" />
+    <ClInclude Include="..\include\simubase\LockRegion.h" />
+    <ClInclude Include="..\include\simubase\LogAppender.h" />
+    <ClInclude Include="..\include\simubase\LogEvent.h" />
+    <ClInclude Include="..\include\simubase\Logging.h" />
+    <ClInclude Include="..\include\simubase\LogCategory.h" />
+    <ClInclude Include="..\include\simubase\LogLayout.h" />
+    <ClInclude Include="..\include\simubase\LogPriority.h" />
+    <ClInclude Include="..\include\simubase\MemoryHelpers.h" />
+    <ClInclude Include="..\include\simubase\MemorySegment.h" />
+    <ClInclude Include="..\include\simubase\PatternLogLayout.h" />
+    <ClInclude Include="..\include\simubase\Port.h" />
+    <ClInclude Include="..\include\simubase\PrivateMemorySegment.h" />
+    <ClInclude Include="..\include\simubase\ProfileEntry.h" />
+    <ClInclude Include="..\include\simubase\Profiler.h" />
+    <ClInclude Include="..\include\simubase\ReaderWriterLock.h" />
+    <ClInclude Include="..\include\simubase\ReaderWriterLockRegion.h" />
+    <ClInclude Include="..\include\simubase\RpcInterface.h" />
+    <ClInclude Include="..\include\simubase\SafeHandle.h" />
+    <ClInclude Include="..\include\simubase\ServerPort.h" />
+    <ClInclude Include="..\include\simubase\SharedMemorySegment.h" />
+    <ClInclude Include="..\include\SimuBase.h" />
+    <ClInclude Include="..\include\simubase\OstreamLogAppender.h" />
+    <ClInclude Include="..\include\simubase\SimpleLogLayout.h" />
+    <ClInclude Include="..\include\simubase\SimuBaseOptions.h" />
+    <ClInclude Include="..\include\simubase\TerminalLogAppender.h" />
+    <ClInclude Include="..\include\simubase\Thread.h" />
+    <ClInclude Include="..\include\simubase\WaitContext.h" />
+    <ClInclude Include="..\include\SimuPlatform.h" />
+    <ClInclude Include="..\include\simubase\StopWatch.h" />
+    <ClInclude Include="..\include\simubase\ThreadBase.h" />
+    <ClInclude Include="..\include\simubase\Utils.h" />
+    <ClInclude Include="..\include\Version.h" />
+    <ClInclude Include="bzip2\bzlib.h" />
+    <ClInclude Include="bzip2\bzlib_private.h" />
+    <ClInclude Include="Channel.h" />
+    <ClInclude Include="ChannelProvider.h" />
+    <ClInclude Include="LocalChannel.h" />
+    <ClInclude Include="lz4\lz4.h" />
+    <ClInclude Include="lzma\Alloc.h" />
+    <ClInclude Include="lzma\LzFind.h" />
+    <ClInclude Include="lzma\LzHash.h" />
+    <ClInclude Include="lzma\LzmaDec.h" />
+    <ClInclude Include="lzma\LzmaEnc.h" />
+    <ClInclude Include="lzma\LzmaLib.h" />
+    <ClInclude Include="lzma\Types.h" />
+    <ClInclude Include="murmurhash3\MurmurHash3.h" />
+    <ClInclude Include="SocketChannel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="flags.mak" />
+    <None Include="Makefile" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\packages\libconfig_vc120.1.4.9.4\build\native\libconfig_vc120.targets" Condition="Exists('..\..\packages\libconfig_vc120.1.4.9.4\build\native\libconfig_vc120.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\libconfig_vc120.1.4.9.4\build\native\libconfig_vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\libconfig_vc120.1.4.9.4\build\native\libconfig_vc120.targets'))" />
+  </Target>
+</Project>
