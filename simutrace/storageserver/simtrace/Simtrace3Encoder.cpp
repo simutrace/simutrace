@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -56,21 +56,21 @@ namespace Simtrace
             location(location) { }
     };
 
-    Simtrace3Encoder::Simtrace3Encoder(ServerStore& store, 
-                                       const std::string& friendlyName, 
+    Simtrace3Encoder::Simtrace3Encoder(ServerStore& store,
+                                       const std::string& friendlyName,
                                        ServerStream* stream) :
         StreamEncoder(store, friendlyName),
-        _stream(stream) 
+        _stream(stream)
     {
-    
+
     }
 
     Simtrace3Encoder::~Simtrace3Encoder()
     {
-    
+
     }
 
-    void Simtrace3Encoder::_writerMain(WorkItem<WorkerContext>& workItem, 
+    void Simtrace3Encoder::_writerMain(WorkItem<WorkerContext>& workItem,
                                        WorkerContext& context)
     {
         // -- This method is called in the context of a worker thread --
@@ -98,7 +98,7 @@ namespace Simtrace
 
             // Build a storage location and write the frame into the store
             auto location = context.encoder.makeStorageLocation(frame);
-            Simtrace3StorageLocation* sim3location = 
+            Simtrace3StorageLocation* sim3location =
                 static_cast<Simtrace3StorageLocation*>(location.get());
 
             sim3location->offset = store.commitFrame(frame);
@@ -112,7 +112,7 @@ namespace Simtrace
 
             LogError("<encoder: '%s'> Encoding of segment %d in buffer %d "
                         "failed <stream: %d, sqn: %d>. Exception: '%s'. "
-                        "The data will be discarded.", 
+                        "The data will be discarded.",
                         context.encoder.getFriendlyName().c_str(),
                         context.segment, context.buffer.getId(), stream->getId(),
                         ctrl->link.sequenceNumber, e.what());
@@ -121,7 +121,7 @@ namespace Simtrace
         }
     }
 
-    void Simtrace3Encoder::_readerMain(WorkItem<WorkerContext>& workItem, 
+    void Simtrace3Encoder::_readerMain(WorkItem<WorkerContext>& workItem,
                                        WorkerContext& context)
     {
         // -- This method is called in the context of a global worker --
@@ -145,11 +145,11 @@ namespace Simtrace
             static_cast<Simtrace3StorageLocation&>(location);
 
         try {
-            context.encoder._decode(storageLocation, context.segment, 
+            context.encoder._decode(storageLocation, context.segment,
                                     ctrl->link.sequenceNumber);
 
             if ((context.flags & StreamAccessFlags::SafSynchronous) == 0) {
-                // Everything went fine. Report the completion. This will 
+                // Everything went fine. Report the completion. This will
                 // wake up any waiting clients.
                 stream->completeSegment(ctrl->link.sequenceNumber);
             }
@@ -177,10 +177,10 @@ namespace Simtrace
 
     void Simtrace3Encoder::initialize(Simtrace3Frame& frame, bool isOpen)
     {
-    
+
     }
 
-    bool Simtrace3Encoder::write(ServerStreamBuffer& buffer, 
+    bool Simtrace3Encoder::write(ServerStreamBuffer& buffer,
         SegmentId segment, std::unique_ptr<StorageLocation>& locationOut)
     {
         WorkerContext ctx(*this, buffer, segment, StreamAccessFlags::SafNone);
@@ -192,8 +192,8 @@ namespace Simtrace
         // these gets highest priority before jobs on hidden streams starve
         // because of too many new jobs from the client and eventually livelock
         // the server.
-        WorkQueue::Priority prio = (_getStream()->getDescriptor().hidden) ? 
-            WorkQueue::Priority::High : 
+        WorkQueue::Priority prio = (_getStream()->getDescriptor().hidden) ?
+            WorkQueue::Priority::High :
             WorkQueue::Priority::Normal;
 
         StorageServer::getInstance().getWorkerPool().submitWork(workItem, prio);
@@ -220,8 +220,8 @@ namespace Simtrace
                 new WorkItem<WorkerContext>(_readerMain, ctx));
 
             WorkQueue::Priority prio = (_getStream()->getDescriptor().hidden) ?
-                WorkQueue::Priority::High : ((prefetch) ? 
-                    WorkQueue::Priority::Low : 
+                WorkQueue::Priority::High : ((prefetch) ?
+                    WorkQueue::Priority::Low :
                     WorkQueue::Priority::Normal);
 
             StorageServer::getInstance().getWorkerPool().submitWork(workItem,

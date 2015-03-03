@@ -33,7 +33,7 @@ namespace SimuTrace
     {
     private:
         DISABLE_COPY(StreamBuffer);
-        
+
         const BufferId _id;
         const bool _master;
 
@@ -46,13 +46,10 @@ namespace SimuTrace
 
         void _prepareSegment(SegmentId id, StreamId owner);
         SegmentId _submitAndRequest(SegmentId segment, StreamId stream);
-    protected:
+    public:
         StreamBuffer(BufferId id, size_t segmentSize, uint32_t numSegments,
                      bool sharedMemory);
-
-    public:
-        StreamBuffer(BufferId id, size_t segmentSize, uint32_t numSegments);
-        StreamBuffer(BufferId id, size_t segmentSize, uint32_t numSegments, 
+        StreamBuffer(BufferId id, size_t segmentSize, uint32_t numSegments,
                      Handle& buffer);
         virtual ~StreamBuffer();
 
@@ -60,6 +57,7 @@ namespace SimuTrace
 
         byte* getSegmentAsPayload(SegmentId segment, size_t& outSize) const;
         byte* getSegment(SegmentId segment) const;
+        byte* getSegmentEnd(SegmentId segment, uint32_t entrySize) const;
         SegmentControlElement* getControlElement(SegmentId segment) const;
 
         BufferId getId() const;
@@ -71,7 +69,7 @@ namespace SimuTrace
         size_t getSegmentSize() const;
         uint32_t getNumSegments() const;
 
-        static size_t computeBufferSize(size_t segmentSize, 
+        static size_t computeBufferSize(size_t segmentSize,
                                         uint32_t numSegments);
     };
 

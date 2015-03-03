@@ -31,13 +31,13 @@ namespace SimuTrace
 #pragma warning(push)
 #pragma warning(disable : 4996)
 
-    std::string stringFormat(const std::string fmt, ...) 
+    std::string stringFormat(const std::string fmt, ...)
     {
         va_list va;
         va_start(va, fmt);
-        
+
         std::string result = stringFormatVa(fmt, va);
-        
+
         va_end(va);
 
         return result;
@@ -118,7 +118,7 @@ namespace SimuTrace
         int i;
 
     #ifdef WIN32
-        // In Win32 the seed is thread-local. To improve the chance that 
+        // In Win32 the seed is thread-local. To improve the chance that
         // the seeds among threads differ, we simply use the current high
         // resolution tick count as seed
         srand(static_cast<uint32_t>(Clock::getTicks()));
@@ -136,11 +136,11 @@ namespace SimuTrace
     std::string guidToString(const Guid& guid)
     {
         // Example Output: {27158148-9814-47DB-8E50-E39573EA40AE}
-        static const std::string& format = 
+        static const std::string& format =
             "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}";
 
-        return stringFormat(format, guid.data1, guid.data2, guid.data3, 
-            guid.data4[0], guid.data4[1], guid.data4[2], guid.data4[3], 
+        return stringFormat(format, guid.data1, guid.data2, guid.data3,
+            guid.data4[0], guid.data4[1], guid.data4[2], guid.data4[3],
             guid.data4[4], guid.data4[5], guid.data4[6], guid.data4[7]);
     }
 
@@ -154,8 +154,8 @@ namespace System {
 
         Handle dupHandle;
     #ifdef WIN32
-        if (!::DuplicateHandle(::GetCurrentProcess(), handle, 
-                               ::GetCurrentProcess(), &dupHandle, 0, FALSE, 
+        if (!::DuplicateHandle(::GetCurrentProcess(), handle,
+                               ::GetCurrentProcess(), &dupHandle, 0, FALSE,
                                DUPLICATE_SAME_ACCESS)) {
             Throw(PlatformException);
         }

@@ -29,11 +29,11 @@ namespace SimuTrace {
 namespace Hash
 {
 
-    void murmur3_32(const void* buffer, size_t length, void* hashBuffer, 
+    void murmur3_32(const void* buffer, size_t length, void* hashBuffer,
                     size_t hashBufferLength, uint32_t seed)
     {
         ThrowOn((hashBufferLength < 4) ||
-                (length > std::numeric_limits<int>::max()), 
+                (length > std::numeric_limits<int>::max()),
                 ArgumentException);
 
         MurmurHash3_x86_32(buffer, static_cast<int>(length), seed, hashBuffer);
@@ -43,7 +43,7 @@ namespace Hash
                      size_t hashBufferLength, uint32_t seed)
     {
         ThrowOn((hashBufferLength < 16) ||
-                (length > std::numeric_limits<int>::max()), 
+                (length > std::numeric_limits<int>::max()),
                 ArgumentException);
 
         MurmurHash3_x64_128(buffer, static_cast<int>(length), seed, hashBuffer);

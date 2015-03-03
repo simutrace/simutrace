@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -49,7 +49,7 @@ namespace SimuTrace
         FiniteContextMethodPredictor<T, 17, 1, 2, T, 0, 17, 3> _firstOrderFcmPredictor;
         FiniteContextMethodPredictor<T, 19, 3, 2, T, 0, 17, 3> _thirdOrderFcmPredictor;
 
-        inline void _getIp(PredictorId** codeBuffer, T** dataBuffer, T& out) 
+        inline void _getIp(PredictorId** codeBuffer, T** dataBuffer, T& out)
         {
             PredictorId id = this->_readPredictorId(codeBuffer);
 
@@ -69,7 +69,7 @@ namespace SimuTrace
             _firstOrderFcmPredictor(0, _sharedFcmHistory),
             _thirdOrderFcmPredictor(2, _sharedFcmHistory) { }
 
-        PredictorId encodeIp(PredictorId** codeBuffer, T** dataBuffer, 
+        PredictorId encodeIp(PredictorId** codeBuffer, T** dataBuffer,
                              const T ip)
         {
             PredictionContext<T> context;

@@ -35,6 +35,18 @@ namespace SimuTrace
 
 #define RPC_VERSION RPC_VER(RPC_VERSION_MAJOR, RPC_VERSION_MINOR)
 
+// Incompatible v3.1 function
+#define RPC_CALL_V31(code, name, payloadType, expectedLength) \
+    RPC_CALL(3, 1, code, name, payloadType, expectedLength)
+
+// Compatible function
+#define RPC_CALL_V31C(code, name, payloadType, expectedLength) \
+    RPC_CALL(3, 1, code, name, payloadType, expectedLength) \
+    RPC_CALL(3, 0, code, name, payloadType, expectedLength)
+
+#define TEST_REQUEST_V31(rpcname, msg) \
+    TEST_REQUEST(3, 1, rpcname, msg)
+
 #define RPC_CALL_V30(code, name, payloadType, expectedLength) \
     RPC_CALL(3, 0, code, name, payloadType, expectedLength)
 
@@ -57,7 +69,7 @@ namespace SimuTrace
     /// Return Value:
     ///        Parameter0: Server API version
     ///
-    RPC_CALL_V30(0x0000, Null, Embedded, 0)
+    RPC_CALL_V31C(0x0000, Null, Embedded, 0)
 
 
     ///
@@ -77,7 +89,7 @@ namespace SimuTrace
     ///        Parameter1<uint32_t>: Number of sessions
     ///        Payload<data>: Array of SessionId
     ///
-    RPC_CALL_V30(0x0001, EnumerateSessions, Embedded, 0)
+    RPC_CALL_V31C(0x0001, EnumerateSessions, Embedded, 0)
 
 
     /* ==========  Simutrace Storage Server - Session API  ========== */
@@ -96,7 +108,7 @@ namespace SimuTrace
     ///
     ///        Parameter0<SessionId> Server Side Session Id
     ///
-    RPC_CALL_V30(0x0010, SessionCreate, Embedded, 0)
+    RPC_CALL_V31C(0x0010, SessionCreate, Embedded, 0)
 
 
     ///
@@ -112,7 +124,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V30(0x0011, SessionOpen, Embedded, 0)
+    RPC_CALL_V31C(0x0011, SessionOpen, Embedded, 0)
 
 
     ///
@@ -136,7 +148,7 @@ namespace SimuTrace
         int dummy;
     };
 
-    RPC_CALL_V30(0x0012, SessionQuery, Embedded, 0)
+    RPC_CALL_V31C(0x0012, SessionQuery, Embedded, 0)
 
 
     ///
@@ -151,7 +163,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V30(0x0013, SessionClose, Embedded, 0)
+    RPC_CALL_V31C(0x0013, SessionClose, Embedded, 0)
 
 
     ///
@@ -168,7 +180,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V30(0x0014, SessionSetConfiguration, Data, 0)
+    RPC_CALL_V31C(0x0014, SessionSetConfiguration, Data, 0)
 
 
     /* ==========  Simutrace Storage Server - Store API  ========== */
@@ -181,12 +193,13 @@ namespace SimuTrace
     ///
     /// Arguments:
     ///        Parameter0<bool>: Overwrite store if it exists
+    ///        Parameter1<bool>: Open the store, instead of create it
     ///        Payload<data>: Specifier
     ///
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V30(0x0020, StoreCreate, Data, 0)
+    RPC_CALL_V31C(0x0020, StoreCreate, Data, 0)
 
 
     ///
@@ -201,7 +214,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V30(0x0021, StoreClose, Embedded, 0)
+    RPC_CALL_V31C(0x0021, StoreClose, Embedded, 0)
 
 
     ///
@@ -224,7 +237,7 @@ namespace SimuTrace
     ///      Only for local connections:
     ///        Payload<Handles>: [0] Stream Buffer
     ///
-    RPC_CALL_V30(0x0022, StreamBufferRegister, Embedded, 0)
+    RPC_CALL_V31C(0x0022, StreamBufferRegister, Embedded, 0)
 
 
     ///
@@ -243,7 +256,7 @@ namespace SimuTrace
     ///        Parameter0<uint32_t>: Number of stream buffers
     ///        Payload<data>: Array of BufferIds
     ///
-    RPC_CALL_V30(0x0023, StreamBufferEnumerate, Embedded, 0)
+    RPC_CALL_V31C(0x0023, StreamBufferEnumerate, Embedded, 0)
 
 
     ///
@@ -267,27 +280,7 @@ namespace SimuTrace
     ///      Only for local connections:
     ///        Payload<Handles>:  [0] Stream Buffer
     ///
-    RPC_CALL_V30(0x0024, StreamBufferQuery, Embedded, 0)
-
-
-    ///
-    ///    DataPoolRegister
-    /// -----------------------------------------------------------
-    /// Routine Description:
-    ///        Create a new data pool, which can be used to deduplicate
-    ///        frequently submitted equal data.
-    ///
-    /// Arguments:
-    ///        Parameter0<StreamId>: Id of the stream which should be used to back 
-    ///                              the data pool. The stream must have the
-    ///                              DATA_POOL_TYPE_ID stream type set.
-    ///
-    /// Return Value:
-    ///        SC_Success on success, SC_Failed otherwise.
-    ///
-    ///        Parameter0<PoolId>: Id of the newly created data pool.
-    ///
-    RPC_CALL_V30(0x0025, DataPoolRegister, Embedded, 0)
+    RPC_CALL_V31C(0x0024, StreamBufferQuery, Embedded, 0)
 
 
     /* ==========  Simutrace Storage Server - Stream RPC  ========== */
@@ -299,7 +292,7 @@ namespace SimuTrace
     ///        Create a new stream to back trace data.
     ///
     /// Arguments:
-    ///        Parameter0<BufferId>: Id of the stream buffer from which to 
+    ///        Parameter0<BufferId>: Id of the stream buffer from which to
     ///                              allocate segments.
     ///        Payload<StreamDescriptor>: Description of the stream and the
     ///                            entries that are to be stored in the stream.
@@ -309,7 +302,7 @@ namespace SimuTrace
     ///
     ///        Parameter0<StreamId>: Id of the newly created stream.
     ///
-    RPC_CALL_V30(0x0030, StreamRegister, Data, sizeof(StreamDescriptor))
+    RPC_CALL_V31C(0x0030, StreamRegister, Data, sizeof(StreamDescriptor))
 
 
     ///
@@ -329,7 +322,7 @@ namespace SimuTrace
     ///        Parameter0<uint32_t>: Number of streams
     ///        Payload<data>: Array of StreamIds
     ///
-    RPC_CALL_V30(0x0031, StreamEnumerate, Embedded, 0)
+    RPC_CALL_V31C(0x0031, StreamEnumerate, Embedded, 0)
 
 
     ///
@@ -344,14 +337,14 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    ///        Parameter0<BufferId>: Id of the buffer, which should back the 
+    ///        Parameter0<BufferId>: Id of the buffer, which should back the
     ///                              stream.
     ///
-    ///        Payload<StreamQueryInformation>: Description of the stream and 
-    ///                              the entries that are to be stored in the 
+    ///        Payload<StreamQueryInformation>: Description of the stream and
+    ///                              the entries that are to be stored in the
     ///                              stream.
     ///
-    RPC_CALL_V30(0x0032, StreamQuery, Embedded, 0)
+    RPC_CALL_V31C(0x0032, StreamQuery, Embedded, 0)
 
 
     ///
@@ -360,13 +353,13 @@ namespace SimuTrace
     /// Routine Description:
     ///        Appends a new segment at the end of the stream and returns the
     ///        id of the segment as well as the id of the allocated buffer
-    ///        segment. 
+    ///        segment.
     ///
     /// Arguments:
     ///        Parameter0<StreamId>: Stream to apply the operation on.
     ///
     ///      Only for remote connections:
-    ///        Payload<Segment>: Control element of the segment + the 
+    ///        Payload<Segment>: Control element of the segment + the
     ///                          segment data
     ///
     ///      Local connections send a data packet with zero payload size.
@@ -383,7 +376,7 @@ namespace SimuTrace
     ///
     ///      Local connections send a data packet with zero payload size.
     ///
-    RPC_CALL_V30(0x0033, StreamAppend, Data, 0)
+    RPC_CALL_V31C(0x0033, StreamAppend, Data, 0)
 
 
     ///
@@ -391,11 +384,11 @@ namespace SimuTrace
     /// -----------------------------------------------------------
     /// Routine Description:
     ///        Closes the specified segment and opens the segment that fulfills
-    ///        the specified query. The query may point to a certain entry by 
+    ///        the specified query. The query may point to a certain entry by
     ///        index, by cycle count, real time or it may directly specify the
-    ///        segment by sequence number. If the query points to an entry the 
+    ///        segment by sequence number. If the query points to an entry the
     ///        returned segment contains the requested entry, but does not need
-    ///        to start with this entry. The caller therefore needs to perform 
+    ///        to start with this entry. The caller therefore needs to perform
     ///        a manual search for the entry within the segment.
     ///
     /// Arguments:
@@ -407,8 +400,13 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
+    ///        Version 3.0:
     ///        Parameter0<StreamSegmentId>: Id of the opened segment
     ///        Parameter1<SegmentId>: Id of the segment in the stream buffer
+    ///
+    ///        Version 3.1:
+    ///        Parameter0<SegmentId>: Id of the segment in the stream buffer
+    ///        Parameter1<uint32_t>: Offset into segment to use for handle
     ///
     ///      Only for remote connections:
     ///         Payload<SegmentControlElement>: The initialized control element
@@ -423,6 +421,7 @@ namespace SimuTrace
         StreamAccessFlags flags;
     };
 
+    RPC_CALL_V31(0x0134, StreamCloseAndOpen, Data, sizeof(StreamOpenQuery))
     RPC_CALL_V30(0x0034, StreamCloseAndOpen, Data, sizeof(StreamOpenQuery))
 
 
@@ -435,12 +434,12 @@ namespace SimuTrace
     ///        the segment is submitted.
     ///
     /// Arguments:
-    ///        Parameter0<StreamId>: Id of the stream to which the segment 
+    ///        Parameter0<StreamId>: Id of the stream to which the segment
     ///                              belongs
     ///        Parameter1<StreamSegmentId>: Id of the stream segment
     ///
     ///      Only for remote connections:
-    ///        Payload<Segment>: Control element of the segment + the 
+    ///        Payload<Segment>: Control element of the segment + the
     ///                          segment data
     ///
     ///      Local connections send a data packet with zero payload size.
@@ -448,7 +447,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V30(0x0035, StreamClose, Data, 0)
+    RPC_CALL_V31C(0x0035, StreamClose, Data, 0)
 
 }
 

@@ -78,7 +78,7 @@ namespace System
 
     ThreadBase::~ThreadBase()
     {
-        if (_threadId != INVALID_THREAD_ID) {    
+        if (_threadId != INVALID_THREAD_ID) {
         #ifdef WIN32
         #else
             ::pthread_detach(_threadId);
@@ -98,7 +98,7 @@ namespace System
         struct sigaction act = {0};
         act.sa_sigaction = _sigbusHandler;
         act.sa_flags = SA_SIGINFO;
- 
+
         // Install signal handler to catch SIGBUS
         if (::sigaction(SIGBUS, &act, 0) != 0) {
             Throw(PlatformException);
@@ -144,13 +144,14 @@ namespace System
 
     void ThreadBase::stop(bool force)
     {
-        ThrowOn(!isRunning() || (force && isExecutingThread()), 
+        ThrowOn(!isRunning() || (force && isExecutingThread()),
                 InvalidOperationException);
 
-        if (!force) {        
+        if (!force) {
             _state = TsStopping;
         } else {
         #ifdef WIN32
+        #pragma warning(suppress: 6258) // Warning using TerminateThread
             if (!::TerminateThread(_thread, 0xffffffff)) {
                 Throw(PlatformException);
             }
@@ -217,8 +218,8 @@ namespace System
 
     bool ThreadBase::isRunning() const
     {
-        return ((_state == TsStarting) || 
-                (_state == TsRunning) || 
+        return ((_state == TsStarting) ||
+                (_state == TsRunning) ||
                 (_state == TsStopping));
     }
 
@@ -278,7 +279,7 @@ namespace System
     #ifdef WIN32
         SafeHandle handle = ::OpenThread(SYNCHRONIZE, FALSE, threadId);
         ThrowOnNull(handle, PlatformException);
-        
+
         if (::WaitForSingleObject(handle, INFINITE) == WAIT_FAILED) {
             Throw(PlatformException);
         }
@@ -313,7 +314,7 @@ namespace System
             th->_retVal = -1;
         }
         th->_state = TsFinished;
-    
+
     #ifdef WIN32
         DWORD retval = (DWORD)th->_retVal;
     #else

@@ -3,10 +3,10 @@
  * Marc Rittinghaus, Thorsten Groeninger
  *
  *             _____ _                 __
- *            / ___/(_)___ ___  __  __/ /__________ _________ 
+ *            / ___/(_)___ ___  __  __/ /__________ _________
  *            \__ \/ / __ `__ \/ / / / __/ ___/ __ `/ ___/ _ \
  *           ___/ / / / / / / / /_/ / /_/ /  / /_/ / /__/  __/
- *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/ 
+ *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/
  *                         http://simutrace.org
  *
  * Simutrace Client Library (libsimutrace) is part of Simutrace.
@@ -50,11 +50,13 @@ extern "C"
      */
     typedef struct _ExceptionInformation {
         ExceptionClass type;    /*!< \brief Class of the exception */
-        ExceptionSite site;     /*!< \brief Site, where the exception 
+        ExceptionSite site;     /*!< \brief Site, where the exception
                                      occurred */
         int code;               /*!< \brief Error code. For platform exceptions
                                      this is the system error code. */
-        const char* message;    /*!< \brief Error message, describing the 
+        uint32_t reserved;      /*!< \internal \brief Internal. Do not use. */
+
+        const char* message;    /*!< \brief Error message, describing the
                                      exception */
     } ExceptionInformation;
 
@@ -63,14 +65,15 @@ extern "C"
 
     /*! \internal */
     typedef struct _StreamStateDescriptor {
-        BOOL isReadOnly;
+        _bool isReadOnly;
         StreamAccessFlags accessFlags;
 
         void* stream;
-        size_t entrySize;
+        uint32_t entrySize;
 
         SegmentId segment;
         StreamSegmentId sequenceNumber;
+
         SegmentControlElement* control;
 
         byte* segmentStart;
@@ -78,7 +81,7 @@ extern "C"
         byte* entry;
     } StreamStateDescriptor;
 
-    /*! \brief Handle to a stream. 
+    /*! \brief Handle to a stream.
      *
      *  Represents a handle to a stream which can be passed to routines of the
      *  stream API to read or write entries. A handle may either be for read or
@@ -94,6 +97,7 @@ extern "C"
      *  \see StStreamOpen()
      *  \see StStreamClose()
      *  \see StGetNextEntryFast()
+     *  \see StGetPreviousEntryFast()
      *  \see StWriteVariableData()
      *  \see StReadVariableData()
      */

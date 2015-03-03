@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -34,45 +34,55 @@ namespace Simtrace {
 namespace SimtraceStoreProvider
 {
 
-    std::unique_ptr<ServerStore> factoryMethod(StoreId id, 
-                                               const std::string& path, 
-                                               bool alwaysCreate)
+    std::unique_ptr<ServerStore> _createOrOpen(StoreId id,
+                                               const std::string& path,
+                                               bool alwaysCreate,
+                                               bool open)
     {
         uint16_t majorVersion = SIMTRACE_DEFAULT_VERSION;
         std::ifstream file(path.c_str(), std::ifstream::binary);
 
         if (file) {
-            if (alwaysCreate) {
-                file.close();
+            if (!open) {
+                if (alwaysCreate) {
+                    file.close();
 
-                LogInfo("Deleting existing store '%s'.", path.c_str());
+                    LogInfo("Deleting existing store '%s'.", path.c_str());
 
-                // We should always create a new store, so delete the existing
-                File::remove(path);
+                    // We should always create a new store, so delete the
+                    // existing
+                    File::remove(path);
+                } else {
+                    Throw(Exception, stringFormat("Cannot create store '%s'. "
+                            "The store already exists.", path.c_str()));
+                }
             } else {
                 SimtraceMasterHeader header;
 
                 file.read((char*)(&header), sizeof(SimtraceMasterHeader));
-                ThrowOn(!file || !isSimtraceStore(header), Exception, 
-                        "Failed to read store master header."); 
+                ThrowOn(!file || !isSimtraceStore(header), Exception,
+                        "Failed to read store master header.");
 
                 majorVersion = header.majorVersion;
 
                 file.close();
             }
+        } else if (open) {
+            Throw(Exception, stringFormat("Cannot open store '%s'. "
+                    "The store does not exist.", path.c_str()));
         }
 
-        LogDebug("Trying to open Simtrace store '%s' using version %d.", 
-                 path.c_str(), majorVersion);
+        LogDebug("Trying to %s Simtrace store '%s' using version %d.",
+                 (open) ? "open" : "create", path.c_str(), majorVersion);
 
         // ! ADD SUPPORT FOR NEW SIMTRACE STORE VERSIONS HERE !
 
         std::unique_ptr<ServerStore> store;
-        switch (majorVersion) 
+        switch (majorVersion)
         {
             case SIMTRACE_VERSION3: {
                 store = std::unique_ptr<Simtrace3Store>(
-                    new Simtrace3Store(id, path, alwaysCreate)); 
+                    new Simtrace3Store(id, path));
                 break;
             }
 
@@ -83,6 +93,19 @@ namespace SimtraceStoreProvider
         }
 
         return store;
+    }
+
+    std::unique_ptr<ServerStore> createMethod(StoreId id,
+                                              const std::string& path,
+                                              bool alwaysCreate)
+    {
+        return _createOrOpen(id, path, alwaysCreate, false);
+    }
+
+    std::unique_ptr<ServerStore> openMethod(StoreId id,
+                                            const std::string& path)
+    {
+        return _createOrOpen(id, path, false, true);
     }
 
     std::string makePath(const std::string& path)
@@ -97,7 +120,7 @@ namespace SimtraceStoreProvider
         return fpath;
     }
 
-    void enumerationMethod(const std::string& path, 
+    void enumerationMethod(const std::string& path,
                            std::vector<std::string>& out)
     {
         Directory directory(path, std::string(".sim"));

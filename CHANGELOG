@@ -1,0 +1,32 @@
+Version 3.1.0
+
+    - Changed build system to cmake
+    - Integrated libconfig to simplify build on Windows
+    - Added support for reverse open queries and reverse read of streams
+    - Completely removed data pools
+    - Stream open returns handle to exact entry in segment
+    - Improved open speed for sessions with large numbers of streams
+    - Added support for recognition of new streams registered by other clients
+    - Added support for server log files (--server.logfile)
+    - Client output redirected to client log file
+    - Added log detail (shared vs. private stream buffer)
+    - Made referenceOut in StWriteVariableData optional
+    - Added CSharp binding and sample
+    - Added simplified native sample
+    - Added submodule for simutrace qemu version
+    - Added exported version of tracing API
+
+  Incompatible Changes:
+    - Added explicit store open and removed functionality from store creation 
+
+  Bug Fixes:
+    - Fixed overflow in log level to string method
+    - Fixed overflow in RPC debug messages
+    - Fixed segment end computation in stream buffer for variable-sized data
+    - Fixed stream buffer shared memory allocation policy
+    - Exclusion of internals from headers to resolve name conflicts with qemu
+    - Removed asserts from fast trace functions for use with qemu
+    - Switched to own bool type to mitigate platform dependent size
+    - Switched entry size to 32 bit integer to mitigate platform dependent size
+    - Fixed memory logging in Linux build
+    - Added missing RPC message on client session close

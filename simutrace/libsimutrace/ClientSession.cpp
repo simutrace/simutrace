@@ -35,9 +35,9 @@ namespace SimuTrace
         unsigned long threadId;
     };
 
-    ClientSession::ClientSession(SessionManager& manager, 
-                                 std::unique_ptr<Port>& port, 
-                                 uint16_t serverApiVersion, SessionId localId, 
+    ClientSession::ClientSession(SessionManager& manager,
+                                 std::unique_ptr<Port>& port,
+                                 uint16_t serverApiVersion, SessionId localId,
                                  SessionId serverSideId, const Environment& root) :
         Session(manager, serverApiVersion, localId, root),
         _serverSideId(serverSideId),
@@ -46,9 +46,9 @@ namespace SimuTrace
         ThrowOnNull(port, ArgumentNullException);
 
         _address = port->getSpecifier();
-        
+
         // The attach will ensure that the given port is a client port.
-        _attach(port); 
+        _attach(port);
     }
 
     ClientSession::~ClientSession()
@@ -56,7 +56,7 @@ namespace SimuTrace
         for (int i = 0; i < _clients.size(); ++i) {
             LogWarn("The thread %d attached to session %d, but did not "
                     "detach. Ensure that all threads properly close their "
-                    "association to a session before they exit.", 
+                    "association to a session before they exit.",
                     _clients[i]->threadId, getLocalId());
 
             _detachFromContext(_clients[i]);
@@ -100,83 +100,15 @@ namespace SimuTrace
         }
     }
 
-    void ClientSession::_attach(std::unique_ptr<Port>& port)
-    {
-        ClientThreadContext* context = _context;
-        if (context != nullptr) {
-            assert(context->threadId == ThreadBase::getCurrentThreadId());
-
-            ThrowOn(context->portMap.find(getLocalId()) != context->portMap.end(), 
-                    Exception, "The thread is already attached to the session.");
-        }
-
-        assert(port != nullptr);
-        assert(port->isConnected());
-
-        // Ensure we were given a client port
-        ClientPort* cp = dynamic_cast<ClientPort*>(port.get());
-        ThrowOnNull(cp, ArgumentException);
-
-        if (_clients.size() > 0) {
-            cp->call(nullptr, RpcApi::CCV30_SessionOpen, RPC_VERSION,
-                     getServerSideId());
-        }
-
-        if (context == nullptr) {
-            context = new ClientThreadContext();
-            context->threadId = ThreadBase::getCurrentThreadId();
-
-            _context = context;
-        }
-
-        // Transfer ownership of port.
-        context->portMap[getLocalId()] = 
-            std::unique_ptr<ClientPort>(static_cast<ClientPort*>(port.release()));
-        _clients.push_back(context);
-
-        Environment::set(&getEnvironment());
-        EnvironmentSwapper::overrideSwap();
-    }
-
-    bool ClientSession::_detach(bool whatif)
-    {
-        ClientThreadContext* context = _context;
-
-        if (context == nullptr) {
-            return false;
-        }
-
-        assert(context->threadId == ThreadBase::getCurrentThreadId());
-
-        auto it = context->portMap.find(getLocalId());
-        if (it == context->portMap.end()) {
-            return false;
-        }
-
-        // The thread is a valid thread of the session.
-        if (whatif) {
-            return true;
-        }
-
-        ClientPort* port = it->second.get();
-        port->call(nullptr, RpcApi::CCV30_SessionClose);
-
-        _detachFromContext(context);
-
-        Environment::set(nullptr);
-
-        return true;
-    }
-
     void ClientSession::_determineStreamBufferConfiguration(
         uint32_t& numSegments)
     {
         // General note on stream buffer configuration
         // --------------------------------------------------------------------
-        // Size: Larger buffers (e.g., 64 MiB) typically compress better and 
+        // Size: Larger buffers (e.g., 64 MiB) typically compress better and
         //  reduce communication overhead with the server.
-        // Number: The more segments are available, the more streams can be 
-        //  supplied without contention. A high number of segments is also 
+        // Number: The more segments are available, the more streams can be
+        //  supplied without contention. A high number of segments is also
         //  better at compensating fluctuating producer activity.
         //  WARNING: The number of segments limits the number of streams that
         //           can be simultaneously written to!
@@ -185,8 +117,8 @@ namespace SimuTrace
         // performance but just eat address space and potentially physical
         // memory. Furthermore, it increases the risk of data loss for
         // copy-based stream buffers.
-        // If the producer activity is constantly higher than the processing 
-        // capacity of the storage server, the stream buffer will eventually 
+        // If the producer activity is constantly higher than the processing
+        // capacity of the storage server, the stream buffer will eventually
         // fill up and the producer will experience contention no matter how
         // big the stream buffer is. In that case a sufficiently high segment
         // size to enable good compression and a moderate number of segments
@@ -199,7 +131,7 @@ namespace SimuTrace
         uint64_t confPoolSize = Configuration::get<int>("client.memmgmt.poolSize") MiB;
         uint64_t poolSize = confPoolSize;
 
-        ThrowOn(poolSize < SIMUTRACE_CLIENT_MEMMGMT_MINIMUM_POOLSIZE, 
+        ThrowOn(poolSize < SIMUTRACE_CLIENT_MEMMGMT_MINIMUM_POOLSIZE,
                 ConfigurationException, stringFormat("The configured memory "
                 "pool size of %s is below the minimum pool size of %s.",
                 sizeToString(poolSize, SizeUnit::SuMiB).c_str(),
@@ -239,8 +171,7 @@ namespace SimuTrace
         numSegments = static_cast<uint32_t>(poolSize / segmentSize);
     }
 
-    Store::Reference ClientSession::_createStore(const std::string& specifier, 
-                                                 bool alwaysCreate)
+    void ClientSession::_updateSettings()
     {
         // We determine what stream buffer size we should take for the client
         // and send the setting to the server. It is then up to the server
@@ -248,13 +179,94 @@ namespace SimuTrace
         uint32_t numSegments;
         _determineStreamBufferConfiguration(numSegments);
         std::string setting = stringFormat(
-            "client: { memmgmt: { poolSize = %d; }; };", 
+            "client: { memmgmt: { poolSize = %d; }; };",
             numSegments * SIMUTRACE_MEMMGMT_SEGMENT_SIZE);
 
         _applySetting(setting);
+    }
 
-        return Store::makeOwnerReference(new ClientStore(*this, specifier, 
-                                                         alwaysCreate)); 
+    void ClientSession::_attach(std::unique_ptr<Port>& port)
+    {
+        ClientThreadContext* context = _context;
+        if (context != nullptr) {
+            assert(context->threadId == ThreadBase::getCurrentThreadId());
+
+            ThrowOn(context->portMap.find(getLocalId()) != context->portMap.end(),
+                    Exception, "The thread is already attached to the session.");
+        }
+
+        assert(port != nullptr);
+        assert(port->isConnected());
+
+        // Ensure we were given a client port
+        ClientPort* cp = dynamic_cast<ClientPort*>(port.get());
+        ThrowOnNull(cp, ArgumentException);
+
+        if (_clients.size() > 0) {
+            cp->call(nullptr, RpcApi::CCV31_SessionOpen, RPC_VERSION,
+                     getServerSideId());
+        }
+
+        if (context == nullptr) {
+            context = new ClientThreadContext();
+            context->threadId = ThreadBase::getCurrentThreadId();
+
+            _context = context;
+        }
+
+        // Transfer ownership of port.
+        context->portMap[getLocalId()] =
+            std::unique_ptr<ClientPort>(static_cast<ClientPort*>(port.release()));
+        _clients.push_back(context);
+
+        Environment::set(&getEnvironment());
+        EnvironmentSwapper::overrideSwap();
+    }
+
+    bool ClientSession::_detach(bool whatif)
+    {
+        ClientThreadContext* context = _context;
+
+        if (context == nullptr) {
+            return false;
+        }
+
+        assert(context->threadId == ThreadBase::getCurrentThreadId());
+
+        auto it = context->portMap.find(getLocalId());
+        if (it == context->portMap.end()) {
+            return false;
+        }
+
+        // The thread is a valid thread of the session.
+        if (whatif) {
+            return true;
+        }
+
+        ClientPort* port = it->second.get();
+        port->call(nullptr, RpcApi::CCV31_SessionClose);
+
+        _detachFromContext(context);
+
+        Environment::set(nullptr);
+
+        return true;
+    }
+
+    Store::Reference ClientSession::_createStore(const std::string& specifier,
+                                                 bool alwaysCreate)
+    {
+        _updateSettings();
+
+        return Store::makeOwnerReference(ClientStore::create(*this, specifier,
+                                                             alwaysCreate));
+    }
+
+    Store::Reference ClientSession::_openStore(const std::string& specifier)
+    {
+        _updateSettings();
+
+        return Store::makeOwnerReference(ClientStore::open(*this, specifier));
     }
 
     void ClientSession::_close()
@@ -262,8 +274,8 @@ namespace SimuTrace
         // This method should never be called, if the client correctly uses the
         // API! So this is actually error handling here. We do this so that
         // the user won't end up with a broken trace, because a single thread
-        // in the client crashed or otherwise misbehaved. 
-        // To get the session down properly, we have to use some tricks. 
+        // in the client crashed or otherwise misbehaved.
+        // To get the session down properly, we have to use some tricks.
         // First, we drop all existing references to the session. This will get
         // us to the store release in the caller method so we can transfer any
         // pending data to the server. For this to work we ensure that
@@ -273,7 +285,7 @@ namespace SimuTrace
         // do not run into synchronization problems. The destructor of the
         // session finally cleans everything up (along with numerous warnings
         // in the log).
-        
+
         if (_context == nullptr) {
             // The current thread is not a session participating thread. We
             // therefore have to hijack a context. Just take the first one.
@@ -291,7 +303,7 @@ namespace SimuTrace
         dropReferences();
     }
 
-    void ClientSession::_enumerateStores(std::vector<std::string>& out) const 
+    void ClientSession::_enumerateStores(std::vector<std::string>& out) const
     {
         Throw(NotImplementedException);
     }
@@ -300,7 +312,7 @@ namespace SimuTrace
     {
         this->Session::_applySetting(setting);
 
-        getPort().call(nullptr, RpcApi::CCV30_SessionSetConfiguration, setting);
+        getPort().call(nullptr, RpcApi::CCV31_SessionSetConfiguration, setting);
     }
 
     StreamId ClientSession::registerStream(StreamDescriptor& desc)

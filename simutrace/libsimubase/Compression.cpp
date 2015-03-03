@@ -27,7 +27,7 @@
 #include "lzma/LzmaLib.h"
 
 namespace SimuTrace {
-namespace Compression 
+namespace Compression
 {
 
     // LZMA ----

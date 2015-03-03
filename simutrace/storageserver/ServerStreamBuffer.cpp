@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@
 #include "ServerSession.h"
 #include "ServerStream.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     enum SegmentFlags {
@@ -56,23 +56,23 @@ namespace SimuTrace
     }
 
 #ifdef _DEBUG
-    inline std::string _getRequestString(ServerStream* stream, 
-                                         StreamSegmentId sequenceNumber, 
+    inline std::string _getRequestString(ServerStream* stream,
+                                         StreamSegmentId sequenceNumber,
                                          StorageLocation* location,
-                                         StreamAccessFlags flags) 
+                                         StreamAccessFlags flags)
     {
         if (stream == nullptr) {
             assert(sequenceNumber == INVALID_STREAM_SEGMENT_ID);
             assert(location == nullptr);
 
             return "scratch";
-        } else { 
-            assert((location == nullptr) || 
+        } else {
+            assert((location == nullptr) ||
                    ((location->link.sequenceNumber == sequenceNumber) &&
                     (location->link.stream == stream->getId())));
 
             return stringFormat("stream: %d, sqn: %d%s%s%s%s", stream->getId(),
-                                sequenceNumber, (location == nullptr) ? 
+                                sequenceNumber, (location == nullptr) ?
                                     "" : ", read-only",
                                 ((flags & StreamAccessFlags::SafRandomAccess) == 0) ?
                                     "" : ", random-access",
@@ -92,7 +92,7 @@ namespace SimuTrace
     struct Segment
     {
         CriticalSection lock;
-        
+
         Segment* next; // used for free-list and standby-list
         Segment* prev; // used for standby-list only
 
@@ -113,8 +113,8 @@ namespace SimuTrace
         SegmentControlElement control;
     };
 
-    ServerStreamBuffer::ServerStreamBuffer(BufferId id, 
-                                           size_t segmentSize, 
+    ServerStreamBuffer::ServerStreamBuffer(BufferId id,
+                                           size_t segmentSize,
                                            uint32_t numSegments,
                                            bool sharedMemory) :
         StreamBuffer(id, segmentSize, numSegments, sharedMemory),
@@ -124,7 +124,7 @@ namespace SimuTrace
         _enableCache(false),
         _cookie(0)
     {
-        _cookie = (static_cast<uint64_t>(rand()) << 32) | rand(); 
+        _cookie = (static_cast<uint64_t>(rand()) << 32) | rand();
 
         _enableCache = !Configuration::get<bool>("server.memmgmt.disableCache");
 
@@ -166,8 +166,8 @@ namespace SimuTrace
 
         // Setup a linked list of segment headers. We take elements from
         // the linked list, when they are requested and put them at the front
-        // when they are freed. This way, we get a free segment in O(1) and 
-        // reuse segments as soon as possible, thus stabilizing the working 
+        // when they are freed. This way, we get a free segment in O(1) and
+        // reuse segments as soon as possible, thus stabilizing the working
         // set on low to medium load.
         for (uint32_t i = 0; i < segCount; ++i) {
             Segment& seg = _segments[i];
@@ -199,7 +199,7 @@ namespace SimuTrace
         cookie ^= control.startTime;
 
         if ((segment.flags & SegmentFlags::SfReadOnly) != 0) {
-            // Control elements that are read-only should not be modified at 
+            // Control elements that are read-only should not be modified at
             // all. We therefore hash the whole control element.
             uint32_t seed = cookie & 0xFFFFFFFF;
 
@@ -268,12 +268,12 @@ namespace SimuTrace
         segment.next  = _freeHead;
 
         // Make segment the new head. If the head is no longer what's stored
-        // in segment.next (some other thread must have inserted a segment 
+        // in segment.next (some other thread must have inserted a segment
         // just now) then update segment.next and try again.
         while (!_freeHead.compare_exchange_strong(segment.next, &segment)) { }
     }
 
-    void ServerStreamBuffer::_prepareSegment(SegmentId segment, 
+    void ServerStreamBuffer::_prepareSegment(SegmentId segment,
                                              ServerStream* stream,
                                              StreamSegmentId sequenceNumber)
     {
@@ -285,14 +285,14 @@ namespace SimuTrace
 
         // We use the base class version so we get the underlying buffer's
         // control element regardless of the current segment settings.
-        SegmentControlElement* control = 
+        SegmentControlElement* control =
             this->StreamBuffer::getControlElement(segment);
         assert(control != nullptr);
 
         // Clear the whole control element
         memset(control, 0, sizeof(SegmentControlElement));
 
-        control->link.stream = (stream == nullptr) ? 
+        control->link.stream = (stream == nullptr) ?
             INVALID_STREAM_ID : stream->getId();
         control->link.sequenceNumber = sequenceNumber;
 
@@ -312,11 +312,11 @@ namespace SimuTrace
         seg->sequenceNumber = sequenceNumber;
     }
 
-    bool ServerStreamBuffer::_handleContention(uint32_t tryCount, 
+    bool ServerStreamBuffer::_handleContention(uint32_t tryCount,
                                                bool isScratch)
     {
         LogWarn("Delaying segment request. Stream buffer %s "
-                "exhausted <try: %d%s>.", _getBufferIdString(getId()).c_str(), 
+                "exhausted <try: %d%s>.", _getBufferIdString(getId()).c_str(),
                 tryCount, (isScratch) ? ", scratch" : "");
 
         const uint32_t maxRetryCount = Configuration::get<int>("server.memmgmt.retryCount");
@@ -338,8 +338,8 @@ namespace SimuTrace
         uint32_t tryCount = 1;
 
         while (true) {
-            LogMem("Requesting segment from buffer %s <try: %d, %s>.", 
-                   _getBufferIdString(getId()).c_str(), tryCount, 
+            LogMem("Requesting segment from buffer %s <try: %d, %s>.",
+                   _getBufferIdString(getId()).c_str(), tryCount,
                    _getRequestString(stream, sequenceNumber, location, flags).c_str());
 
             seg = _dequeueFromFreeList();
@@ -354,7 +354,7 @@ namespace SimuTrace
                 _prepareSegment(seg->id, stream, sequenceNumber);
 
                 LogMem("Allocated segment %d from buffer %s <try: %d, %s>",
-                       seg->id, _getBufferIdString(getId()).c_str(), tryCount, 
+                       seg->id, _getBufferIdString(getId()).c_str(), tryCount,
                        _getRequestString(stream, sequenceNumber, location, flags).c_str());
 
                 break;
@@ -423,7 +423,7 @@ namespace SimuTrace
             if (((segment.flags & SegmentFlags::SfLowPriority) == 0) ||
                 ((segment.flags & SegmentFlags::SfPrefetch) != 0)) {
 
-                // Set the segment to be the head of the list. This way it 
+                // Set the segment to be the head of the list. This way it
                 // won't be chosen as victim the next time.
                 _standbyHead = &segment;
 
@@ -513,7 +513,7 @@ namespace SimuTrace
         assert(link.stream != INVALID_STREAM_ID);
         assert(link.sequenceNumber != INVALID_STREAM_SEGMENT_ID);
 
-        // If the same segment has been requested multiple times, we keep 
+        // If the same segment has been requested multiple times, we keep
         // only a single copy on the standby list.
         if (_findStandbySegment(link, false)) {
             _purgeSegment(segment.id);
@@ -522,7 +522,7 @@ namespace SimuTrace
             _enqueueToStandbyList(segment);
         }
     }
-    
+
     void ServerStreamBuffer::_freeSegment(SegmentId segment, bool prefetch)
     {
         assert(segment < getNumSegments());
@@ -537,13 +537,13 @@ namespace SimuTrace
 
             if (prefetch) {
                 // If this is a prefetch free, we add the corresponding flag to
-                // the segment. This will prevent the segment from being added 
-                // to the tail of the standby list (from which we fetch 
-                // segments for replacement) even if the segment is marked as 
+                // the segment. This will prevent the segment from being added
+                // to the tail of the standby list (from which we fetch
+                // segments for replacement) even if the segment is marked as
                 // low priority. The flag is automatically removed later.
-                // The flag is necessary to prevent a prefetched segment from 
-                // being recycled before it had the chance to be used at least 
-                // once. Otherwise, we would not be able to prefetch multiple 
+                // The flag is necessary to prevent a prefetched segment from
+                // being recycled before it had the chance to be used at least
+                // once. Otherwise, we would not be able to prefetch multiple
                 // low priority segments.
                 seg.flags = seg.flags | SegmentFlags::SfPrefetch;
             }
@@ -551,17 +551,17 @@ namespace SimuTrace
             if ((seg.flags & SegmentFlags::SfReadOnly) == 0) {
                 // If this is a new segment, we change it to read-only here, so
                 // we only have read-only segments in the cache. Since we use a
-                // different hash for read-only segments, we have to update the 
+                // different hash for read-only segments, we have to update the
                 // hash.
                 seg.flags = seg.flags | SegmentFlags::SfReadOnly;
 
                 seg.control.cookie = _computeControlCookie(seg.control, seg);
 
-                // We overwrite the whole control element, because in the mean 
-                // time we have updated the timing information and the cookie 
-                // in the saved segment control element. We therefore have to 
+                // We overwrite the whole control element, because in the mean
+                // time we have updated the timing information and the cookie
+                // in the saved segment control element. We therefore have to
                 // update our copy in the cache.
-                SegmentControlElement* control = 
+                SegmentControlElement* control =
                     this->StreamBuffer::getControlElement(seg.id);
                 assert(control != nullptr);
 
@@ -615,7 +615,7 @@ namespace SimuTrace
             control = &seg.control;
 
             // In the debug build, we check for consistency before we force the
-            // owner and sequence number to the given value. In the release 
+            // owner and sequence number to the given value. In the release
             // build, false arguments will only invalidate the cookie.
             assert(seg.control.link.stream         == seg.stream->getId());
             assert(seg.control.link.sequenceNumber == seg.sequenceNumber);
@@ -625,15 +625,15 @@ namespace SimuTrace
         }
 
         // Check the cookie
-        ThrowOn(!_testControlCookie(*control, seg), Exception, 
+        ThrowOn(!_testControlCookie(*control, seg), Exception,
                 stringFormat("Failed submitting segment %d to buffer %s. "
-                             "The control cookie is invalid.", 
+                             "The control cookie is invalid.",
                              segment, _getBufferIdString(getId()).c_str()));
 
         LogMem("Submitting segment %d to buffer %s "
                "<rvc: %d, vc: %d, stream: %d, sqn: %d>.",
-               segment, _getBufferIdString(getId()).c_str(), 
-               seg.control.rawEntryCount, seg.control.entryCount, 
+               segment, _getBufferIdString(getId()).c_str(),
+               seg.control.rawEntryCount, seg.control.entryCount,
                seg.control.link.stream, seg.control.link.sequenceNumber);
 
         // Mark the segment as submitted so the caller cannot resubmit it and
@@ -673,16 +673,16 @@ namespace SimuTrace
                 seg.control.entryCount = seg.control.rawEntryCount;
             }
 
-            size_t validBufferLength = getEntrySize(&desc) * 
+            size_t validBufferLength = getEntrySize(&desc) *
                 seg.control.rawEntryCount;
 
             ThrowOn((validBufferLength > getSegmentSize()) ||
-                    (!isVariableEntrySize(desc.entrySize) && 
+                    (!isVariableEntrySize(desc.entrySize) &&
                      (seg.control.entryCount != seg.control.rawEntryCount)) ||
-                    (seg.control.entryCount > seg.control.rawEntryCount), 
+                    (seg.control.entryCount > seg.control.rawEntryCount),
                     Exception, stringFormat("Invalid number of entries in "
-                    "control element for stream %d <sqn: %d, bid: %d>.", 
-                    seg.control.link.stream, seg.control.link.sequenceNumber, 
+                    "control element for stream %d <sqn: %d, bid: %d>.",
+                    seg.control.link.stream, seg.control.link.sequenceNumber,
                     segment));
 
             assert(seg.control.entryCount > 0);
@@ -691,7 +691,7 @@ namespace SimuTrace
             assert(seg.control.endTime == INVALID_TIME_STAMP);
             seg.control.endTime = Clock::getTimestamp();
 
-            // Update end timing information. Note, the original control 
+            // Update end timing information. Note, the original control
             // element is NOT updated.
             if (desc.temporalOrder) {
                 assert(!isVariableEntrySize(desc.entrySize));
@@ -701,13 +701,13 @@ namespace SimuTrace
                 const CycleCount cycleMask = TEMPORAL_ORDER_CYCLE_COUNT_MASK;
 
                 // Read the cycle count from the first entry
-                CycleCount* timestamp = reinterpret_cast<CycleCount*>(
+                const CycleCount* timestamp = reinterpret_cast<const CycleCount*>(
                     getSegment(segment));
 
                 seg.control.startCycle = *timestamp & cycleMask;
 
                 // Read the cycle count from the last valid entry
-                timestamp = reinterpret_cast<CycleCount*>(
+                timestamp = reinterpret_cast<const CycleCount*>(
                     reinterpret_cast<size_t>(timestamp) +
                     validBufferLength - desc.entrySize);
 
@@ -729,31 +729,37 @@ namespace SimuTrace
 
             LogDebug("Encoding segment %d in buffer %s "
                      "<stream: %d, sqn: %d, size: %s>.",
-                     segment, _getBufferIdString(getId()).c_str(), 
+                     segment, _getBufferIdString(getId()).c_str(),
                      seg.control.link.stream, seg.control.link.sequenceNumber,
                      sizeToString(validBufferLength).c_str());
 
             // Encode the segment's data with the encoder specified for the
             // stream type. Depending on the encoder, this operation may not
             // write out any data, yet. The encoder may also perform its work
-            // asynchronously. In that case we do not finish the segment here. 
+            // asynchronously. In that case we do not finish the segment here.
             // The encoder has to complete the segment at the stream!
             StreamEncoder& encoder = seg.stream->getEncoder();
 
             completed = encoder.write(*this, segment, location);
             if (completed) {
-                assert((location == nullptr) ||
-                       ((location->link == seg.control.link) &&
-                        (location->ranges.startIndex == seg.control.startIndex) &&
-                        ((location->ranges.startIndex == INVALID_ENTRY_INDEX) ||
-                         (location->getEntryCount() == seg.control.entryCount)) &&
-                        (location->rawEntryCount == seg.control.rawEntryCount) &&
-                        (location->ranges.startCycle == seg.control.startCycle) &&
-                        (location->ranges.endCycle == seg.control.endCycle) &&
-                        (location->ranges.startTime == seg.control.startTime) &&
-                        (location->ranges.endTime == seg.control.endTime)));
+                if (location != nullptr) {
+                    assert(location->link == seg.control.link);
+                    assert(location->ranges.startIndex == seg.control.startIndex);
+                    assert((location->ranges.startIndex == INVALID_ENTRY_INDEX) ||
+                           (location->getEntryCount() == seg.control.entryCount));
+                    assert(location->rawEntryCount == seg.control.rawEntryCount);
+                    assert(location->ranges.startCycle == seg.control.startCycle);
+                    assert(location->ranges.endCycle == seg.control.endCycle);
+                    assert(location->ranges.startTime == seg.control.startTime);
+                    assert(location->ranges.endTime == seg.control.endTime);
 
-                _freeSegment(segment);
+                    _freeSegment(segment);
+                } else {
+                    // The encoder did not specify a storage location, so the
+                    // segment is no longer valid. Remove it from the buffer.
+
+                    _purgeSegment(segment);
+                }
             }
 
         } catch (const std::exception& e) {
@@ -764,8 +770,8 @@ namespace SimuTrace
 
             LogError("Failed to encode segment %d in buffer %s "
                      "<stream: %d, sqn: %d>. Exception: '%s'.",
-                     segment, _getBufferIdString(getId()).c_str(), 
-                     seg.control.link.stream, seg.control.link.sequenceNumber, 
+                     segment, _getBufferIdString(getId()).c_str(),
+                     seg.control.link.stream, seg.control.link.sequenceNumber,
                      e.what());
 
             throw;
@@ -801,7 +807,7 @@ namespace SimuTrace
         // Source 2: Allocate a new segment from the free list. This may
         //           evict segments from the cache if the free list is empty.
         if (seg == nullptr) {
-            seg = _tryAllocateFreeSegment(stream, sequenceNumber, 
+            seg = _tryAllocateFreeSegment(stream, sequenceNumber,
                                           location, flags, prefetch);
         }
 
@@ -827,11 +833,11 @@ namespace SimuTrace
             if (_enableCache) {
                 seg->flags = seg->flags | SegmentFlags::SfCacheable;
 
-                // If the caller specified random access, we set low priority 
-                // for it. That will lead the cache to add the segment to the 
-                // tail instead of the head. On the next eviction the segment 
+                // If the caller specified random access, we set low priority
+                // for it. That will lead the cache to add the segment to the
+                // tail instead of the head. On the next eviction the segment
                 // will be selected. For true random access, this prevents the
-                // pollution of the cache. For true sequential access, the 
+                // pollution of the cache. For true sequential access, the
                 // caller will not access a closed segment again. We therefore,
                 // can also reuse it as soon as possible.
                 if (((flags & StreamAccessFlags::SafRandomAccess) != 0) ||
@@ -842,11 +848,11 @@ namespace SimuTrace
             }
 
             // If the storage location is specified, we invoke the encoder
-            // to load the respective data into the fresh segment. 
+            // to load the respective data into the fresh segment.
 
             try {
                 StreamEncoder& encoder = stream->getEncoder();
-                SegmentControlElement* control = 
+                SegmentControlElement* control =
                     this->StreamBuffer::getControlElement(seg->id);
                 assert(control != nullptr);
 
@@ -871,14 +877,14 @@ namespace SimuTrace
 
                 LogDebug("Decoding segment %d in buffer %s "
                          "<stream: %d, sqn: %d>.", seg->id,
-                         _getBufferIdString(getId()).c_str(), 
+                         _getBufferIdString(getId()).c_str(),
                          stream->getId(), sequenceNumber);
 
                 // This routine guarantees that the segment id is set BEFORE
                 // the encoder read is initiated.
                 segment = seg->id;
 
-                completed = encoder.read(*this, seg->id, flags, *location, 
+                completed = encoder.read(*this, seg->id, flags, *location,
                                          prefetch);
                 assert((!completed) ||
                        ((control->startCycle == location->ranges.startCycle) &&
@@ -892,7 +898,7 @@ namespace SimuTrace
 
                 // If the encoder should perform a synchronous read, we expect
                 // the operation to be completed.
-                assert(completed || 
+                assert(completed ||
                        ((flags & StreamAccessFlags::SafSynchronous) == 0));
 
             } catch (const std::exception& e) {
@@ -929,10 +935,10 @@ namespace SimuTrace
         return completed;
     }
 
-    SegmentId ServerStreamBuffer::requestSegment(ServerStream& stream, 
+    SegmentId ServerStreamBuffer::requestSegment(ServerStream& stream,
                                                  StreamSegmentId sequenceNumber)
     {
-        ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID, 
+        ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID,
                 ArgumentException);
 
         SegmentId id;
@@ -972,10 +978,10 @@ namespace SimuTrace
         assert(ctrl != nullptr);
 
         std::string streamStr = (ctrl->link.stream != INVALID_STREAM_ID) ?
-            stringFormat("stream: %d, sqn: %d", ctrl->link.stream, 
+            stringFormat("stream: %d, sqn: %d", ctrl->link.stream,
                 ctrl->link.sequenceNumber) : "scratch";
 
-        LogMem("Releasing segment %d to buffer %s <%s>.", segment, 
+        LogMem("Releasing segment %d to buffer %s <%s>.", segment,
                _getBufferIdString(getId()).c_str(), streamStr.c_str());
     #endif
 
@@ -999,10 +1005,10 @@ namespace SimuTrace
         assert(ctrl != nullptr);
 
         std::string streamStr = (ctrl->link.stream != INVALID_STREAM_ID) ?
-            stringFormat("stream: %d, sqn: %d", ctrl->link.stream, 
+            stringFormat("stream: %d, sqn: %d", ctrl->link.stream,
                 ctrl->link.sequenceNumber) : "scratch";
 
-        LogMem("Purging segment %d of buffer %s <%s>.", segment, 
+        LogMem("Purging segment %d of buffer %s <%s>.", segment,
                _getBufferIdString(getId()).c_str(), streamStr.c_str());
     #endif
 
@@ -1032,7 +1038,7 @@ namespace SimuTrace
 
     bool ServerStreamBuffer::openSegment(SegmentId& segment,
                                          ServerStream& stream,
-                                         StreamAccessFlags flags, 
+                                         StreamAccessFlags flags,
                                          StorageLocation& location,
                                          bool prefetch)
     {
@@ -1040,10 +1046,10 @@ namespace SimuTrace
 
         LogMem("%s segment into buffer %s <stream: %d, sqn: %d>.",
                (prefetch) ? "Prefetching" : "Loading",
-               _getBufferIdString(getId()).c_str(), location.link.stream, 
+               _getBufferIdString(getId()).c_str(), location.link.stream,
                location.link.sequenceNumber);
 
-        return _requestSegment(segment, &stream, location.link.sequenceNumber, 
+        return _requestSegment(segment, &stream, location.link.sequenceNumber,
                                flags, &location, prefetch);
     }
 
@@ -1080,7 +1086,7 @@ namespace SimuTrace
                 LogMem("Flushing cached segment %d in buffer %s "
                        "<store: %d, stream: %d, sqn: %d>.", seg->id,
                        _getBufferIdString(getId()).c_str(), store,
-                       seg->stream->getId(), 
+                       seg->stream->getId(),
                        seg->sequenceNumber);
 
                 // Remove the segment from the LRU list and purge it
@@ -1097,7 +1103,7 @@ namespace SimuTrace
             seg = nseg;
         } while (true);
 
-        assert((store != INVALID_STORE_ID) || 
+        assert((store != INVALID_STORE_ID) ||
                ((_standbyHead == nullptr) && (_standbyIndex.empty())));
     }
 

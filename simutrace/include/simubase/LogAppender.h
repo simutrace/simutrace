@@ -46,7 +46,7 @@ namespace SimuTrace
         std::unique_ptr<LogLayout> _layout;
         bool _inherit;
     protected:
-        LogAppender(const std::string& name, std::unique_ptr<LogLayout>& layout, 
+        LogAppender(const std::string& name, std::unique_ptr<LogLayout>& layout,
                     bool inherit);
 
         virtual void _append(const LogEvent& event) = 0;

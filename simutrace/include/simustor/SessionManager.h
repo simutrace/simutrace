@@ -46,10 +46,10 @@ namespace SimuTrace
         virtual std::unique_ptr<Session> _startSession(SessionId localId,
             std::unique_ptr<Port>& sessionPort, uint16_t peerApiVersion) = 0;
 
-        SessionId _createSession(std::unique_ptr<Port>& sessionPort, 
+        SessionId _createSession(std::unique_ptr<Port>& sessionPort,
                                  uint16_t peerApiVersion);
-        void _openLocalSession(SessionId session, 
-                               std::unique_ptr<Port>& sessionPort, 
+        void _openLocalSession(SessionId session,
+                               std::unique_ptr<Port>& sessionPort,
                                uint16_t peerApiVersion);
 
         Session* _getSession(SessionId id) const;

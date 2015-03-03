@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -33,32 +33,32 @@ namespace SimuTrace
 
     //
     // The finite context method predictor (FCM) takes a history of the last n
-    // observed symbols (where n denotes the predictor's order) and predicts 
+    // observed symbols (where n denotes the predictor's order) and predicts
     // the symbol which followed the observed sequence the last time. FCMs thus
-    // are good at predicting previously observed sequences. To simplify 
-    // matching the history, the input symbols are hashed and used as an index 
-    // into a table containing the prediction (i.e., the value encountered the 
-    // last time for the given history). In this implementation, for each 
-    // prediction an additional history is kept to allow the predictor to 
-    // predict not only the least recent value which followed the input 
-    // sequence the last time, but also the second recent value and so on. 
-    // Thus, our FCM technically maintains a last value predictor for each 
+    // are good at predicting previously observed sequences. To simplify
+    // matching the history, the input symbols are hashed and used as an index
+    // into a table containing the prediction (i.e., the value encountered the
+    // last time for the given history). In this implementation, for each
+    // prediction an additional history is kept to allow the predictor to
+    // predict not only the least recent value which followed the input
+    // sequence the last time, but also the second recent value and so on.
+    // Thus, our FCM technically maintains a last value predictor for each
     // hashed input sequence.
     //
     // To allow multiple FCMs to share a common input sequence history, the
     // history implementation is encapsulated in the FcmHistory classes. If no
-    // history is specified in the constructor, a simple history of the 
+    // history is specified in the constructor, a simple history of the
     // specified order is created.
     //
 
-    // T: symbol type 
+    // T: symbol type
     // tableSize: size of the hash table
     // order: length of the input history to match against
     // lineLength: length of the prediction history for each input history.
     //             For each input, the predictor will provide lineLength
     //             predictions.
     template<typename T, uint32_t tableSize, uint32_t order, uint32_t lineLength,
-             typename hKey, uint32_t hTableSize, uint32_t hHashSize, uint32_t hOrder> 
+             typename hKey, uint32_t hTableSize, uint32_t hHashSize, uint32_t hOrder>
     class FiniteContextMethodPredictor :
         public Predictor<T>
     {
@@ -77,7 +77,7 @@ namespace SimuTrace
 
         void _initialize()
         {
-            // It does not make sense to initialize the prediction history to 
+            // It does not make sense to initialize the prediction history to
             // all 0s, as we would then predict the same value multiple times.
             for (uint32_t index = 0; index < (1 << tableSize); ++index) {
                 for (uint32_t i = 0; i < lineLength; ++i) {
@@ -90,10 +90,10 @@ namespace SimuTrace
         {
             assert(index < (1 << tableSize));
 
-            // VPC4 only updates the value history if the first value is 
-            // different from the input to avoid an unnecessary insertion of 
-            // the same value. A full compare is not done to prevent the 
-            // decoding step from having to check against all entries in all 
+            // VPC4 only updates the value history if the first value is
+            // different from the input to avoid an unnecessary insertion of
+            // the same value. A full compare is not done to prevent the
+            // decoding step from having to check against all entries in all
             // predictors to determine if an update should be performed.
             if (_valueTable[index][0] != newValue) {
                 // Shift the value history to make room for the new value.
@@ -108,8 +108,8 @@ namespace SimuTrace
     public:
         FiniteContextMethodPredictor(PredictorId idBase) :
             Predictor<T>(idBase, lineLength),
-            _history(new FcmHistory<T, tableSize, order>(), 
-                     [](FcmHistory<T, tableSize, order>* instance) 
+            _history(new FcmHistory<T, tableSize, order>(),
+                     [](FcmHistory<T, tableSize, order>* instance)
                      { delete instance; })
         {
             _initialize();

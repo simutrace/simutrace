@@ -53,7 +53,7 @@ namespace SimuTrace
         _send(msg);
         _receive(*response);
 
-        // Check if this is the response to our request 
+        // Check if this is the response to our request
         ThrowOn(response->sequenceNumber != msg.sequenceNumber, Exception,
                 "Failed to get response from server. Potential "
                 "message order violation detected.");
@@ -73,7 +73,7 @@ namespace SimuTrace
         return response->response.status;
     }
 
-    uint32_t ClientPort::call(Message* response, uint32_t controlCode, 
+    uint32_t ClientPort::call(Message* response, uint32_t controlCode,
                               uint32_t parameter0, uint64_t parameter1)
     {
         Message msg = {0};
@@ -84,8 +84,8 @@ namespace SimuTrace
         return call(response, msg);
     }
 
-    uint32_t ClientPort::call(Message* response, uint32_t controlCode, 
-                              const void* data, uint32_t length, 
+    uint32_t ClientPort::call(Message* response, uint32_t controlCode,
+                              const void* data, uint32_t length,
                               uint32_t parameter0, uint32_t parameter1)
     {
         Message msg = {0};

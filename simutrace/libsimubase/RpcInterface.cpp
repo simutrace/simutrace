@@ -24,7 +24,7 @@
 
 #include "Exceptions.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     Message::~Message()
@@ -48,7 +48,7 @@ namespace SimuTrace
         Message::embedded.parameter1 = parameter1;
     }
 
-    void Message::setupData(uint32_t parameter0, uint32_t parameter1, 
+    void Message::setupData(uint32_t parameter0, uint32_t parameter1,
                             const void* data, uint32_t length)
     {
         payloadType = MessagePayloadType::MptData;
@@ -59,7 +59,7 @@ namespace SimuTrace
         Message::data.payload       = const_cast<void*>(data);
     }
 
-    void Message::setupHandle(uint32_t parameter0, uint32_t parameter1, 
+    void Message::setupHandle(uint32_t parameter0, uint32_t parameter1,
                               std::vector<Handle>& handles)
     {
         payloadType = MessagePayloadType::MptHandles;
@@ -78,7 +78,7 @@ namespace SimuTrace
 
         if (expectedLength > 0) {
 
-            switch (Message::payloadType) 
+            switch (Message::payloadType)
             {
                 case MessagePayloadType::MptEmbedded: {
                     break;
@@ -122,8 +122,8 @@ namespace SimuTrace
             }
 
             case MessagePayloadType::MptData: {
-                if ((data.payloadLength > 0) && 
-                    (data.payload != nullptr) && 
+                if ((data.payloadLength > 0) &&
+                    (data.payload != nullptr) &&
                     ((localFlags & LocalMessageFlags::LmfAllocationOwner) != 0)) {
 
                     if ((localFlags & LocalMessageFlags::LmfCustomAllocation) != 0) {
@@ -144,8 +144,8 @@ namespace SimuTrace
             }
 
             case MessagePayloadType::MptHandles: {
-                if ((handles.handleCount > 0) && 
-                    (handles.handles!= nullptr) && 
+                if ((handles.handleCount > 0) &&
+                    (handles.handles!= nullptr) &&
                     ((localFlags & LocalMessageFlags::LmfAllocationOwner) != 0)) {
 
                     for (auto i = 0; i < handles.handles->size(); ++i) {

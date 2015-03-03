@@ -3,10 +3,10 @@
  * Marc Rittinghaus, Thorsten Groeninger
  *
  *             _____ _                 __
- *            / ___/(_)___ ___  __  __/ /__________ _________ 
+ *            / ___/(_)___ ___  __  __/ /__________ _________
  *            \__ \/ / __ `__ \/ / / / __/ ___/ __ `/ ___/ _ \
  *           ___/ / / / / / / / /_/ / /_/ /  / /_/ / /__/  __/
- *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/ 
+ *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/
  *                         http://simutrace.org
  *
  * Simutrace Store Library (libsimustor) is part of Simutrace.
@@ -49,10 +49,12 @@ extern "C"
 #define INVALID_SESSION_ID INVALID_OBJECT_ID
 #define SERVER_SESSION_ID (INVALID_SESSION_ID - 1)
 
+#ifdef SIMUTRACE
     /*! \internal \brief Id of a store. */
     typedef ObjectId    StoreId;
 #define INVALID_STORE_ID INVALID_OBJECT_ID
 #define CLIENT_STORE_ID (INVALID_STORE_ID - 1)
+#endif
 
     /* Simulation and tracing environment related definitions */
 
@@ -96,10 +98,12 @@ extern "C"
      */
     typedef Guid        StreamTypeId;
 
+#ifdef SIMUTRACE
     /*! \internal \brief Id of a stream buffer. */
     typedef ObjectId    BufferId;
 #define INVALID_BUFFER_ID INVALID_OBJECT_ID
 #define SERVER_BUFFER_ID (INVALID_BUFFER_ID - 1)
+#endif
 
     /*! \internal \brief Id of a stream buffer segment. */
     typedef ObjectId    SegmentId;
@@ -118,10 +122,6 @@ extern "C"
     typedef ObjectId    StreamSegmentId;
 #define INVALID_STREAM_SEGMENT_ID INVALID_OBJECT_ID
 
-    /*! \internal \brief Id of a data pool. */
-    typedef ObjectId    PoolId;
- #define INVALID_POOL_ID INVALID_OBJECT_ID
-
     /*! \internal \brief Identifies a segment in a stream. */
     typedef struct _StreamSegmentLink {
         StreamId stream;
@@ -138,12 +138,16 @@ extern "C"
     #endif
     } StreamSegmentLink;
 
+#ifdef SIMUTRACE
     /*! \internal \brief Header of a variable-sized data block. */
     typedef struct _VDataBlockHeader {
         uint16_t reserved : 1;
         uint16_t continuation : 1;
         uint16_t size : 14;
     } VDataBlockHeader;
+#else
+    typedef uint16_t VDataBlockHeader;
+#endif
 
 #define VARIABLE_ENTRY_SIZE_FLAG 0x80000000
 #define VARIABLE_ENTRY_MAX_SIZE ((1 << 14) - 1 + sizeof(VDataBlockHeader))
@@ -167,14 +171,14 @@ extern "C"
      *
      *  \since 3.0
      *
-     *  \see StRegisterStream()
+     *  \see StStreamRegister()
      *  \see isVariableEntrySize()
      *  \see getEntrySize()
      */
-    static inline size_t makeVariableEntrySize(size_t sizeHint)
+    static inline uint32_t makeVariableEntrySize(uint32_t sizeHint)
     {
-        assert((sizeHint & VARIABLE_ENTRY_SIZE_FLAG) == 0);
-        assert(sizeHint > sizeof(VDataBlockHeader));
+        STASSERT((sizeHint & VARIABLE_ENTRY_SIZE_FLAG) == 0);
+        STASSERT(sizeHint > sizeof(VDataBlockHeader));
 
         if (sizeHint > VARIABLE_ENTRY_MAX_SIZE) {
             sizeHint = VARIABLE_ENTRY_MAX_SIZE;
@@ -191,20 +195,21 @@ extern "C"
      *
      *  \param entrySize The entry size to check.
      *
-     *  \returns \c TRUE if the entry size is variable, \c FALSE otherwise.
+     *  \returns \c _true if the entry size is variable, \c _false otherwise.
      *
      *  \since 3.0
      *
      *  \see makeVariableEntrySize()
      *  \see getEntrySize()
      */
-    static inline BOOL isVariableEntrySize(size_t entrySize)
+    static inline _bool isVariableEntrySize(uint32_t entrySize)
     {
-        return ((entrySize & VARIABLE_ENTRY_SIZE_FLAG) != 0) ? TRUE : FALSE;
+        return ((entrySize & VARIABLE_ENTRY_SIZE_FLAG) != 0) ? _true : _false;
     }
 
+#ifdef SIMUTRACE
     /*! \internal \brief Returns the size hint for a variable entry size. */
-    static inline size_t getSizeHint(size_t variableEntrySize)
+    static inline uint32_t getSizeHint(uint32_t variableEntrySize)
     {
         assert((variableEntrySize & VARIABLE_ENTRY_SIZE_FLAG) != 0);
         return variableEntrySize & (~VARIABLE_ENTRY_SIZE_FLAG);
@@ -212,9 +217,9 @@ extern "C"
 
     /*! \internal \brief Computes the block offset in variable-sized data */
     static inline size_t getVBufferOffsetFromIndex(uint64_t rawEntryIndex,
-                                                   size_t sizeHint)
+                                                   uint32_t sizeHint)
     {
-        assert((sizeHint > sizeof(VDataBlockHeader)) && 
+        assert((sizeHint > sizeof(VDataBlockHeader)) &&
                (sizeHint <= VARIABLE_ENTRY_MAX_SIZE));
 
         return rawEntryIndex * sizeHint;
@@ -222,14 +227,14 @@ extern "C"
 
     /*! \internal \brief Encodes a buffer as variable-sized data */
     static inline size_t writeVariableData(byte* dest, size_t destSize,
-                                           byte* data, size_t dataSize,
-                                           size_t sizeHint, 
+                                           const byte* data, size_t dataSize,
+                                           uint32_t sizeHint,
                                            uint32_t* outBlockCount)
     {
         assert(dest != NULL);
         assert(data != NULL);
         assert(dataSize > 0);
-        assert((sizeHint > sizeof(VDataBlockHeader)) && 
+        assert((sizeHint > sizeof(VDataBlockHeader)) &&
                (sizeHint <= VARIABLE_ENTRY_MAX_SIZE));
 
         if (destSize < sizeHint) {
@@ -246,7 +251,7 @@ extern "C"
             /* Account for the current block in the source and destination */
             destSize -= sizeHint;
 
-            size_t chunkSize = (dataSize >= blockDataSize) ? 
+            size_t chunkSize = (dataSize >= blockDataSize) ?
                 blockDataSize : dataSize;
             dataSize -= chunkSize;
 
@@ -280,11 +285,11 @@ extern "C"
     }
 
     /*! \internal \brief Decodes a buffer of variable-sized data. */
-    static inline BOOL readVariableData(byte* src, size_t srcSize,
-                                        byte* data, size_t* dataSize)
+    static inline _bool readVariableData(const byte* src, size_t srcSize,
+                                         byte* data, size_t* dataSize)
     {
         assert(src != NULL);
-        assert(srcSize >= sizeof(VDataBlockHeader));
+        assert(srcSize > sizeof(VDataBlockHeader));
 
         assert(dataSize != NULL);
 
@@ -302,11 +307,11 @@ extern "C"
 
             if (!header->continuation) {
                 *dataSize = size;
-                return TRUE;
+                return _true;
             }
 
             /* Move the source to the next block. */
-            size_t sizeHint = sizeof(VDataBlockHeader) + header->size; 
+            size_t sizeHint = sizeof(VDataBlockHeader) + header->size;
             assert(srcSize >= sizeHint);
 
             src += sizeHint;
@@ -314,8 +319,40 @@ extern "C"
         } while (srcSize > sizeof(VDataBlockHeader));
 
         *dataSize = size;
-        return FALSE;
+        return _false;
     }
+
+    /*! \internal \brief Finds offset of the first block of the n-th entry */
+    static inline size_t findVariableEntry(const byte* buffer, size_t size,
+                                           uint64_t localSearchIndex)
+    {
+        assert(buffer != NULL);
+        assert(size > sizeof(VDataBlockHeader));
+
+        uint64_t localIndex = 0;
+        const byte* buf = buffer;
+        do {
+            VDataBlockHeader* header = (VDataBlockHeader*)(buffer);
+
+            if (!header->continuation) {
+                localIndex++;
+
+                if (localIndex == localSearchIndex) {
+                    return buffer - buf;
+                }
+            }
+
+            /* Move the buffer to the next block. */
+            size_t sizeHint = sizeof(VDataBlockHeader) + header->size;
+            assert(size >= sizeHint);
+
+            buffer += sizeHint;
+            size -= sizeHint;
+        } while (size > sizeof(VDataBlockHeader));
+
+        return -1;
+    }
+#endif /* SIMUTRACE */
 
 #define MAX_STREAM_NAME_LENGTH 256
 #define MAX_STREAM_TYPE_NAME_LENGTH MAX_STREAM_NAME_LENGTH
@@ -332,32 +369,36 @@ extern "C"
      *  \since 3.0
      */
     typedef struct _StreamTypeDescriptor {
-        char name[MAX_STREAM_TYPE_NAME_LENGTH]; /*!< \brief Friendly name of 
+        char name[MAX_STREAM_TYPE_NAME_LENGTH]; /*!< \brief Friendly name of
                                                      the type */
-        StreamTypeId id;                        /*!< \brief Unique id of the 
+        StreamTypeId id;                        /*!< \brief Unique id of the
                                                      type */
 
         /* Properties */
-        uint32_t temporalOrder : 1; /*!< \brief Temporally ordered stream
 
-                                         Indicates if the entries in the
-                                         stream are temporally ordered. If 
-                                         \c temporalOrder is set, the first 
-                                         member in each entry must be a 48 bit
-                                         cycle count field. */
-        uint32_t bigEndian : 1;     /*!< \brief Value endianess. 
-                                         Not supported, yet*/
-        uint32_t arch32Bit : 1;     /*!< \brief Indicates if type is meant for
-                                         32 bit architectures */
+        /*! \brief Temporally ordered stream
 
-        size_t entrySize;           /*!< \brief Entry size
+            Indicates if the entries in the stream are temporally ordered. If
+            \c temporalOrder is set, the first member in each entry must be a
+            48 bit monotonically increasing (cycle) counter field. */
+        uint32_t temporalOrder : 1;
 
-                                         Size of a single entry in bytes. To
-                                         make variable-sized entries use
-                                         makeVariableEntrySize(). If the size
-                                         itself is desired, do not read
-                                         the entry size directly, instead
-                                         use getEntrySize() */
+        uint32_t bigEndian : 1;   /*!< \brief Value endianess.
+                                       Not supported, yet*/
+        uint32_t arch32Bit : 1;   /*!< \brief Indicates if type is meant for
+                                       32 bit architectures */
+
+        uint32_t reserved0 : 29;  /*!< \internal \brief Internal. Do not use */
+        uint32_t reserved1;       /*!< \internal \brief Internal. Do not use */
+
+        /*! \brief Entry size
+
+            Size of a single entry in bytes. To make variable-sized entries use
+            makeVariableEntrySize(). If the size itself is desired, do not read
+            the entry size directly, instead use getEntrySize() */
+        uint32_t entrySize;
+
+        uint32_t reserved2;       /*!< \internal \brief Internal. Do not use */
     } StreamTypeDescriptor;
 
 
@@ -376,64 +417,68 @@ extern "C"
      *
      *  \see makeVariableEntrySize()
      */
-    static inline size_t getEntrySize(const StreamTypeDescriptor* desc)
+    static inline uint32_t getEntrySize(const StreamTypeDescriptor* desc)
     {
-        assert(desc != NULL);
+        STASSERT(desc != NULL);
 
-        return (isVariableEntrySize(desc->entrySize)) ? 
-            getSizeHint(desc->entrySize) : desc->entrySize;
+        return desc->entrySize & (~VARIABLE_ENTRY_SIZE_FLAG);
     }
 
 
-    /*! \brief Describes a stream. 
+    /*! \brief Describes a stream.
      *
      *  Contains all information necessary to register a new stream.
      *
      *  \since 3.0
      */
     typedef struct _StreamDescriptor {
-        char name[MAX_STREAM_NAME_LENGTH]; /*!< \brief Friendly name of the 
+        char name[MAX_STREAM_NAME_LENGTH]; /*!< \brief Friendly name of the
                                                 stream */
 
         /* Hidden is only allowed on the server-side */
-        BOOL hidden;                       /*!< \brief Internal, set to 
-                                                \c FALSE */
+        _bool hidden;                      /*!< \brief Internal, set to
+                                                \c _false */
+
+        _bool reserved0[3];       /*!< \internal \brief Internal. Do not use */
+        uint32_t reserved1;       /*!< \internal \brief Internal. Do not use */
 
         StreamTypeDescriptor type;         /*!< \brief Type of the stream */
     } StreamDescriptor;
 
 
-    /*! \brief Describes data ranges in a stream. 
+    /*! \brief Describes data ranges in a stream.
      *
      *  The entries in a stream or stream segment cover ranges of certain
      *  properties, for example a time span. Simutrace builds indices over
-     *  these ranges to allow the user to search for supplied points (e.g., 
-     *  a certain point in simulation time) when reading trace data. This 
+     *  these ranges to allow the user to search for supplied points (e.g.,
+     *  a certain point in simulation time) when reading trace data. This
      *  structure contains all ranges that Simutrace uses for index generation.
      *
      *  \since 3.0
      */
     typedef union _StreamRangeInformation {
     /*! \cond */
-        struct { 
+        struct {
     /*! \endcond */
             uint64_t startIndex;    /*!< \brief Index of the first entry */
             uint64_t endIndex;      /*!< \brief Index of the last entry  */
 
-            CycleCount startCycle;  /*!< \brief Simulation time of the first 
+            CycleCount startCycle;  /*!< \brief Simulation time of the first
                                          entry */
-            CycleCount endCycle;    /*!< \brief Simulation time of the last 
+            CycleCount endCycle;    /*!< \brief Simulation time of the last
                                          entry */
 
-            Timestamp startTime;    /*!< \brief Wall clock time at the 
-                                         allocation of the range in the server 
+            Timestamp startTime;    /*!< \brief Wall clock time at the
+                                         allocation of the range in the server
                                          during recording */
             Timestamp endTime;      /*!< \brief Wall clock time at the start of
                                          the processing by the server */
     /*! \cond */
         };
 
+    #ifdef SIMUTRACE
         Range ranges[3]; /*!< Internal, do not use. */
+    #endif
     /*! \endcond */
 
     #ifdef __cplusplus
@@ -457,21 +502,21 @@ extern "C"
      *  \since 3.0
      */
     typedef struct _StreamStatistics {
-        uint64_t compressedSize;        /*!< \brief Total size of the stream in 
+        uint64_t compressedSize;        /*!< \brief Total size of the stream in
                                              bytes after compression with the
                                              type-specific encoder */
 
-        uint64_t entryCount;            /*!< \brief Number of entries in the 
+        uint64_t entryCount;            /*!< \brief Number of entries in the
                                              stream */
         uint64_t rawEntryCount;         /*!< \brief Number of raw entries in the
                                              stream.
 
-                                             This value differs from 
+                                             This value differs from
                                              \c entryCount only in streams with
                                              variable-sized data and is the
                                              number of data blocks. */
 
-        StreamRangeInformation ranges;  /*!< \brief Range information over the 
+        StreamRangeInformation ranges;  /*!< \brief Range information over the
                                              entire stream */
     #ifdef __cplusplus
         _StreamStatistics() :
@@ -485,7 +530,7 @@ extern "C"
 
     /*! \brief Stream query result.
      *
-     *  Contains stream registration and type information as well as 
+     *  Contains stream registration and type information as well as
      *  statistics about the encapsulated data.
      *
      *  \since 3.0
@@ -493,7 +538,7 @@ extern "C"
      *  \see StStreamQuery()
      */
     typedef struct _StreamQueryInformation {
-        StreamDescriptor descriptor; /*!< \brief Stream registration 
+        StreamDescriptor descriptor; /*!< \brief Stream registration
                                           information */
         StreamStatistics stats;      /*!< \brief Stream data statistics */
     } StreamQueryInformation;
@@ -509,7 +554,7 @@ extern "C"
         uint32_t entryCount;
         uint32_t rawEntryCount;
 
-        /* The server may set startIndex to INVALID_ENTRY_INDEX to indicate 
+        /* The server may set startIndex to INVALID_ENTRY_INDEX to indicate
            that no index-based addressing is needed. The client must not
            touch this field */
         uint64_t startIndex;
@@ -534,13 +579,13 @@ extern "C"
      *  \see StStreamOpen()
      */
     typedef enum _QueryIndexType {
-        /* We build individual index trees 
+        /* We build individual index trees
            for the following index types   */
         QIndex          = 0x00,      /*!< Index of an entry. The first entry
                                           in a stream has index 0, the second
                                           one has index 1 and so on.         */
         QCycleCount     = 0x01,      /*!< Cycle count of an entry. */
-        QRealTime       = 0x02,      /*!< Wall clock time. Simutrace 
+        QRealTime       = 0x02,      /*!< Wall clock time. Simutrace
                                           automatically records the wall clock
                                           time for each segment (e.g., 64 MiB)
                                           of trace data in a stream.         */
@@ -548,10 +593,18 @@ extern "C"
         QMaxTree        = QRealTime, /*!< Internal, do not use */
 
         /* Not tree-based index types */
-        QSequenceNumber          = QMaxTree + 0x01, /*!< The sequence number
-                                                         of a stream segment */
-        QNextValidSequenceNumber = QMaxTree + 0x02, /*!< Points to the next
-                                                         valid sequence number*/
+        QSequenceNumber              = QMaxTree + 0x01, /*!< The sequence
+                                                             number of a stream
+                                                             segment         */
+        QNextValidSequenceNumber     = QMaxTree + 0x02, /*!< Points to the next
+                                                             valid sequence
+                                                             number          */
+
+        /* Since 3.1 */
+        QPreviousValidSequenceNumber = QMaxTree + 0x03, /*!< Points to the
+                                                             previous sequence
+                                                             number
+                                                             \since 3.1      */
 
         QMax                        /*!< Internal, do not use */
     } QueryIndexType;
@@ -573,8 +626,8 @@ extern "C"
                                          in sequential order. Segments are
                                          cached, but reused as soon as possible
                                          to avoid cache pollution. Maximum
-                                         read-ahead. This access pattern and 
-                                         settings provide best read 
+                                         read-ahead. This access pattern and
+                                         settings provide best read
                                          performance                         */
         SafRandomAccess     = 0x02, /*!< Data is accessed in random order.
                                          Segments are cached, but reused as
@@ -583,6 +636,19 @@ extern "C"
 
         /* Implict in client */
         SafSynchronous      = 0x04, /*!< Internal, do not use */
+
+        /* Since 3.1 */
+        SafReverseQuery     = 0x08, /*!< The query information specified in the
+                                         call to StStreamOpen() are relative to
+                                         the end of the stream.
+                                         \since 3.1                          */
+
+        SafReverseRead      = 0x10, /*!< The caller intends to read the stream
+                                         in reverse order. In a call to
+                                         StStreamOpen(), this flag prepares the
+                                         new read handle for use with
+                                         StGetPreviousEntryFast().
+                                         \since 3.1                          */
 
         SafMax                      /*!< Internal, do not use */
     } StreamAccessFlags;
@@ -601,7 +667,25 @@ extern "C"
         return (memcmp(&l1, &l2, sizeof(StreamSegmentLink)) == 0);
     }
 
+    /* StreamAccessFlags */
+    inline StreamAccessFlags operator^(StreamAccessFlags a, StreamAccessFlags b)
+    {
+        return static_cast<StreamAccessFlags>(
+            static_cast<int>(a) ^ static_cast<int>(b));
+    }
+
+    inline StreamAccessFlags operator|(StreamAccessFlags a, StreamAccessFlags b)
+    {
+        return static_cast<StreamAccessFlags>(
+            static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline StreamAccessFlags operator&(StreamAccessFlags a, StreamAccessFlags b)
+    {
+        return static_cast<StreamAccessFlags>(
+            static_cast<int>(a) & static_cast<int>(b));
+    }
 }
-#endif 
+#endif
 
 #endif

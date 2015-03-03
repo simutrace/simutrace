@@ -63,7 +63,7 @@ namespace SimuTrace
         void log(LogPriority::Value priority, const std::string& format, ...);
 
         const std::string& getName() const;
-        
+
         bool getAdditivity() const;
         void setAdditivity(bool additivity);
 

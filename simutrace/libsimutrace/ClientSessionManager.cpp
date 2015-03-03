@@ -46,16 +46,15 @@ namespace SimuTrace
 
     void ClientSessionManager::_initializeEnvironment()
     {
-        static const char* logPattern = 
+        static const char* logPattern =
             "<Simutrace> [%d{%Y-%m-%d %H:%M:%S.%~}] %c %s%m%n";
 
-        std::unique_ptr<LogLayout> layout = 
+        std::unique_ptr<LogLayout> layout =
             std::unique_ptr<LogLayout>(new PatternLogLayout(logPattern));
         std::shared_ptr<LogAppender> consoleLog =
-            std::make_shared<TerminalLogAppender>("terminal", layout, true);
+            std::make_shared<FileLogAppender>("simutraceclient.log", layout, true);
 
-        // In the client we set the Debug level as debug level. Uncomment this
-        // line to see full debug output, including RPC etc.
+        // In the client we set the Debug level as default level.
         _log.setPriorityThreshold(LogPriority::Debug);
 
         _log.registerAppender(consoleLog);
@@ -68,14 +67,14 @@ namespace SimuTrace
     }
 
     std::unique_ptr<Session> ClientSessionManager::_startSession(
-        SessionId localId, std::unique_ptr<Port>& sessionPort, 
+        SessionId localId, std::unique_ptr<Port>& sessionPort,
         uint16_t peerApiVersion)
     {
         Message response = {0};
         ClientPort& port = dynamic_cast<ClientPort&>(*sessionPort);
 
         // Create the server session
-        port.call(&response, RpcApi::CCV30_SessionCreate, RPC_VERSION);
+        port.call(&response, RpcApi::CCV31_SessionCreate, RPC_VERSION);
 
         ThrowOn((response.payloadType != MessagePayloadType::MptEmbedded) ||
                 (response.parameter0 == INVALID_SESSION_ID),
@@ -84,7 +83,7 @@ namespace SimuTrace
         // Create the local client session. If this fails, we will close the
         // port. This will also close the session on the server side.
         return std::unique_ptr<Session>(
-            new ClientSession(*this, sessionPort, peerApiVersion, localId, 
+            new ClientSession(*this, sessionPort, peerApiVersion, localId,
                               response.parameter0, _environment));
     }
 
@@ -94,7 +93,7 @@ namespace SimuTrace
         Message response = {0};
         ClientPort port(specifier);
 
-        port.call(&response, RpcApi::CCV30_Null, RPC_VERSION);
+        port.call(&response, RpcApi::CCV31_Null, RPC_VERSION);
 
         ThrowOn(response.payloadType != MessagePayloadType::MptEmbedded,
                 RpcMessageMalformedException);
@@ -113,6 +112,16 @@ namespace SimuTrace
         // new session.
 
         uint16_t serverApiVersion = _getServerApiVersion(specifier);
+
+        // We only connect to servers that have the same or higher version
+        ThrowOn((RPC_VER_MAJOR(serverApiVersion) < RPC_VERSION_MAJOR) ||
+                ((RPC_VER_MAJOR(serverApiVersion) == RPC_VERSION_MAJOR) &&
+                 (RPC_VER_MINOR(serverApiVersion) < RPC_VERSION_MINOR)),
+                Exception, stringFormat("Incompatible server version %s.%s "
+                "(client %s.%s).",
+                RPC_VER_MAJOR(serverApiVersion),
+                RPC_VER_MINOR(serverApiVersion),
+                RPC_VERSION_MAJOR, RPC_VERSION_MINOR));
 
         std::unique_ptr<Port> clientPort(new ClientPort(specifier));
         return _createSession(clientPort, serverApiVersion);

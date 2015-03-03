@@ -31,7 +31,6 @@ namespace SimuTrace
     class SessionManager;
     class StreamBuffer;
     class Stream;
-    class DataPool;
 
     class Session
     {
@@ -64,7 +63,7 @@ namespace SimuTrace
         mutable CriticalSection _lock;
         mutable ReaderWriterLock _storeLock;
 
-        Session(SessionManager& manager, uint16_t clientVersion, 
+        Session(SessionManager& manager, uint16_t clientVersion,
                 SessionId localId, const Environment& root);
 
         virtual void _attach(std::unique_ptr<Port>& port) = 0;
@@ -72,8 +71,9 @@ namespace SimuTrace
 
         void dropReferences();
 
-        virtual Store::Reference _createStore(const std::string& specifier, 
+        virtual Store::Reference _createStore(const std::string& specifier,
                                               bool alwaysCreate = false) = 0;
+        virtual Store::Reference _openStore(const std::string& specifier) = 0;
 
         virtual void _close() = 0;
 
@@ -92,29 +92,25 @@ namespace SimuTrace
 
         void close();
 
-        // Store Open Behavior.
-        // openStore() is an alias for createStore() with alwaysCreate = false.
+        // Store Create Behavior.
         //    Store Exists    AlwaysCreate    Behavior
         //        0                0            New Store
-        //        1                0            Open
+        //        1                0            Fail
         //        0                1            New Store
         //        1                1            New Store / Drop Old
-        void openStore(const std::string& specifier);
-        void createStore(const std::string& specifier, 
+        void createStore(const std::string& specifier,
                          bool alwaysCreate = false);
+        void openStore(const std::string& specifier);
         void closeStore();
 
         BufferId registerStreamBuffer(size_t segmentSize, uint32_t numSegments);
         StreamId registerStream(StreamDescriptor& desc, BufferId buffer);
-        PoolId registerDataPool(StreamId stream);
 
         void enumerateStreamBuffers(std::vector<BufferId>& out) const;
         void enumerateStreams(std::vector<StreamId>& out, bool includeHidden) const;
-        void enumerateDataPools(std::vector<PoolId>& out) const;
         void enumerateStores(std::vector<std::string>& out) const;
 
         StreamBuffer& getStreamBuffer(BufferId id) const;
-        DataPool& getDataPool(PoolId id) const;
         Stream& getStream(StreamId id) const;
 
         uint16_t getPeerApiVersion() const;

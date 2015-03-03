@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -39,13 +39,13 @@ namespace SimuTrace
     }
 
     std::unique_ptr<Session> ServerSessionManager::_startSession(
-        SessionId localId, std::unique_ptr<Port>& sessionPort, 
+        SessionId localId, std::unique_ptr<Port>& sessionPort,
         uint16_t peerApiVersion)
     {
         const Environment& env = StorageServer::getInstance().getEnvironment();
 
         // Create a server session. This will also start the thread that
-        // processes client requests for this session/connection pair.  
+        // processes client requests for this session/connection pair.
         return std::unique_ptr<ServerSession>(
             new ServerSession(*this, sessionPort, peerApiVersion, localId, env));
     }
@@ -56,7 +56,7 @@ namespace SimuTrace
         return _createSession(sessionPort, peerApiVersion);
     }
 
-    void ServerSessionManager::openLocalSession(SessionId session, 
+    void ServerSessionManager::openLocalSession(SessionId session,
         std::unique_ptr<Port>& sessionPort, uint16_t peerApiVersion)
     {
         return _openLocalSession(session, sessionPort, peerApiVersion);

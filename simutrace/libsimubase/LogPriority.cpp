@@ -41,7 +41,7 @@ namespace LogPriority
 
     const std::string& getPriorityName(LogPriority::Value priority)
     {
-        return _priorityNames[(priority > 8) ? 9 : priority];
+        return _priorityNames[(priority > 8) ? 8 : priority];
     }
 
 }

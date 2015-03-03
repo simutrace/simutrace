@@ -47,7 +47,7 @@ namespace SimuTrace
         virtual size_t _send(const void* data, size_t size) = 0;
         virtual size_t _send(const std::vector<Handle>& handles) = 0;
         virtual size_t _receive(void* data, size_t size) = 0;
-        virtual size_t _receive(std::vector<Handle>& handles, 
+        virtual size_t _receive(std::vector<Handle>& handles,
                                 uint32_t handleCount) = 0;
 
         bool _isServerChannel() const;

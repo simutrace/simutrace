@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 
 #include "SimuStor.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     class ServerStreamBuffer;

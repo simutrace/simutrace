@@ -49,7 +49,7 @@ namespace SimuTrace
     void OstreamLogAppender::_append(const LogEvent& event)
     {
         _stream << _getLayout().format(event);
-        ThrowOn(!_stream.good(), Exception, 
+        ThrowOn(!_stream.good(), Exception,
                 "Failed to log to stream. Stream state is bad.");
     }
 

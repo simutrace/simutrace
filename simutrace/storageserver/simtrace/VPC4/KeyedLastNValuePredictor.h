@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ namespace SimuTrace
 
     template<typename T, typename K, uint32_t tableSize, uint32_t lineLength>
     class KeyedLastNValuePredictor :
-        public FiniteContextMethodPredictor<T, tableSize, 1, lineLength, 
+        public FiniteContextMethodPredictor<T, tableSize, 1, lineLength,
                                             K, 0, 0, 1>
     {
     private:
@@ -46,7 +46,7 @@ namespace SimuTrace
 
     public:
         KeyedLastNValuePredictor(PredictorId idBase) :
-            FiniteContextMethodPredictor<T, tableSize, 1, lineLength, 
+            FiniteContextMethodPredictor<T, tableSize, 1, lineLength,
                                          K, 0, 0, 1>(idBase, _history),
             _history() { }
 

@@ -3,10 +3,10 @@
  * Marc Rittinghaus, Thorsten Groeninger
  *
  *             _____ _                 __
- *            / ___/(_)___ ___  __  __/ /__________ _________ 
+ *            / ___/(_)___ ___  __  __/ /__________ _________
  *            \__ \/ / __ `__ \/ / / / __/ ___/ __ `/ ___/ _ \
  *           ___/ / / / / / / / /_/ / /_/ /  / /_/ / /__/  __/
- *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/ 
+ *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/
  *                         http://simutrace.org
  *
  * Simutrace Base Library (libsimubase) is part of Simutrace.
@@ -29,6 +29,7 @@
 #ifndef SIMUPLATFORM_H
 #define SIMUPLATFORM_H
 
+#ifdef SIMUTRACE
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -68,52 +69,18 @@
 
 #include <errno.h>
 
-#include <string.h>
-#endif
-
-#include <assert.h>
-
-#ifndef BOOL
-#define BOOL unsigned char
-#endif
-
-typedef char byte;
-
-#ifndef TRUE
-#define FALSE   0
-#define TRUE    !FALSE
-#endif
-
-#ifdef WIN32
-#define _DEBUG_BREAK_ __debugbreak();
-#else
-#define _DEBUG_BREAK_ assert(FALSE);
-
 #ifndef NDEBUG
 #define _DEBUG
 #endif
 
-#endif
+#endif /* WIN32 */
 
 #include <time.h>
 
 #include <stdio.h>
-#include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdlib.h>
-
-#define KiB *0x400ULL
-#define MiB *0x100000ULL
-#define GiB *0x40000000ULL
-
-#ifdef WIN32
-#define OPT_SHORT_PREFIX "-"
-#define OPT_LONG_PREFIX "--"
-#else
-#define OPT_SHORT_PREFIX "-"
-#define OPT_LONG_PREFIX "--"
-#endif
 
 /* STL classes */
 #ifdef __cplusplus
@@ -135,20 +102,11 @@ typedef char byte;
 #include <tuple>
 #include <atomic>
 
-#include <limits>
 #include <algorithm>
 
 #include <ctime>
 
 #include <memory>
-
-#ifdef WIN32
-#define cbegin(vec) (vec).cbegin()
-#define cend(vec) (vec).cend()
-#else
-#define cbegin(vec) (vec).begin()
-#define cend(vec) (vec).end()
-#endif
 
 #ifdef _MSC_VER
 #define __thread _declspec(thread)
@@ -156,9 +114,36 @@ typedef char byte;
 
 /* Macro to delete copy constructor and assignment operator */
 #define DISABLE_COPY(Class) \
-    Class(const Class &) = delete;            \
+    Class(const Class &) = delete; \
     Class &operator=(const Class &) = delete
 
 #endif /* __cplusplus */
+
+#define KiB *0x400ULL
+#define MiB *0x100000ULL
+#define GiB *0x40000000ULL
+
+#include <assert.h>
+#define STASSERT(expr) assert(expr)
+#else
+#define STASSERT(expr)
+#endif /* SIMUTRACE */
+
+#include <stdint.h>
+#include <string.h>
+
+#ifdef __cplusplus
+#include <limits>
+#endif
+
+typedef char byte;
+
+/* We define an own bool type here because we are sending bool types across
+ * the network and store them in trace files. We therefore might end up
+ * relying on the exact same definition between C, C++ and different
+ * compilers */
+typedef int8_t _bool;
+#define _false 0
+#define _true  1
 
 #endif

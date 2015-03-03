@@ -31,13 +31,13 @@ namespace SimuTrace
 
     class LogCategory;
 
-    class LogEvent 
+    class LogEvent
     {
     private:
         const LogCategory& _category;
         const std::string _message;
         const LogPriority::Value _priority;
-        
+
         const Timestamp _timestamp;
     public:
         LogEvent(const LogCategory& category, const std::string& message,
@@ -46,9 +46,9 @@ namespace SimuTrace
 
         const LogCategory& getCategory() const;
         const std::string& getMessage() const;
-        
+
         LogPriority::Value getPriority() const;
-        
+
         Timestamp getTimestamp() const;
     };
 

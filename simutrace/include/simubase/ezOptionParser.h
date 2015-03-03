@@ -57,7 +57,7 @@ static bool isdigit(const std::string & s, int i=0) {
       case '6': case '7': case '8': case '9': break;
       default: return false;
     }
-    
+
   return true;
 };
 /* ################################################################### */
@@ -70,21 +70,21 @@ static bool isdigit(const std::string * s, int i=0) {
       case '6': case '7': case '8': case '9': break;
       default: return false;
     }
-    
+
   return true;
 };
 /* ################################################################### */
-/* 
+/*
 Compare strings for opts, so short opt flags come before long format flags.
 For example, -d < --dimension < --dmn, and also lower come before upper. The default STL std::string compare doesn't do that.
 */
-static bool CmpOptStringPtr(std::string * s1, std::string * s2) { 
+static bool CmpOptStringPtr(std::string * s1, std::string * s2) {
   int c1,c2;
   const char *s=s1->c_str();
   for(c1=0; c1 < s1->size(); ++c1)
     if (isalnum(s[c1])) // locale sensitive.
       break;
-      
+
   s=s2->c_str();
   for(c2=0; c2 < s2->size(); ++c2)
     if (isalnum(s[c2]))
@@ -95,7 +95,7 @@ static bool CmpOptStringPtr(std::string * s1, std::string * s2) {
     return false;
   else if (c1 < c2)
     return true;
-    
+
   // Both have same number of symbols, so compare first letter.
   char char1 = s1->at(c1);
   char char2 = s2->at(c2);
@@ -108,16 +108,16 @@ static bool CmpOptStringPtr(std::string * s1, std::string * s2) {
   // Their case doesn't match, so find which is lower.
   char up1 = isupper(char1);
   char up2 = isupper(char2);
-    
+
   if (up1 && !up2)
     return false;
   else if (!up1 && up2)
     return true;
-    
-  return (s1->compare(*s2)<0); 
+
+  return (s1->compare(*s2)<0);
 };
 /* ################################################################### */
-/* 
+/*
 Makes a vector of strings from one string,
 splitting at (and excluding) delimiter "token".
 */
@@ -320,6 +320,9 @@ static char** CommandLineToArgvA(char* CmdLine, int* _argc) {
   i = ((len+2)/2)*sizeof(void*) + sizeof(void*);
 
   argv = (char**)malloc(i + (len+2)*sizeof(char));
+  if (argv == NULL) {
+    return NULL;
+  }
 
   _argv = (char*)(((unsigned char*)argv)+i);
 
@@ -343,7 +346,7 @@ static char** CommandLineToArgvA(char* CmdLine, int* _argc) {
       }
     } else {
       switch(a) {
-      case '\"': 
+      case '\"':
       case '\'': // rsz. Added single quote.
         in_QM = true;
         in_TEXT = true;
@@ -423,9 +426,9 @@ public:
   inline bool isValid(const std::string * value);
   inline void print();
   inline void reset();
-  
+
   /* If value must be in custom range, use these comparison modes. */
-  enum OP { OP_NOOP=0, 
+  enum OP { OP_NOOP=0,
     OP_LT, /* value < list[0] */
     OP_LE, /* value <= list[0] */
     OP_GT, /* value > list[0] */
@@ -436,10 +439,10 @@ public:
     OP_GTLE, /* list[0] < value <= list[1] */
     OP_IN /* if value is in list */
   };
-  
+
   enum TYPE { NOTYPE=0, S1, U1, S2, U2, S4, U4, S8, U8, F, D, T };
   enum TYPE2 { NOTYPE2=0, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT, DOUBLE, TEXT };
-    
+
   union {
     unsigned char *u1;
     char *s1;
@@ -452,8 +455,8 @@ public:
     float *f;
     double *d;
     std::string** t;
-  };  
-  
+  };
+
   char op;
   bool quiet;
   short id;
@@ -482,13 +485,13 @@ void ezOptionValidator::reset() {
     case T:
       for(int i=0; i < size; ++i)
         delete t[i];
-        
+
       delete [] t;
       t = 0;
       break;
     default: break;
   }
-   
+
   size = 0;
   op = OP_NOOP;
   type = NOTYPE;
@@ -568,14 +571,14 @@ ezOptionValidator::ezOptionValidator(char _type, char _op, const char** list, in
   }
 };
 /* ------------------------------------------------------------------- */
-/* Less efficient but convenient ctor that parses strings to setup validator. 
+/* Less efficient but convenient ctor that parses strings to setup validator.
 _type: s1, u1, s2, u2, ..., f, d, t
 _op: lt, gt, ..., in
 _list: comma-delimited string
 */
 ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const char* _list, bool _insensitive) : insensitive(_insensitive), size(0), t(0), type(0), quiet(0) {
   id = ezOptionParserIDGenerator::instance().next();
-  
+
   switch(_type[0]) {
     case 'u':
       switch(_type[1]) {
@@ -584,11 +587,11 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
         case '4': type = U4; break;
         case '8': type = U8; break;
         default: break;
-      } 
+      }
       break;
     case 's':
       switch(_type[1]) {
-        case '1': type = S1; 
+        case '1': type = S1;
           break;
         case '2': type = S2; break;
         case '4': type = S4; break;
@@ -599,16 +602,16 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
     case 'f': type = F; break;
     case 'd': type = D; break;
     case 't': type = T; break;
-    default: 
+    default:
       if (!quiet)
         std::cerr << "ERROR: Unknown validator datatype \"" << _type << "\".\n";
       break;
   }
-  
+
   int nop = 0;
   if (_op != 0)
     nop = strlen(_op);
-  
+
   switch(nop) {
     case 0: op = OP_NOOP; break;
     case 2:
@@ -617,7 +620,7 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
           switch(_op[1]) {
             case 'e': op = OP_GE; break;
             default: op = OP_GT; break;
-          } 
+          }
           break;
         case 'i': op = OP_IN;
           break;
@@ -625,7 +628,7 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
           switch(_op[1]) {
             case 'e': op = OP_LE; break;
             default: op = OP_LT; break;
-          } 
+          }
           break;
       }
       break;
@@ -645,7 +648,7 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
           break;
       }
       break;
-    default: 
+    default:
       if (!quiet)
         std::cerr << "ERROR: Unknown validator operation \"" << _op << "\".\n";
       break;
@@ -661,19 +664,19 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
   std::string **strings = new std::string*[size];
 
   int i = 0;
-  for(it = split.begin(); it != split.end(); ++it) 
+  for(it = split.begin(); it != split.end(); ++it)
     strings[i++] = *it;
-    
-  if (insensitive) 
-    for(i=0; i < size; ++i) 
+
+  if (insensitive)
+    for(i=0; i < size; ++i)
       ToLowerASCII(*strings[i]);
-  
+
   #define FreeStrings() { \
     for(i=0; i < size; ++i)\
       delete strings[i];\
     delete [] strings;\
   }
-    
+
   #define ToArray(T,P,Y) case T: P = new Y[size]; To##T(strings, P, size); FreeStrings(); break;
   switch(type) {
     ToArray(S1,s1,char);
@@ -688,7 +691,7 @@ ezOptionValidator::ezOptionValidator(const char* _type, const char* _op, const c
     ToArray(D,d,double);
     case T: t = strings; break; /* Don't erase strings array. */
     default: break;
-  }   
+  }
 };
 /* ------------------------------------------------------------------- */
 void ezOptionValidator::print() {
@@ -735,8 +738,8 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
           return false;
         }
 
-        if (isdigit(valueAsString) && 
-            (valueAsString->size() > 18) && 
+        if (isdigit(valueAsString) &&
+            (valueAsString->size() > 18) &&
             valueAsString->compare("9223372036854775807") > 0) {
           if (!quiet)
             std::cerr << "ERROR: Invalid value " << *valueAsString << " is greater than datatype max 9223372036854775807.\n";
@@ -749,9 +752,9 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
             std::cerr << "ERROR: Invalid value " << *valueAsString << " is less than datatype min 0.\n";
           return false;
         }
-        
+
         if (isdigit(valueAsString) &&
-           (valueAsString->size() > 19) && 
+           (valueAsString->size() > 19) &&
             valueAsString->compare("18446744073709551615") > 0) {
           if (!quiet)
             std::cerr << "ERROR: Invalid value " << *valueAsString << " is greater than datatype max 18446744073709551615.\n";
@@ -776,12 +779,12 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
         }
         } break;
       case D: {
-        long double ldmax = static_cast<long double>(std::numeric_limits<double>::max()); 
+        long double ldmax = static_cast<long double>(std::numeric_limits<double>::max());
         std::stringstream ss(valueAsString->c_str());
         long double ldvalue;
         ss >> ldvalue;
         long double ldmin = -ldmax;
-        
+
         if (ldvalue < ldmin) {
           if (!quiet)
             std::cerr << "ERROR: Invalid value " << ldvalue << " is less than datatype min " << ldmin << ".\n";
@@ -797,7 +800,7 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
       case NOTYPE: default: break;
     }
   } else {
-    if (op == OP_IN) { 
+    if (op == OP_IN) {
 		  int i=0;
       if (insensitive) {
         std::string valueAsStringLower(*valueAsString);
@@ -813,12 +816,12 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
         }
       }
       return false;
-    } 
+    }
   }
-  
+
   // Only check datatype limits, and return;
   if (op == OP_NOOP) return true;
-  
+
 #define VALIDATE(T, U, LIST) { \
   /* Value string converted to true native type. */ \
   std::stringstream ss(valueAsString->c_str());\
@@ -908,7 +911,7 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
       case OP_NOOP: case OP_IN: default: break;\
   } \
   }
-  
+
   switch(type) {
     case U1: VALIDATE(unsigned char, int, u1); break;
     case S1: VALIDATE(char, int, s1); break;
@@ -934,7 +937,7 @@ public:
     int i, j;
     for(i=0; i < flags.size(); ++i)
       delete flags[i];
-      
+
     flags.clear();
     parseIndex.clear();
     clearArgs();
@@ -961,7 +964,7 @@ public:
   inline void getMultiFloats(std::vector< std::vector<float> >&);
   inline void getMultiDoubles(std::vector< std::vector<double> >&);
   inline void getMultiStrings(std::vector< std::vector<std::string> >&);
-  
+
   // defaults value regardless of being set by user.
   std::string defaults;
   // If expects arguments, this will delimit arg list.
@@ -987,7 +990,7 @@ void OptionGroup::clearArgs() {
   for(i=0; i < args.size(); ++i) {
     for(j=0; j < args[i]->size(); ++j)
       delete args[i]->at(j);
-      
+
     delete args[i];
   }
 
@@ -1303,7 +1306,7 @@ void OptionGroup::getMultiStrings(std::vector< std::vector<std::string> >& out) 
       if (out.size() < n) out.resize(n);
 
       for(int i=0; i < n; ++i) {
-        for(int j=0; j < args[i]->size(); ++j) 
+        for(int j=0; j < args[i]->size(); ++j)
           out[i].push_back( *args[i]->at(j) );
       }
     }
@@ -1318,7 +1321,7 @@ public:
   enum Layout { ALIGN, INTERLEAVE, STAGGER };
 
   inline ~ezOptionParser();
-  
+
   inline void add(const char * defaults, bool required, int expectArgs, char delim, const char * help, const char * flag1, ezOptionValidator* validator=0);
   inline void add(const char * defaults, bool required, int expectArgs, char delim, const char * help, const char * flag1, const char * flag2, ezOptionValidator* validator=0);
   inline void add(const char * defaults, bool required, int expectArgs, char delim, const char * help, const char * flag1, const char * flag2, const char * flag3, ezOptionValidator* validator=0);
@@ -1334,10 +1337,10 @@ public:
   inline int isSet(const char * name);
   inline int isSet(std::string & name);
   inline void parse(int argc, const char * argv[]);
-  inline void prettyPrint(std::string & out); 
+  inline void prettyPrint(std::string & out);
   inline void reset();
   inline void resetArgs();
-    
+
   // Insert extra empty line betwee each option's usage description.
   char doublespace;
   // General description in human language on what the user's tool does.
@@ -1372,16 +1375,16 @@ ezOptionParser::~ezOptionParser() {
 /* ################################################################### */
 void ezOptionParser::reset() {
   this->doublespace = 1;
-  
+
   int i;
   for(i=0; i < groups.size(); ++i)
     delete groups[i];
   groups.clear();
-  
+
   for(i=0; i < unknownArgs.size(); ++i)
     delete unknownArgs[i];
   unknownArgs.clear();
-  
+
   for(i=0; i < firstArgs.size(); ++i)
     delete firstArgs[i];
   firstArgs.clear();
@@ -1389,11 +1392,11 @@ void ezOptionParser::reset() {
   for(i=0; i < lastArgs.size(); ++i)
     delete lastArgs[i];
   lastArgs.clear();
-  
+
   ValidatorMap::iterator it;
   for(it = validators.begin(); it != validators.end(); ++it)
     delete it->second;
-  
+
   validators.clear();
   optionGroupIds.clear();
   groupValidators.clear();
@@ -1403,18 +1406,18 @@ void ezOptionParser::resetArgs() {
   int i;
   for(i=0; i < groups.size(); ++i)
     groups[i]->clearArgs();
-  
+
   for(i=0; i < unknownArgs.size(); ++i)
     delete unknownArgs[i];
   unknownArgs.clear();
-  
+
   for(i=0; i < firstArgs.size(); ++i)
     delete firstArgs[i];
   firstArgs.clear();
 
   for(i=0; i < lastArgs.size(); ++i)
     delete lastArgs[i];
-  lastArgs.clear();  
+  lastArgs.clear();
 };
 /* ################################################################### */
 void ezOptionParser::add(const char * defaults, bool required, int expectArgs, char delim, const char * help, const char * flag1, ezOptionValidator* validator) {
@@ -1457,7 +1460,7 @@ void ezOptionParser::add(const char * defaults, bool required, int expectArgs, c
   this->optionGroupIds[flag2] = id;
 
   this->groups.push_back(g);
-  
+
   if (validator) {
     int vid = validator->id;
     validators[vid] = validator;
@@ -1487,7 +1490,7 @@ void ezOptionParser::add(const char * defaults, bool required, int expectArgs, c
   this->optionGroupIds[flag3] = id;
 
   this->groups.push_back(g);
-  
+
   if (validator) {
     int vid = validator->id;
     validators[vid] = validator;
@@ -1520,7 +1523,7 @@ void ezOptionParser::add(const char * defaults, bool required, int expectArgs, c
   this->optionGroupIds[flag4] = id;
 
   this->groups.push_back(g);
-  
+
   if (validator) {
     int vid = validator->id;
     validators[vid] = validator;
@@ -1534,7 +1537,7 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
   int i;
   std::string out;
   bool quote;
-  
+
   // Export the first args, except the program name, so start from 1.
   for(i=1; i < firstArgs.size(); ++i) {
     quote = ((firstArgs[i]->find_first_of(" \t") != std::string::npos) && (firstArgs[i]->find_first_of("\'\"") == std::string::npos));
@@ -1548,10 +1551,10 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
 
     out.append(" ");
   }
-  
+
   if (firstArgs.size() > 1)
     out.append("\n");
-  
+
   std::vector<std::string* > stringPtrs(groups.size());
   int j,m;
   int n = groups.size();
@@ -1572,11 +1575,11 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
           quote = ((g->defaults.find_first_of(" \t") != std::string::npos) && (g->defaults.find_first_of("\'\"") == std::string::npos));
           if (quote)
             out.append("\"");
-            
+
           out.append(g->defaults);
           if (quote)
             out.append("\"");
-            
+
           out.append("\n");
         }
       } else {
@@ -1585,16 +1588,16 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
           out.append(*stringPtrs[i]);
           out.append(" ");
           m = g->args[j]->size();
-          
+
           for(int k=0; k < m; ++k) {
             quote = ( (*g->args[j]->at(k)).find_first_of(" \t") != std::string::npos );
             if (quote)
               out.append("\"");
-              
+
             out.append(*g->args[j]->at(k));
             if (quote)
               out.append("\"");
-              
+
             if ((g->delim) && ((k+1) != m))
               out.append(1,g->delim);
           }
@@ -1603,7 +1606,7 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
       }
     }
   }
-  
+
   // Export the last args.
   for(i=0; i < lastArgs.size(); ++i) {
     quote = ( lastArgs[i]->find_first_of(" \t") != std::string::npos );
@@ -1616,14 +1619,14 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
 
     out.append(" ");
   }
-  
+
   std::ofstream file(filename);
   if (!file.is_open())
     return false;
 
   file << out;
   file.close();
-  
+
   return true;
 };
 /* ################################################################### */
@@ -1647,7 +1650,7 @@ bool ezOptionParser::importFile(const char * filename, char comment) {
   file.read (memblock, size);
   memblock[size] = '\0';
   file.close();
-  
+
   // Find comment lines.
   std::list<std::string*> lines;
   std::string memblockstring(memblock);
@@ -1672,7 +1675,7 @@ bool ezOptionParser::importFile(const char * filename, char comment) {
       pos = line->find_first_not_of(" \t\r");
       if ((pos==std::string::npos) || (line->at(pos)==comment)) {
         line->erase();
-        continue; 
+        continue;
       } else {
         // Erase whitespace prefix.
         line->erase(0,pos);
@@ -1681,11 +1684,11 @@ bool ezOptionParser::importFile(const char * filename, char comment) {
 
       if (line->at(0)=='"')
         dq.push_back(0);
-    
+
       if (line->at(0)=='\'')
         sq.push_back(0);
     } else { // Empty line.
-      continue; 
+      continue;
     }
 
     for(i=1; i < n; ++i) {
@@ -1716,15 +1719,15 @@ bool ezOptionParser::importFile(const char * filename, char comment) {
             line->erase(i);
             break;
           }
-        } else {        
+        } else {
           // Not in quotes.
           line->erase(i);
           break;
         }
       }
-    }  
+    }
   }
-      
+
   std::string cmd;
   // Convert list to string without newlines to simulate commandline.
   for(iter=lines.begin(); iter != lines.end(); ++iter) {
@@ -1733,27 +1736,27 @@ bool ezOptionParser::importFile(const char * filename, char comment) {
       cmd.append(" ");
     }
   }
-  
-  // Now parse as if from command line. 
+
+  // Now parse as if from command line.
   int argc=0;
   char** argv = CommandLineToArgvA((char*)cmd.c_str(), &argc);
-  
+
   // Parse.
   parse(argc, (const char**)argv);
   if (argv) free(argv);
   for(iter=lines.begin(); iter != lines.end(); ++iter)
     delete *iter;
-    
+
   return true;
 };
 /* ################################################################### */
 int ezOptionParser::isSet(const char * name) {
   std::string sname(name);
-  
+
   if (this->optionGroupIds.count(sname)) {
     return this->groups[this->optionGroupIds[sname]]->isSet;
   }
-  
+
   return 0;
 };
 /* ################################################################### */
@@ -1761,7 +1764,7 @@ int ezOptionParser::isSet(std::string & name) {
   if (this->optionGroupIds.count(name)) {
     return this->groups[this->optionGroupIds[name]]->isSet;
   }
-  
+
   return 0;
 };
 /* ################################################################### */
@@ -1769,7 +1772,7 @@ OptionGroup * ezOptionParser::get(const char * name) {
   if (optionGroupIds.count(name)) {
     return groups[optionGroupIds[name]];
   }
-  
+
   return 0;
 };
 /* ################################################################### */
@@ -1786,7 +1789,7 @@ void ezOptionParser::getUsage(std::string & usage, int width, Layout layout) {
     usage.append("EXAMPLES:\n\n");
     usage.append(example);
   }
-  
+
   if (!footer.empty()) {
     usage.append(footer);
   }
@@ -1799,13 +1802,13 @@ void ezOptionParser::getUsageDescriptions(std::string & usage, int width, Layout
   // Store index of flag groups before sort for easy lookup later.
   std::map<std::string*, int> stringPtrToIndexMap;
   std::vector<std::string* > stringPtrs(groups.size());
-  
+
   for(i=0; i < groups.size(); ++i) {
     std::sort(groups[i]->flags.begin(), groups[i]->flags.end(), CmpOptStringPtr);
     stringPtrToIndexMap[groups[i]->flags[0]] = i;
     stringPtrs[i] = groups[i]->flags[0];
   }
-  
+
   size_t j, k, n;
   std::string opts;
   std::vector<std::string> sortedOpts;
@@ -1818,63 +1821,65 @@ void ezOptionParser::getUsageDescriptions(std::string & usage, int width, Layout
     for(j=0; j < groups[k]->flags.size()-1; ++j) {
       opts.append(*groups[k]->flags[j]);
       opts.append(", ");
-      
+
       if (opts.size() > width)
         opts.append("\n");
     }
     // The last flag. No need to append comma anymore.
     opts.append( *groups[k]->flags[j] );
-    
+
     if (groups[k]->expectArgs) {
       opts.append(" ARG");
-      
+
       if (groups[k]->delim) {
         opts.append("1[");
         opts.append(1, groups[k]->delim);
         opts.append("ARGn]");
       }
     }
-      
+
     sortedOpts.push_back(opts);
-  }  
-  
+  }
+
   // Each option group will use this to build multiline help description.
-  std::list<std::string*> desc; 
+  std::list<std::string*> desc;
   // Number of whitespaces from start of line to description (interleave layout) or
   // gap between flag names and description (align, stagger layouts).
   int gutter = 3;
-  
+
   // Find longest opt flag string to set column start for help usage descriptions.
   int maxlen=0;
   if (layout == ALIGN) {
     for(i=0; i < groups.size(); ++i) {
       if (maxlen < sortedOpts[i].size())
         maxlen = sortedOpts[i].size();
-    }  
+    }
   }
-  
+
   // The amount of space remaining on a line for help text after flags.
   int helpwidth;
   std::list<std::string*>::iterator cIter, insertionIter;
   size_t pos;
   for(i=0; i < groups.size(); ++i) {
     k = stringPtrToIndexMap[stringPtrs[i]];
-    
+
     if (layout == STAGGER)
       maxlen = sortedOpts[i].size();
-      
+
     int pad = gutter + maxlen;
-    helpwidth = width - pad;        
-    
+    helpwidth = width - pad;
+
     // All the following split-fu could be optimized by just using substring (offset, length) tuples, but just to get it done, we'll do some not-too expensive string copying.
     SplitDelim(groups[k]->help, '\n', desc);
     // Split lines longer than allowable help width.
-    for(insertionIter=desc.begin(), cIter=insertionIter++; 
-        cIter != desc.end(); 
+    for(insertionIter=desc.begin(), cIter=insertionIter++;
+        cIter != desc.end();
         cIter=insertionIter++) {
       if ((*cIter)->size() > helpwidth) {
         // Get pointer to next string to insert new strings before it.
         std::string *rem = *cIter;
+        assert(rem != NULL);
+
         // Remove this line and add back in pieces.
         desc.erase(cIter);
         // Loop until remaining string is short enough.
@@ -1893,7 +1898,7 @@ void ezOptionParser::getUsageDescriptions(std::string & usage, int width, Layout
           pos = rem->find_first_not_of(' ', pos);
           rem->erase(0, pos);
         }
-        
+
         if (rem->size())
           desc.insert(insertionIter, rem);
         else
@@ -1909,32 +1914,32 @@ void ezOptionParser::getUsageDescriptions(std::string & usage, int width, Layout
       usage.append("\n");
       usage.append(gutter, ' ');
     }
-    
+
     // First line already padded above (before calling SplitDelim) after option flag names.
     cIter = desc.begin();
     usage.append(**cIter);
     usage.append("\n");
     // Now inject the pad for each line.
-    for(++cIter; cIter != desc.end(); ++cIter) {      
+    for(++cIter; cIter != desc.end(); ++cIter) {
       usage.append(pad, ' ');
       usage.append(**cIter);
       usage.append("\n");
     }
 
-    if (this->doublespace) usage.append("\n");    
-    
+    if (this->doublespace) usage.append("\n");
+
     if (desc.size()) {
-      for(cIter=desc.begin(); cIter != desc.end(); ++cIter)    
+      for(cIter=desc.begin(); cIter != desc.end(); ++cIter)
         delete *cIter;
-      
+
       desc.clear();
     }
-  }  
+  }
 };
 /* ################################################################### */
 bool ezOptionParser::gotExpected(std::vector<std::string> & badOptions) {
   int i,j;
-  
+
   for(i=0; i < groups.size(); ++i) {
     OptionGroup *g = groups[i];
     // If was set, ensure number of args is correct.
@@ -1943,7 +1948,7 @@ bool ezOptionParser::gotExpected(std::vector<std::string> & badOptions) {
         badOptions.push_back(*g->flags[0]);
         continue;
       }
-      
+
       for(j=0; j < g->args.size(); ++j) {
         if ((g->expectArgs != -1) && (g->expectArgs != g->args[j]->size()))
           badOptions.push_back(*g->flags[0]);
@@ -1956,7 +1961,7 @@ bool ezOptionParser::gotExpected(std::vector<std::string> & badOptions) {
 /* ################################################################### */
 bool ezOptionParser::gotRequired(std::vector<std::string> & badOptions) {
   int i;
-  
+
   for(i=0; i < groups.size(); ++i) {
     OptionGroup *g = groups[i];
     // Simple case when required but user never set it.
@@ -1972,16 +1977,16 @@ bool ezOptionParser::gotRequired(std::vector<std::string> & badOptions) {
 bool ezOptionParser::gotValid(std::vector<std::string> & badOptions, std::vector<std::string> & badArgs) {
   int groupid, validatorid;
   std::map< int, int >::iterator it;
-  
+
   for(it = groupValidators.begin(); it != groupValidators.end(); ++it) {
     groupid = it->first;
     validatorid = it->second;
     if (validatorid < 0) continue;
-    
+
     OptionGroup *g = groups[groupid];
     ezOptionValidator *v = validators[validatorid];
     bool nextgroup = false;
-    
+
     for (int i = 0; i < g->args.size(); ++i) {
       if (nextgroup) break;
       std::vector< std::string* > * args = g->args[i];
@@ -2001,24 +2006,24 @@ bool ezOptionParser::gotValid(std::vector<std::string> & badOptions, std::vector
 /* ################################################################### */
 void ezOptionParser::parse(int argc, const char * argv[]) {
   if (argc < 1) return;
-  
+
   /*
   std::map<std::string,int>::iterator it;
   for ( it=optionGroupIds.begin() ; it != optionGroupIds.end(); it++ )
     std::cout << (*it).first << " => " << (*it).second << std::endl;
   */
-  
+
   int found=0, i, k, firstOptIndex=0, lastOptIndex=0;
   std::string s;
   OptionGroup *g;
-  
+
   for(i=0; i < argc; ++i) {
     s = argv[i];
 
     if (optionGroupIds.count(s))
       break;
   }
-  
+
   firstOptIndex = i;
 
   if (firstOptIndex == argc) {
@@ -2027,7 +2032,7 @@ void ezOptionParser::parse(int argc, const char * argv[]) {
 
     for(k=1; k < argc; ++k)
       this->lastArgs.push_back(new std::string(argv[k]));
-      
+
     return;
   }
 
@@ -2035,10 +2040,10 @@ void ezOptionParser::parse(int argc, const char * argv[]) {
   for(k=0; k < i; ++k) {
     this->firstArgs.push_back(new std::string(argv[k]));
   }
-  
+
   for(; i < argc; ++i) {
     s = argv[i];
-    
+
     if (optionGroupIds.count(s)) {
       k = optionGroupIds[s];
       g = groups[k];
@@ -2055,11 +2060,11 @@ void ezOptionParser::parse(int argc, const char * argv[]) {
       lastOptIndex = i;
     }
   }
-  
+
   // Scan for unknown opts/arguments.
   for(i=firstOptIndex; i <= lastOptIndex; ++i) {
     s = argv[i];
-    
+
     if (optionGroupIds.count(s)) {
       k = optionGroupIds[s];
       g = groups[k];
@@ -2071,9 +2076,9 @@ void ezOptionParser::parse(int argc, const char * argv[]) {
       unknownArgs.push_back(new std::string(argv[i]));
     }
   }
-  
+
   if ( lastOptIndex >= (argc-1) ) return;
-  
+
   // Store final args without flags.
   for(k=lastOptIndex + 1; k < argc; ++k) {
     this->lastArgs.push_back(new std::string(argv[k]));
@@ -2083,7 +2088,7 @@ void ezOptionParser::parse(int argc, const char * argv[]) {
 void ezOptionParser::prettyPrint(std::string & out) {
   char tmp[256];
   int i,j,k;
-  
+
   out += "First Args:\n";
   for(i=0; i < firstArgs.size(); ++i) {
     sprintf(tmp, "%d: %s\n", i+1, firstArgs[i]->c_str());
@@ -2102,7 +2107,7 @@ void ezOptionParser::prettyPrint(std::string & out) {
 
   out += "\nOptions:\n";
   OptionGroup *g;
-  for(i=0; i < n; ++i) {            
+  for(i=0; i < n; ++i) {
     g = get(stringPtrs[i]->c_str());
     out += "\n";
     // The flag names:
@@ -2119,7 +2124,7 @@ void ezOptionParser::prettyPrint(std::string & out) {
           sprintf(tmp, "%s (default)\n", g->defaults.c_str());
           out += tmp;
         } else {
-          for(k=0; k < g->args.size(); ++k) {            
+          for(k=0; k < g->args.size(); ++k) {
             for(j=0; j < g->args[k]->size()-1; ++j) {
               sprintf(tmp, "%s%c", g->args[k]->at(j)->c_str(), g->delim);
               out += tmp;
@@ -2137,13 +2142,13 @@ void ezOptionParser::prettyPrint(std::string & out) {
       out += tmp;
     }
   }
-  
+
   out += "\nLast Args:\n";
   for(i=0; i < lastArgs.size(); ++i) {
     sprintf(tmp, "%d: %s\n", i+1, lastArgs[i]->c_str());
     out += tmp;
   }
-  
+
   out += "\nUnknown Args:\n";
   for(i=0; i < unknownArgs.size(); ++i) {
     sprintf(tmp, "%d: %s\n", i+1, unknownArgs[i]->c_str());

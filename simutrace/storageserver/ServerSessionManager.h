@@ -31,18 +31,18 @@ namespace SimuTrace
     {
     private:
         DISABLE_COPY(ServerSessionManager);
-        
-        virtual std::unique_ptr<Session> _startSession(SessionId localId, 
+
+        virtual std::unique_ptr<Session> _startSession(SessionId localId,
             std::unique_ptr<Port>& sessionPort, uint16_t peerApiVersion) override;
 
     public:
         ServerSessionManager();
         virtual ~ServerSessionManager() override;
 
-        SessionId createSession(std::unique_ptr<Port>& sessionPort, 
+        SessionId createSession(std::unique_ptr<Port>& sessionPort,
                                 uint16_t peerApiVersion);
-        void openLocalSession(SessionId session, 
-                              std::unique_ptr<Port>& sessionPort, 
+        void openLocalSession(SessionId session,
+                              std::unique_ptr<Port>& sessionPort,
                               uint16_t peerApiVersion);
     };
 

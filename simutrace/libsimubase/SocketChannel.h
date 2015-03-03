@@ -26,7 +26,7 @@
 
 #include "Channel.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
 #ifdef WIN32
@@ -54,10 +54,10 @@ namespace SimuTrace
 
         SocketChannel(SOCKET endpoint, const std::string& address);
 
-        void _initChannel(bool isServer, const std::string& address, 
+        void _initChannel(bool isServer, const std::string& address,
                           SOCKET endpoint);
-        void _getAddressInfo(struct addrinfo** info, const char* host, 
-                             const char* port);        
+        void _getAddressInfo(struct addrinfo** info, const char* host,
+                             const char* port);
         void _updateSocketAddress(const std::string& address);
 
         void _createServerSocket();
@@ -80,11 +80,11 @@ namespace SimuTrace
         virtual size_t _send(const void* data, size_t size) override;
         virtual size_t _send(const std::vector<Handle>& handles) override;
         virtual size_t _receive(void* data, size_t size) override;
-        virtual size_t _receive(std::vector<Handle>& handles, 
+        virtual size_t _receive(std::vector<Handle>& handles,
                                 uint32_t handleCount) override;
 
     public:
-        static std::unique_ptr<Channel> factoryMethod(bool isServer, 
+        static std::unique_ptr<Channel> factoryMethod(bool isServer,
             const std::string& address);
 
     public:

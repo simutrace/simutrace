@@ -44,11 +44,11 @@ namespace SimuTrace
         virtual ~ServerPort();
 
         void ret(Message& msg);
-        void ret(Message& request, uint32_t status, uint32_t result0 = 0, 
+        void ret(Message& request, uint32_t status, uint32_t result0 = 0,
                  uint64_t result1 = 0);
-        void ret(Message& request, uint32_t status, const void* data, 
+        void ret(Message& request, uint32_t status, const void* data,
                  uint32_t length, uint32_t result0 = 0, uint32_t result1 = 0);
-        void ret(Message& request, uint32_t status, std::vector<Handle>& handles, 
+        void ret(Message& request, uint32_t status, std::vector<Handle>& handles,
                  uint32_t result0 = 0, uint32_t result1 = 0);
 
         void wait(Message& request);

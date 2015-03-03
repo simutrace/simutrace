@@ -51,16 +51,18 @@ namespace System
         std::string errorString;
         char* msg = nullptr;
 
-    #ifdef WIN32    
-        ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                        FORMAT_MESSAGE_FROM_SYSTEM | 
-                        FORMAT_MESSAGE_IGNORE_INSERTS,
-                        nullptr, 
-                        errorCode, 
-                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
-                        (LPSTR)&msg, 0, nullptr);
+    #ifdef WIN32
+        DWORD n = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                   FORMAT_MESSAGE_FROM_SYSTEM |
+                                   FORMAT_MESSAGE_IGNORE_INSERTS,
+                                   nullptr,
+                                   errorCode,
+                                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                   (LPSTR)&msg, 0, nullptr);
 
-        if (msg != nullptr) {
+        if (n > 0) {
+            assert(msg != nullptr);
+
             errorString = std::string(msg);
             ::LocalFree(msg);
         } else {
@@ -89,7 +91,7 @@ namespace System
     // Exception
     //
 
-    Exception::Exception(LOC_PARAM const std::string& message, 
+    Exception::Exception(LOC_PARAM const std::string& message,
         ExceptionClass errorClass, int errorCode) :
     #ifdef _DEBUG
         _location(LOC_ARG0),
@@ -98,7 +100,7 @@ namespace System
         _errorCode(errorCode)
     {
     #ifdef _DEBUG
-        _message = stringFormat("%s [Line: %d, File: %s]", 
+        _message = stringFormat("%s [Line: %d, File: %s]",
             message.c_str(), _location.lineOfCode, _location.sourceFile);
     #else
         _message = stringFormat("%s", message.c_str());
@@ -107,9 +109,9 @@ namespace System
 
     Exception::Exception(LOC_PARAM const std::string& message) :
         Exception(LOC_ARG message, ExceptionClass::EcUnknown, 0) { }
- 
+
     Exception::Exception(LOC_PARAM ExceptionClass errorClass, int errorCode) :
-        Exception(LOC_ARG System::getErrorString(errorCode), 
+        Exception(LOC_ARG System::getErrorString(errorCode),
                   errorClass, errorCode) { }
 
     Exception::Exception(LOC_PARAM0) :

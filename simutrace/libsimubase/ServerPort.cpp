@@ -52,14 +52,14 @@ namespace SimuTrace
 
     void ServerPort::ret(Message& msg)
     {
-        ThrowOn(msg.payloadType >= MessagePayloadType::MptMax, 
+        ThrowOn(msg.payloadType >= MessagePayloadType::MptMax,
                 NotSupportedException);
         msg.flags |= MessageFlags::MfResponse;
 
         _send(msg);
     }
 
-    void ServerPort::ret(Message& request, uint32_t status, uint32_t result0, 
+    void ServerPort::ret(Message& request, uint32_t status, uint32_t result0,
                          uint64_t result1)
     {
         request.discard();
@@ -70,19 +70,19 @@ namespace SimuTrace
         ret(request);
     }
 
-    void ServerPort::ret(Message& request, uint32_t status, const void* data, 
+    void ServerPort::ret(Message& request, uint32_t status, const void* data,
                          uint32_t length, uint32_t result0, uint32_t result1)
     {
         request.discard();
 
         request.response.status = status;
-        request.setupData(result0, result1, data, length);        
+        request.setupData(result0, result1, data, length);
 
         ret(request);
     }
 
-    void ServerPort::ret(Message& request, uint32_t status,  
-                         std::vector<Handle>& handles, uint32_t result0, 
+    void ServerPort::ret(Message& request, uint32_t status,
+                         std::vector<Handle>& handles, uint32_t result0,
                          uint32_t result1)
     {
         request.discard();
@@ -93,7 +93,7 @@ namespace SimuTrace
         ret(request);
     }
 
-    void ServerPort::wait(Message& request) 
+    void ServerPort::wait(Message& request)
     {
         request.discard();
 

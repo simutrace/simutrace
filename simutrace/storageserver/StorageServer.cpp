@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -34,8 +34,10 @@
 
 using namespace libconfig;
 
-namespace SimuTrace 
+namespace SimuTrace
 {
+
+    static const char* _logPattern = "[%d{%Y-%m-%d %H:%M:%S.%~}] %c %s%m%n";
 
     class StorageServer::Request :
         public WorkItemBase
@@ -48,7 +50,7 @@ namespace SimuTrace
             _server(server),
             _port()
         {
-            ThrowOnNull(dynamic_cast<ServerPort*>(port.get()), 
+            ThrowOnNull(dynamic_cast<ServerPort*>(port.get()),
                         ArgumentNullException);
 
             _port = std::move(port);
@@ -59,9 +61,9 @@ namespace SimuTrace
         StorageServer& getStorageServer() const { return _server; }
         std::unique_ptr<Port>& getPort() { return _port; }
 
-        ServerPort& getServerPort() 
-        { 
-            return *static_cast<ServerPort*>(_port.get()); 
+        ServerPort& getServerPort()
+        {
+            return *static_cast<ServerPort*>(_port.get());
         }
     };
 
@@ -112,7 +114,7 @@ namespace SimuTrace
         uint64_t confPoolSize = Configuration::get<int>("server.memmgmt.poolSize") MiB;
         uint64_t poolSize = confPoolSize;
 
-        ThrowOn(poolSize < SIMUTRACE_SERVER_MEMMGMT_MINIMUM_POOLSIZE, 
+        ThrowOn(poolSize < SIMUTRACE_SERVER_MEMMGMT_MINIMUM_POOLSIZE,
                 ConfigurationException, stringFormat("The configured memory "
                 "pool size of %s is below the minimum pool size of %s.",
                 sizeToString(poolSize, SizeUnit::SuMiB).c_str(),
@@ -160,7 +162,7 @@ namespace SimuTrace
             // Step 1: Initialize logging so we can report errors.
             //
 
-            _initializeLogging();
+            _initializeLogging(0);
 
 
             //
@@ -175,13 +177,8 @@ namespace SimuTrace
                 return;
             }
 
-            // Apply --server.quiet setting so we can determine if we should
-            // print the banner or not.
-            if (Configuration::get<bool>("server.quiet")) {
-                _logRoot.enableAppender("terminal", false);
-            }
+            _initializeLogging(1);
 
-            _logBanner();
 
             // Apply server configuration
             _applyConfiguration();
@@ -204,24 +201,46 @@ namespace SimuTrace
 
     }
 
-    void StorageServer::_initializeLogging()
+    void StorageServer::_initializeLogging(int phase)
     {
-        static const char* logPattern = "[%d{%Y-%m-%d %H:%M:%S.%~}] %c %s%m%n";
+        if (phase == 0) {
+            //
+            // Step 1: Initialize logging so we can report any errors to the
+            //         user. Until the configuration is successfully loaded,
+            //         we are only logging to stdout.
+            //
 
-        //
-        // Step 1: Initialize logging so we can report any errors to the 
-        //         user. Until the configuration is successfully loaded,
-        //         we are only logging to stdout.
-        //
+            std::unique_ptr<LogLayout> layout(new PatternLogLayout(_logPattern));
+            std::shared_ptr<LogAppender> consoleLog =
+                std::make_shared<TerminalLogAppender>("terminal", layout, true);
 
-        std::unique_ptr<LogLayout> layout(new PatternLogLayout(logPattern));
-        std::shared_ptr<LogAppender> consoleLog =
-            std::make_shared<TerminalLogAppender>("terminal", layout, true);
+            _logRoot.registerAppender(consoleLog);
 
-        _logRoot.registerAppender(consoleLog);
+            // Activate logging to the new log
+            Environment::setLog(&_logRoot);
 
-        // Activate logging to the new log
-        Environment::setLog(&_logRoot);
+        } else { // Adapt logging according to configuration
+            assert(phase == 1);
+
+            std::string logfile;
+            Configuration::get("server.logfile", logfile);
+            if (!logfile.empty()) {
+                std::unique_ptr<LogLayout> layout(
+                    new PatternLogLayout(_logPattern));
+                std::shared_ptr<LogAppender> fileLog =
+                    std::make_shared<FileLogAppender>(logfile, layout, true);
+
+                _logRoot.registerAppender(fileLog);
+            }
+
+            // Apply --server.quiet setting so we can determine if we should
+            // print the banner or not.
+            if (Configuration::get<bool>("server.quiet")) {
+                _logRoot.enableAppender("terminal", false);
+            }
+
+            _logBanner();
+        }
     }
 
     bool StorageServer::_initializeConfiguration(int argc, const char* argv[])
@@ -229,8 +248,8 @@ namespace SimuTrace
         Environment::setConfig(&_config);
 
         //
-        // Step 2: Initialize configuration. We first add options from all 
-        //         components to the option parser. We then can apply the 
+        // Step 2: Initialize configuration. We first add options from all
+        //         components to the option parser. We then can apply the
         //         detected options to the configuration. Options set via
         //         the command line always supersede options set in the
         //         configuration file.
@@ -249,7 +268,7 @@ namespace SimuTrace
         std::vector<std::string> badOptions;
         if (!options.gotRequired(badOptions)) {
             for (auto i = 0; i < badOptions.size(); ++i) {
-                LogFatal("Missing required option '%s'.", badOptions[i].c_str());       
+                LogFatal("Missing required option '%s'.", badOptions[i].c_str());
             }
 
             Throw(OptionException, "One or more required options are missing.");
@@ -327,7 +346,7 @@ namespace SimuTrace
                 _config.readFile(configFile.c_str());
             } catch (const std::exception& e) {
                 LogError("Cannot read configuration file '%s'. "
-                         "The exception is '%s'.", 
+                         "The exception is '%s'.",
                          configFile.c_str(), e.what());
 
                 throw;
@@ -340,7 +359,7 @@ namespace SimuTrace
         auto prefixLength = prefix.length();
 
         Setting& root = _config.getRoot();
-        for (auto it = cbegin(options.groups); it != cend(options.groups); ++it) {
+        for (auto it = options.groups.begin(); it != options.groups.end(); ++it) {
             ez::OptionGroup* group = (*it);
             assert(group->flags.size() > 0);
 
@@ -362,9 +381,9 @@ namespace SimuTrace
                 Setting& setting = _config.lookup(option);
                 if (setting.getType() == typeIt->second) {
                     if (!group->isSet) {
-                        // The setting is configured in the file, but not set 
-                        // on the command line. Proceed with the next option, 
-                        // so we do not overwrite the setting's value with the 
+                        // The setting is configured in the file, but not set
+                        // on the command line. Proceed with the next option,
+                        // so we do not overwrite the setting's value with the
                         // default one.
                         LogDebug("Setting: %s = %s", option.c_str(),
                             Configuration::settingToString(setting).c_str());
@@ -388,7 +407,7 @@ namespace SimuTrace
 
                 //TODO: Improve exception handling
 
-                switch (typeIt->second) 
+                switch (typeIt->second)
                 {
                     case Setting::Type::TypeString: {
                         std::string out;
@@ -437,7 +456,7 @@ namespace SimuTrace
     void StorageServer::_initializeServer()
     {
         //
-        // Step 3: Initialize server components. After this step we are ready 
+        // Step 3: Initialize server components. After this step we are ready
         //         to accept client connections in the main loop.
         //
 
@@ -450,7 +469,7 @@ namespace SimuTrace
         _requestPool = std::unique_ptr<WorkerPool>(
             new WorkerPool(rworkers, _environment));
 
-        LogInfo("Created %d server request worker threads.", 
+        LogInfo("Created %d server request worker threads.",
                 _requestPool->getWorkerCount());
 
         // Create the worker pool that will process trace data. Since we do not
@@ -460,7 +479,7 @@ namespace SimuTrace
         _workerPool = std::unique_ptr<WorkerPool>(
             new WorkerPool(workers, _environment));
 
-        LogInfo("Created %d server processing worker threads.", 
+        LogInfo("Created %d server processing worker threads.",
                 _workerPool->getWorkerCount());
 
     #ifdef WIN32
@@ -478,8 +497,8 @@ namespace SimuTrace
         _determineMemoryPoolConfiguration(nseg);
 
         _memoryPool = std::unique_ptr<ServerStreamBuffer>(
-            new ServerStreamBuffer(SERVER_BUFFER_ID, 
-                                   SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB, 
+            new ServerStreamBuffer(SERVER_BUFFER_ID,
+                                   SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB,
                                    nseg, false));
 
         LogInfo("Created server memory pool with %s (%s per segment).",
@@ -523,7 +542,7 @@ namespace SimuTrace
         LogPriority::Value loglevel;
         Configuration::get("server.loglevel", loglevel);
 
-        LogDebug("Setting log level to %s (%d).", 
+        LogDebug("Setting log level to %s (%d).",
             LogPriority::getPriorityName(loglevel).c_str(), loglevel);
 
         _logRoot.setPriorityThreshold(loglevel);
@@ -538,13 +557,6 @@ namespace SimuTrace
             _setWorkspace(workspace);
         }
 
-        // --server.logfile
-        std::string logfile;
-        logfile = Configuration::get<std::string>("server.logfile");
-        if (!logfile.empty()) {
-            Throw(NotImplementedException);
-        }
-
         // --server.bindings
         _specifier = Configuration::get<std::string>("server.bindings");
         ThrowOn(_specifier.empty(), Exception, "No server bindings defined. "
@@ -555,7 +567,7 @@ namespace SimuTrace
     {
         assert(_shouldStop);
 
-        // Close the server's bindings. That will prevent new requests from  
+        // Close the server's bindings. That will prevent new requests from
         // being taken.
         for (auto& binding : _bindings) {
             Thread<Binding*>* thread = binding->thread.get();
@@ -574,11 +586,11 @@ namespace SimuTrace
 
         _bindings.clear();
 
-        // Close the request pool and wait for any outstanding requests to 
+        // Close the request pool and wait for any outstanding requests to
         // be completely processed.
         if (_requestPool != nullptr) {
             _requestPool->close();
- 
+
             _requestPool = nullptr;
         }
 
@@ -617,9 +629,9 @@ namespace SimuTrace
 
 
         // Reset the environment. Do not use Read-/WriteConfig from this point
-        // on. This deactivates logging to our log category. The server's 
+        // on. This deactivates logging to our log category. The server's
         // destructor takes care of freeing log appenders by releasing the log
-        // root. After this point, errors are only reported on stderr through 
+        // root. After this point, errors are only reported on stderr through
         // the PreLog environment.
         Environment::set(nullptr);
     }
@@ -685,13 +697,13 @@ namespace SimuTrace
         }
 
         /* =======  Main Server API  ======= */
-        m[RpcApi::CCV30_Null]              = _handlePeekVersion;
-        m[RpcApi::CCV30_EnumerateSessions] = _handleEnumerateSessions;
+        m[RpcApi::CCV31_Null]              = _handlePeekVersion;
+        m[RpcApi::CCV31_EnumerateSessions] = _handleEnumerateSessions;
 
         /* =======  Session API  ======= */
-        m[RpcApi::CCV30_SessionCreate]     = _handleSessionCreate;
-        m[RpcApi::CCV30_SessionOpen]       = _handleSessionOpen;
-        m[RpcApi::CCV30_SessionQuery]      = _handleSessionQuery;
+        m[RpcApi::CCV31_SessionCreate]     = _handleSessionCreate;
+        m[RpcApi::CCV31_SessionOpen]       = _handleSessionOpen;
+        m[RpcApi::CCV31_SessionQuery]      = _handleSessionQuery;
     }
 
     void StorageServer::_init(int argc, const char* argv[])
@@ -736,7 +748,7 @@ namespace SimuTrace
 
     void StorageServer::_handlePeekVersion(Request& request, Message& msg)
     {
-        TEST_REQUEST_V30(Null, msg);
+        TEST_REQUEST_V31(Null, msg);
         ServerPort& port = request.getServerPort();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
@@ -750,11 +762,11 @@ namespace SimuTrace
 
     void StorageServer::_handleEnumerateSessions(Request& request, Message& msg)
     {
-        TEST_REQUEST_V30(EnumerateSessions, msg);
+        TEST_REQUEST_V31(EnumerateSessions, msg);
         ServerPort& port = request.getServerPort();
         StorageServer& server = request.getStorageServer();
 
-        LogDebug("<client: %s> Session enumeration requested.", 
+        LogDebug("<client: %s> Session enumeration requested.",
                  port.getAddress().c_str());
 
         std::vector<SessionId> ids;
@@ -767,7 +779,7 @@ namespace SimuTrace
 
     void StorageServer::_handleSessionCreate(Request& request, Message& msg)
     {
-        TEST_REQUEST_V30(SessionCreate, msg);
+        TEST_REQUEST_V31(SessionCreate, msg);
         StorageServer& server = request.getStorageServer();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
@@ -777,7 +789,7 @@ namespace SimuTrace
 
     void StorageServer::_handleSessionOpen(Request& request, Message& msg)
     {
-        TEST_REQUEST_V30(SessionOpen, msg);
+        TEST_REQUEST_V31(SessionOpen, msg);
         StorageServer& server = request.getStorageServer();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
@@ -788,7 +800,7 @@ namespace SimuTrace
 
     void StorageServer::_handleSessionQuery(Request& request, Message& msg)
     {
-        TEST_REQUEST_V30(SessionQuery, msg);
+        TEST_REQUEST_V31(SessionQuery, msg);
 
         Throw(NotImplementedException);
     }
@@ -819,14 +831,14 @@ namespace SimuTrace
 
         } catch (const SocketException& e) {
 
-            // We encountered a socket exception. This is most probably caused 
-            // by a failed transmission of the response. We simply drop the 
+            // We encountered a socket exception. This is most probably caused
+            // by a failed transmission of the response. We simply drop the
             // connection without returning any further information.
 
             assert(request.getPort() != nullptr);
 
             LogError("<client: %s, code: 0x%x> SocketException: '%s'. "
-                     "Dropping connection.", port.getAddress().c_str(), 
+                     "Dropping connection.", port.getAddress().c_str(),
                      msg.request.controlCode, e.what());
 
         } catch (const Exception& e) {
@@ -864,7 +876,7 @@ namespace SimuTrace
 
             LogFatal("Encountered fatal exception during processing of "
                      "request for client %s. The exception is '%s'. "
-                     "Stopping server.", port.getAddress().c_str(), 
+                     "Stopping server.", port.getAddress().c_str(),
                      e.what());
 
             StorageServer::getInstance()._stop();
@@ -877,9 +889,9 @@ namespace SimuTrace
         Environment::set(&server.getEnvironment());
 
         Binding& binding = *thread.getArgument();
-        assert(binding.port != nullptr);        
+        assert(binding.port != nullptr);
 
-        LogInfo("Waiting for connections on binding %s...", 
+        LogInfo("Waiting for connections on binding %s...",
                 binding.port->getAddress().c_str());
 
         //
@@ -902,7 +914,7 @@ namespace SimuTrace
             // errors. Better terminate.
 
             LogFatal("Encountered fatal exception for binding %s. "
-                     "The exception is '%s'. Stopping server.", 
+                     "The exception is '%s'. Stopping server.",
                      binding.port->getAddress().c_str(), e.what());
 
             server._stop();
@@ -982,5 +994,17 @@ namespace SimuTrace
     const Environment& StorageServer::getEnvironment() const
     {
         return _environment;
+    }
+
+    bool StorageServer::hasLocalBindings() const
+    {
+        for (auto const &binding : _bindings) {
+              ChannelCapabilities caps = binding->port->getChannelCaps();
+              if ((caps & ChannelCapabilities::CCapHandleTransfer) != 0) {
+                return true;
+              }
+        }
+
+        return false;
     }
 }

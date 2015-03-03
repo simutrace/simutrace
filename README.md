@@ -13,7 +13,7 @@ of gigabytes in size. Simutrace has been particularly extended to facilitate
 efficient memory tracing by incorporating aggressive, but fast memory trace 
 compression.
 
-Simutrace is a research project of the operating system group at Karlsruhe 
+Simutrace is a research project of the operating systems group at Karlsruhe 
 Institute of Technology (KIT).
 
 
@@ -28,7 +28,7 @@ Table of Contents
     - [Starting Simutrace](#starting-simutrace)
     - [Writing and Reading Traces](#writing-and-reading-traces)
   - [Documentation](#documentation)
-    - [Buiding the Documentation](#building-the-documentation) 
+    - [Building the Documentation](#building-the-documentation) 
   - [Bugs and Feature Requests](#bugs-and-feature-requests)
     - [Known Issues](#known-issues)
   - [Versioning](#versioning)
@@ -94,7 +94,7 @@ For best performance, we recommend running the server on a system with at least
 dual-socket Xeon system at full load when reading a memory trace with 
 700 MiB/s. The hardware requirements for the client are significantly lower as
 all heavyweight processing is done in the server process. The client runs
-perfectly fine on a single core with 2 to 4 GiB of RAM. When running the 
+perfectly fine on a single core with 1 GiB of RAM. When running the 
 client and server on the same machine, the memory of the client is shared with
 the server and does not add to the server's requirements.
 
@@ -105,23 +105,13 @@ Simutrace and its prerequisites. If you cannot find a version of Simutrace on
 http://simutrace.org/downloads suitable to your environment (e.g., OS), you can
 build Simutrace [from source](#building-from-source).
 
-Note: The installation does not include an extension for a full system 
-simulator to generate trace events from a simulation. For information on 
-simulator extensions, please refer to http://simutrace.org.
+Note: The installation does not include extensions for a full system 
+simulators to generate trace events from a simulation. Supported simulator
+extensions are referenced as git submodules in the simulation directory. For
+more information on a particular extension, please see the respective
+extension's repository. 
 
-#### Step 1: libconfig
-
-Simutrace utilizes [libconfig](http://www.hyperrealm.com/libconfig/) for
-configuration file parsing. To run Simutrace you first have to install
-libconfig (version 1.4.9 or compatible, c++ binding). On <b>Windows</b>, we 
-provide the library together with the binary installation package. 
-On <b>Linux</b>, you probably find a binary package within your distribution's
-package management system. On Ubuntu Linux 14.04 LTS you can install libconfig
-by entering:
-
-    $ sudo apt-get install libconfig++9
-
-#### Step 2: Visual C++ Redistributable Package 2013 (Windows-only)
+#### Step 1: Visual C++ Redistributable Package 2013 (Windows-only)
 
 The Visual C++ Redistributable package installs run-time components that are 
 required to run Simutrace. Download the package from Microsoft and follow the
@@ -130,7 +120,7 @@ instructions given on the download page.
 <i>If you have Visual Studio 2013 installed, the required components are 
 already on your system.</i>
 
-#### Step 3: Simutrace
+#### Step 2: Simutrace
 
 Download the latest version of Simutrace from http://simutrace.org/downloads.
 
@@ -141,23 +131,20 @@ that is not officially supported, you can build the software from source.
 
 #### Step 1: Setting up the Build Environment
 
-On <b>Windows</b>, you need Microsoft Visual Studio 2013 or newer with
-Visual C++ to build Simutrace. A free (express) version can be downloaded from 
-Microsoft. Dependencies on libraries are configured as NuGet packages and are 
-resolved by Visual Studio before the first build automatically.
+Simutrace uses CMake (2.8.9 or newer) to generate build files for the 
+development tools available on your system.
 
-On <b>Linux</b>, you have to install the basic development tools such a C++11
-compatible GCC (version 4.7 or higher) and make. Some distributions provide a 
-package that will install the required tools. On Ubuntu Linux 14.04 LTS you 
-can enter:
+On <b>Windows</b>, download the latest CMake version from http://cmake.org. To 
+build Simutrace, we use Microsoft Visual Studio 2013 (Visual C++). A free 
+(express) version can be downloaded from Microsoft. The source of libconfig is 
+provided in the 3rdParty directory and is automatically added to the build process.
 
-    $ sudo apt-get install build-essential
+On <b>Linux</b>, you have to install cmake, the basic development tools such 
+a C++11 compatible GCC (version 4.7 or higher) and make. Some distributions 
+provide a package that will install the required tools. On Ubuntu Linux 14.04 
+LTS you can enter:
 
-You further need to install the development version of 
-[libconfig](http://www.hyperrealm.com/libconfig/) (version 1.4.9 or compatible,
-c++ binding).
-
-    $ sudo apt-get install libconfig++-dev
+    $ sudo apt-get install cmake build-essential
 
 #### Step 2: Cloning the Source Repository
 
@@ -172,18 +159,26 @@ After installing git, you clone the source repository by entering:
 
     $ git clone https://github.com/simutrace/simutrace.git
 
-The repository encompasses the server component, the C client interface
-library to write simulator extensions and analysis clients, sample code and 
-documentation sources.
+The repository encompasses the server, the C client interface
+library to write simulator extensions and analysis clients, sample code, and 
+documentation sources, and more.
 
 The repository has the following structure:
 
 <pre>
 .
+|-- <b>3rdParty</b>
+|   `-- libconfig-1.4.9     <i>Libconfig to parse configuration files<i>
+|
 |-- <b>samples</b>
-|   `-- simpleclient        <i>C sample client application, which writes</i>
-|                           <i>and reads data to/from a trace.</i>
+|   |-- csharp.simple       <i>Sample on how to use C# binding</i>
+|	|-- storemon            <i>Small monitoring app, that displays live stats</i>
+|   |                       <i>on the streams in a specified store</i>
+|   |-- simple              <i>Very basic sample client in C</i>
+|   `-- parallel            <i>Sample client in C, which writes and reads</i>
+|                           <i>to/from a trace using multiple threads</i>
 `-- <b>simutrace</b>
+    |-- bindings            <i>Bindings for libsimutrace</i>
     |-- documentation       <i>Documentation source and theme.</i>
     |-- <b>include</b>             <i>Header files, use SimuTrace.h.</i>
     |   |-- simubase        <i>Internal headers for libsimubase.</i>
@@ -199,24 +194,25 @@ The repository has the following structure:
 
 #### Step 3: Building
 
-To build the code on <b>Windows</b> you open the solution file 
-(<i>SimuTrace.sln</i>) in the root of the source tree and choose 
-BUILD | BUILD SOLUTION in Visual Studio.
+Before you can build the source, you have to generate the build files with
+CMake. If you are using <b>Windows</b> you will most probably want to generate
+a Visual Studio solution. On <b>Linux</b>, you can generate makefiles with
+cmake and build Simutrace by running the following commands from the the root 
+directory of the source tree:
 
-On <b>Linux</b>, you go into the root directory of the source tree and run
-make:
+    $ mkdir build
+	$ cd build
+	$ cmake -DCMAKE_BUILD_TYPE=Release ..
+	$ make
 
-    $ make
-
-The final executables will be located in <i>build/Release</i> or 
-<i>build/Release-Windows</i>, respectively, depending on your platform.
+The final executables will be located in <i>build/bin</i>.
 
 ##### Debug Version
 To build the debug version of Simutrace you have to choose the
-appropriate solution configuration in Visual Studio (<i>Debug-Windows</i>) or
-on Linux type:
+appropriate solution configuration in Visual Studio (<i>Debug</i>) or
+on Linux type generate the makefiles with:
 
-    $ make CONFIG=DEBUG 
+    $ cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 ### Starting Simutrace
 
@@ -236,9 +232,6 @@ directory. To supply the file during startup, type:
 
     $ ./simustore -c simustore.cfg
 
-If you start Simutrace from Visual Studio, the configuration file is supplied
-by default.
-
 How to start the <b>client</b>, depends on the client application. A client may
 be an extension in a full system simulator, which connects to the server and
 outputs all events it observes in the simulation. A client may also be an
@@ -248,8 +241,7 @@ analysis.
 Simutrace does not come with any specific client application, yet. Instead we
 provide samples that show you how to bind against the client library
 (<i>libsimutrace(.so/.dll)</i>) and use the Simutrace API to work with the
-storage server. All samples can be started by just running the corresponding
-executable without any further arguments.
+storage server.
 
 ### Writing and Reading Traces
 
@@ -259,7 +251,8 @@ purpose. You may use the interface by including <i>SimuTrace.h</i>.
 
 Note: if you wish to use a different programming language for your client,
 see if and how your preferred language can bind to a native C shared/dynamic
-library.
+library. For some languages we already provide bindings. Take a look at the
+bindings directory for supported languages.
 
 Please see the source of the sample clients as well as the documentation for 
 details on how to bind to the client library and invoke the API.
@@ -288,7 +281,7 @@ On Ubuntu 14.04 LTS you can enter:
 Afterwards, you can build the documentation by typing in the root of the
 source directory:
 
-    $ make documentation
+    $ make-doc.sh
 
 You will find the documentation in <i>build/documentation/html</i>.
 
@@ -359,8 +352,10 @@ For known issues, please see [KNOWN ISSUES](/KNOWNISSUES).
 Versioning
 ----------
 
-Simutrace employs the semantic versioning scheme (http://semver.org/). For the
-current version, please refer to [VERSION](/VERSION).
+We try to comply with the semantic versioning scheme (http://semver.org/). If
+we incorporated incompatible changes from one minor version to the other, you
+will find these documented in the changelog and the API documentation. For
+the current version, please refer to [VERSION](/VERSION).
 
 
 Contributing

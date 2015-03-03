@@ -33,7 +33,7 @@ namespace SimuTrace
     {
     private:
         DISABLE_COPY(Stream);
-        
+
         std::string _name;
 
         StreamId _id;
@@ -41,6 +41,9 @@ namespace SimuTrace
         const StreamDescriptor _desc;
 
         StreamBuffer& _buffer;
+    protected:
+        byte* getBufferSegmentEnd(SegmentId segment) const;
+
     public:
         Stream(StreamId id, const StreamDescriptor& desc, StreamBuffer& buffer);
         virtual ~Stream();

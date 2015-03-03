@@ -27,8 +27,8 @@
 
 namespace SimuTrace
 {
-  
-    StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize, 
+
+    StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize,
                                uint32_t numSegments, bool sharedMemory) :
         _id(id),
         _buffer(nullptr),
@@ -39,22 +39,23 @@ namespace SimuTrace
     {
         ThrowOn(id == INVALID_BUFFER_ID, ArgumentException);
         ThrowOn((segmentSize != SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB) ||
-                (numSegments == 0) || 
-                (numSegments > SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER), 
+                (numSegments == 0) ||
+                (numSegments > SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER),
                 NotSupportedException);
-
-        Guid guid;
-
-        // Generate a random GUID for the data buffer.
-        generateGuid(guid);
-
-        std::string guidStr = stringFormat("simutrace:buffer:%s", 
-                                           guidToString(guid).c_str());
 
         // Create the data buffer and map it
         if (sharedMemory) {
+            Guid guid;
+
+            // Generate a random GUID for the data buffer.
+            generateGuid(guid);
+
+            std::string guidStr = stringFormat("simutrace:buffer:%s",
+                                               guidToString(guid).c_str());
+
             _buffer = std::unique_ptr<MemorySegment>(
-                new SharedMemorySegment(guidStr.c_str(), true, getBufferSize()));
+                new SharedMemorySegment(guidStr.c_str(), true,
+                                        getBufferSize()));
         } else {
             _buffer = std::unique_ptr<MemorySegment>(
                 new PrivateMemorySegment(getBufferSize()));
@@ -63,14 +64,7 @@ namespace SimuTrace
         _buffer->map();
     }
 
-    StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize, 
-                               uint32_t numSegments) :
-        StreamBuffer(id, segmentSize, numSegments, true)
-    {
-    
-    }
-
-    StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize, 
+    StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize,
                                uint32_t numSegments, Handle& buffer) :
         _id(id),
         _buffer(nullptr),
@@ -81,8 +75,8 @@ namespace SimuTrace
     {
         ThrowOn(id == INVALID_BUFFER_ID, ArgumentException);
         ThrowOn((segmentSize != SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB) ||
-                (numSegments == 0) || 
-                (numSegments > SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER), 
+                (numSegments == 0) ||
+                (numSegments > SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER),
                 NotSupportedException);
 
         _buffer = std::unique_ptr<SharedMemorySegment>(
@@ -124,7 +118,7 @@ namespace SimuTrace
         _buffer->touch();
     }
 
-    byte* StreamBuffer::getSegmentAsPayload(SegmentId segment, 
+    byte* StreamBuffer::getSegmentAsPayload(SegmentId segment,
                                             size_t& outSize) const
     {
         outSize = _segmentSize + sizeof(SegmentControlElement);
@@ -134,7 +128,7 @@ namespace SimuTrace
     byte* StreamBuffer::getSegment(SegmentId segment) const
     {
         ThrowOn(segment >= _numSegments, ArgumentOutOfBoundsException);
-        
+
         // The segment starts with the data and ends with the control element.
         // This way, half transferred segment in a socket-based session are
         // not regarded as filled by the server because the control segment is
@@ -147,11 +141,22 @@ namespace SimuTrace
         return _buffer->getBuffer() + offset;
     }
 
+    byte* StreamBuffer::getSegmentEnd(SegmentId segment, uint32_t entrySize) const
+    {
+        SegmentControlElement* ctrl = getControlElement(segment);
+
+        size_t offset = (isVariableEntrySize(entrySize) ?
+            getSizeHint(entrySize) : entrySize) * ctrl->rawEntryCount;
+        assert(offset <= _segmentSize);
+
+        return getSegment(segment) + offset;
+    }
+
     SegmentControlElement* StreamBuffer::getControlElement(
         SegmentId segment) const
     {
         ThrowOn(segment >= _numSegments, ArgumentOutOfBoundsException);
-        
+
         // The segment starts with the data and ends with the control element.
         // This way, half transferred segment in a socket-based session are
         // not regarded as filled by the server because the control segment is
@@ -177,17 +182,19 @@ namespace SimuTrace
 
     Handle StreamBuffer::getBufferHandle() const
     {
-        ThrowOnNull(dynamic_cast<SharedMemorySegment*>(_buffer.get()),
-                    InvalidOperationException);
+        auto buf = dynamic_cast<SharedMemorySegment*>(_buffer.get());
+        if (buf == nullptr) {
+            return INVALID_HANDLE_VALUE;
+        }
 
-        return static_cast<SharedMemorySegment*>(_buffer.get())->getHandle();
+        return buf->getHandle();
     }
-    
+
     size_t StreamBuffer::getBufferSize() const
     {
         return _numSegments * _lineSize;
     }
-    
+
     size_t StreamBuffer::getSegmentSize() const
     {
         return _segmentSize;
@@ -198,7 +205,7 @@ namespace SimuTrace
         return _numSegments;
     }
 
-    size_t StreamBuffer::computeBufferSize(size_t segmentSize, 
+    size_t StreamBuffer::computeBufferSize(size_t segmentSize,
                                            uint32_t numSegments)
     {
         return numSegments * _computeLineSize(segmentSize);

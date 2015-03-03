@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -37,8 +37,7 @@ namespace SimuTrace {
 namespace Simtrace
 {
 
-    Simtrace3Store::Simtrace3Store(StoreId id, const std::string& path, 
-                                   bool alwaysCreate) :
+    Simtrace3Store::Simtrace3Store(StoreId id, const std::string& path) :
         ServerStore(id, path),
         _file(),
         _fileLock(),
@@ -53,8 +52,6 @@ namespace Simtrace
         _initializeEncoderMap();
 
         if (File::exists(path)) {
-            assert(!alwaysCreate);
-
             _openStore(path);
         } else {
             _createStore(path);
@@ -76,7 +73,7 @@ namespace Simtrace
 
         // Default Encoder --------------------
         // If no special encoder is registered for an entry type, we use a
-        // general purpose compression and write the compressed data to 
+        // general purpose compression and write the compressed data to
         // the store.
         desc.factoryMethod = Simtrace3GenericEncoder::factoryMethod;
         desc.type = nullptr;
@@ -118,7 +115,7 @@ namespace Simtrace
         _loading = true;
 
         _file = std::unique_ptr<File>(
-            new File(path, File::CreateMode::OpenExisting, 
+            new File(path, File::CreateMode::OpenExisting,
                      File::AccessMode::ReadWrite));
 
         _mapHeader();
@@ -131,7 +128,7 @@ namespace Simtrace
             _loading = false;
 
             // We are currently not support extending an existing store.
-            _readMode = true; 
+            _readMode = true;
         }
 
         // For each directory, we iterate over its entries (i.e., frames)
@@ -142,13 +139,14 @@ namespace Simtrace
                 "First directory link corrupted.");
 
         _mapDirectory(_header->v3.directories[0]);
+        assert(_directory != nullptr);
 
         uint32_t index = 0;
         while (true) {
-            FrameDirectoryEntry* entry = &_directory[index];
-
             ThrowOn(index >= _header->v3.directoryCapacity, Exception,
                     "Directory structure corrupted.");
+
+            FrameDirectoryEntry* entry = &_directory[index];
 
             const uint32_t marker = entry->markerValue;
             if (marker == SIMTRACE_V3_FRAME_MARKER) {
@@ -166,7 +164,7 @@ namespace Simtrace
                     ThrowOn(!frame.validateHash(), Exception,
                             "Corrupted meta data frame detected.");
 
-                    ServerStream* sstream = 
+                    ServerStream* sstream =
                         static_cast<ServerStream*>(findStream(fheader.streamId));
 
                     // The stream does not exist. Create and register it first.
@@ -178,15 +176,15 @@ namespace Simtrace
                         ThrowOnNull(attrDesc, Exception, "Unable to find "
                                     "stream description attribute.");
 
-                        StreamDescriptor* desc = 
+                        StreamDescriptor* desc =
                             reinterpret_cast<StreamDescriptor*>(attrDesc->buffer);
 
                         // We are using the server's memory pool for hidden
                         // streams and the shared memory pool for public ones.
                         BufferId bufId = (desc->hidden) ? SERVER_BUFFER_ID : 0;
 
-                        std::unique_ptr<Stream> stream = 
-                            this->ServerStore::_createStream(fheader.streamId, 
+                        std::unique_ptr<Stream> stream =
+                            this->ServerStore::_createStream(fheader.streamId,
                                                              *desc, bufId);
                         assert(stream != nullptr);
 
@@ -199,16 +197,16 @@ namespace Simtrace
                            Simtrace3AttributeType::SatData) == nullptr);
 
                     // Inform the encoder about the meta data
-                    Simtrace3Encoder& encoder = 
+                    Simtrace3Encoder& encoder =
                         static_cast<Simtrace3Encoder&>(sstream->getEncoder());
 
                     encoder.initialize(frame, true);
 
                 } else {
                     // This is a data frame. Add the segment to its stream
-                    ServerStream& stream = 
+                    ServerStream& stream =
                         static_cast<ServerStream&>(getStream(fheader.streamId));
-                    Simtrace3Encoder& encoder = 
+                    Simtrace3Encoder& encoder =
                         static_cast<Simtrace3Encoder&>(stream.getEncoder());
 
                     Simtrace3Frame frame(fheader);
@@ -339,7 +337,7 @@ namespace Simtrace
         _header->v3.writerVersion = StorageServer::getVersion();
         _header->v3.endTime = Clock::getTimestamp();
 
-        // Update the hash of the header. 
+        // Update the hash of the header.
         // Do not modify the header after this point!
         Hash::murmur3_32(_header, SIMTRACE_V3_HEADER_CHECKSUM_DATA_SIZE,
                          &_header->v3.checksum, sizeof(uint32_t), 0);
@@ -364,7 +362,7 @@ namespace Simtrace
         _directoryMapping->updateSize();
 
         // Map the directory into memory
-        _directoryMapping->map(offset, _header->v3.directoryCapacity * 
+        _directoryMapping->map(offset, _header->v3.directoryCapacity *
             sizeof(FrameDirectoryEntry));
 
         _directory = reinterpret_cast<FrameDirectory>(
@@ -377,7 +375,7 @@ namespace Simtrace
 
         // Reserve space for directory, map it into memory and add it to the
         // directory table in the header (if possible).
-        size_t directorySize = _header->v3.directoryCapacity * 
+        size_t directorySize = _header->v3.directoryCapacity *
             sizeof(FrameDirectoryEntry);
         FileOffset offset = _reserveSpace(directorySize);
 
@@ -407,7 +405,7 @@ namespace Simtrace
                  _header->v3.directoryCount - 1);
     }
 
-    void Simtrace3Store::_addFrameToDirectory(Simtrace3Frame& frame, 
+    void Simtrace3Store::_addFrameToDirectory(Simtrace3Frame& frame,
                                               FileOffset offset)
     {
         FrameHeader& frameHeader = frame.getHeader();
@@ -417,7 +415,7 @@ namespace Simtrace
 
         // The current directory is full or none has been setup in the first
         // place. We have to add a new directory to the store.
-        if ((_directory == nullptr) || 
+        if ((_directory == nullptr) ||
             (_nextFrameIndex == _header->v3.directoryCapacity - 1)) {
 
             _addDirectory();
@@ -480,7 +478,7 @@ namespace Simtrace
         const FrameHeader& header = frame.getHeader();
         FileOffset frameOffset = _file->commitSpace(header.totalSize);
 
-        // Write frame header to store 
+        // Write frame header to store
         FileOffset offset = frameOffset;
         offset += _file->write(&header, offset);
 
@@ -497,13 +495,13 @@ namespace Simtrace
                                    description.header.size,
                                    offset);
 
-            uncompressedBytesWritten += description.header.uncompressedSize + 
+            uncompressedBytesWritten += description.header.uncompressedSize +
                                         sizeof(AttributeHeader);
         }
 
         LogDebug("<store: %s> Written frame to store <stream: %d, sqn: %d, "
                  "size: %s (%s), attr#: %d>.", getName().c_str(),
-                 header.streamId, header.sequenceNumber, 
+                 header.streamId, header.sequenceNumber,
                  sizeToString(header.totalSize).c_str(),
                  sizeToString(uncompressedBytesWritten).c_str(),
                  header.attributeCount);
@@ -514,11 +512,11 @@ namespace Simtrace
     uint64_t Simtrace3Store::_readFrame(Simtrace3Frame& frame,
                                         FileOffset offset, size_t size)
     {
-        // We map the frame into memory and then rebuild the list of 
+        // We map the frame into memory and then rebuild the list of
         // attributes.
         frame.map(*_headerMapping, offset, size);
 
-        unsigned char* buffer = 
+        unsigned char* buffer =
             reinterpret_cast<unsigned char*>(frame.getBuffer());
 
         // We update the frame header by copying the header from the mapping
@@ -540,7 +538,7 @@ namespace Simtrace
 
             assert(position < header.totalSize);
 
-            description.header = 
+            description.header =
                 reinterpret_cast<AttributeHeader&>(buffer[position]);
             position += sizeof(AttributeHeader);
 
@@ -554,17 +552,17 @@ namespace Simtrace
         return position;
     }
 
-    std::unique_ptr<Stream> Simtrace3Store::_createStream(StreamId id, 
+    std::unique_ptr<Stream> Simtrace3Store::_createStream(StreamId id,
         StreamDescriptor& desc, BufferId buffer)
     {
-        std::unique_ptr<Stream> stream = 
+        std::unique_ptr<Stream> stream =
             this->ServerStore::_createStream(id, desc, buffer);
         assert(stream != nullptr);
 
         if (!_loading) {
-            // If we are creating a new stream that is not loaded from the 
+            // If we are creating a new stream that is not loaded from the
             // store we need to write frame 0 to save the stream's meta data.
-            // This will also give the encoder the chance to write out any 
+            // This will also give the encoder the chance to write out any
             // additional attributes it needs to decode the stream later.
 
             ServerStream* sstream = static_cast<ServerStream*>(stream.get());
@@ -591,7 +589,7 @@ namespace Simtrace
 
         frame.updateHash();
 
-        ThrowOn(frame.getHeader().streamId == INVALID_STREAM_ID, 
+        ThrowOn(frame.getHeader().streamId == INVALID_STREAM_ID,
                 ArgumentException);
 
         _markDirty();
@@ -623,7 +621,7 @@ namespace Simtrace
         return offset;
     }
 
-    void Simtrace3Store::readFrame(Simtrace3Frame& frame, 
+    void Simtrace3Store::readFrame(Simtrace3Frame& frame,
                                    Simtrace3StorageLocation& location)
     {
         ThrowOn(_loading, InvalidOperationException);
@@ -631,7 +629,7 @@ namespace Simtrace
         _readFrame(frame, location.offset, location.size);
     }
 
-    void Simtrace3Store::readAttribute(Simtrace3Frame& frame, uint32_t index, 
+    void Simtrace3Store::readAttribute(Simtrace3Frame& frame, uint32_t index,
                                        void* buffer)
     {
         ThrowOn(_loading, InvalidOperationException);
@@ -646,7 +644,7 @@ namespace Simtrace
         FileOffset offset = reinterpret_cast<FileOffset>(list[index].buffer) -
             reinterpret_cast<FileOffset>(frame.getBuffer());
 
-        _file->read(buffer, frame.getOffset() + offset, 
+        _file->read(buffer, frame.getOffset() + offset,
                     list[index].header.size);
     }
 }

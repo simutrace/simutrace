@@ -33,10 +33,14 @@
 #pragma warning(disable : 4244) /* possible loss of data */
 #pragma warning(disable : 4996) /* unsafe printf */
 #pragma warning(disable : 4101) /* unreferenced local variable */
+#pragma warning(disable : 4018) /* signed/unsigned mismatch */
 #endif
 
 #include <libconfig.h++>
 #include <ezOptionParser.h>
+
+#define OPT_SHORT_PREFIX "-"
+#define OPT_LONG_PREFIX "--"
 
 #ifdef _MSC_VER
 #pragma warning(pop)

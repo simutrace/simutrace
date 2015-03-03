@@ -24,7 +24,7 @@
 #include "SimuStor.h"
 #include "SimuTraceTypes.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     class ClientSession :
@@ -43,23 +43,24 @@ namespace SimuTrace
         std::vector<ClientThreadContext*> _clients;
 
         void _detachFromContext(ClientThreadContext* context);
+        void _determineStreamBufferConfiguration(uint32_t& numSegments);
+        void _updateSettings();
 
         virtual void _attach(std::unique_ptr<Port>& port) override;
         virtual bool _detach(bool whatif) override;
 
-        virtual Store::Reference _createStore(const std::string& specifier, 
+        virtual Store::Reference _createStore(const std::string& specifier,
                                               bool alwaysCreate) override;
+        virtual Store::Reference _openStore(const std::string& specifier) override;
 
         virtual void _close() override;
 
         virtual void _enumerateStores(std::vector<std::string>& out) const override;
 
         virtual void _applySetting(const std::string& setting) override;
-
-        void _determineStreamBufferConfiguration(uint32_t& numSegments);
     public:
-        ClientSession(SessionManager& manager, std::unique_ptr<Port>& port, 
-                      uint16_t serverApiVersion, SessionId localId, 
+        ClientSession(SessionManager& manager, std::unique_ptr<Port>& port,
+                      uint16_t serverApiVersion, SessionId localId,
                       SessionId serverSideId, const Environment& root);
         virtual ~ClientSession() override;
 

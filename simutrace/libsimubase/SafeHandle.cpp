@@ -30,7 +30,7 @@ namespace SimuTrace
     SafeHandle::SafeHandle(Handle handle) :
         _handle(handle)
     {
-        
+
     }
 
     SafeHandle::SafeHandle(const SafeHandle& instance) :

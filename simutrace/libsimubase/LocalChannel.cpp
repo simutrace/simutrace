@@ -75,13 +75,13 @@ namespace SimuTrace
 
         std::string tmp = "\\\\.\\pipe\\" + getAddress();
 
-        Handle handle = ::CreateNamedPipeA(tmp.c_str(), 
-                                           PIPE_ACCESS_DUPLEX, 
-                                           PIPE_TYPE_BYTE, 
-                                           PIPE_UNLIMITED_INSTANCES, 
-                                           PIPE_OUT_BUFFER_SIZE, 
-                                           PIPE_IN_BUFFER_SIZE, 
-                                           PIPE_DEFAULT_TIMEOUT, 
+        Handle handle = ::CreateNamedPipeA(tmp.c_str(),
+                                           PIPE_ACCESS_DUPLEX,
+                                           PIPE_TYPE_BYTE,
+                                           PIPE_UNLIMITED_INSTANCES,
+                                           PIPE_OUT_BUFFER_SIZE,
+                                           PIPE_IN_BUFFER_SIZE,
+                                           PIPE_DEFAULT_TIMEOUT,
                                            &security);
 
         ThrowOn(handle == INVALID_HANDLE_VALUE, PlatformException);
@@ -103,7 +103,7 @@ namespace SimuTrace
         SafeHandle handle;
         uint32_t retryCount = 0;
         do {
-            handle = ::CreateFileA(tmp.c_str(), GENERIC_READ | GENERIC_WRITE, 
+            handle = ::CreateFileA(tmp.c_str(), GENERIC_READ | GENERIC_WRITE,
                                    0, nullptr, OPEN_EXISTING, 0, NULL);
             if (handle.isValid()) {
                 break;
@@ -111,15 +111,15 @@ namespace SimuTrace
 
             retryCount++;
 
-            ThrowOn(retryCount > maxRetryCount, PlatformException, 
+            ThrowOn(retryCount > maxRetryCount, PlatformException,
                     ERROR_TIMEOUT);
-            ThrowOn(System::getLastErrorCode() != ERROR_PIPE_BUSY, 
+            ThrowOn(System::getLastErrorCode() != ERROR_PIPE_BUSY,
                     PlatformException);
 
             ::WaitNamedPipe(tmp.c_str(), sleepTime);
         } while (true);
 
-        DWORD mode = PIPE_READMODE_BYTE; 
+        DWORD mode = PIPE_READMODE_BYTE;
         if (!::SetNamedPipeHandleState(handle, &mode, nullptr, nullptr)) {
             Throw(PlatformException);
         }
@@ -127,7 +127,7 @@ namespace SimuTrace
         _endpoint.swap(handle);
     }
 
-    void LocalChannel::_duplicateHandles(const std::vector<Handle>& local, 
+    void LocalChannel::_duplicateHandles(const std::vector<Handle>& local,
                                          std::vector<Handle>& remote)
     {
         unsigned long remotePid;
@@ -147,8 +147,8 @@ namespace SimuTrace
         for (int i = 0; i < local.size(); i++) {
             Handle remoteHandle;
 
-            BOOL success = ::DuplicateHandle(localProcess, local[i], 
-                                             remoteProcess, &remoteHandle, 
+            BOOL success = ::DuplicateHandle(localProcess, local[i],
+                                             remoteProcess, &remoteHandle,
                                              0, TRUE, DUPLICATE_SAME_ACCESS);
 
             ThrowOn(!success, PlatformException);
@@ -159,7 +159,7 @@ namespace SimuTrace
 
 #else
 
-    void LocalChannel::_createDomainSocket(SafeHandle& handle, 
+    void LocalChannel::_createDomainSocket(SafeHandle& handle,
                                            struct sockaddr_un& sockaddr)
     {
         handle = ::socket(PF_UNIX, SOCK_STREAM, 0);
@@ -168,12 +168,12 @@ namespace SimuTrace
         memset(&sockaddr, 0, sizeof(struct sockaddr_un));
 
         sockaddr.sun_family = AF_UNIX;
-        int result = ::snprintf(sockaddr.sun_path, 
-                                sizeof(sockaddr.sun_path), 
+        int result = ::snprintf(sockaddr.sun_path,
+                                sizeof(sockaddr.sun_path),
                                 "%s", getAddress().c_str());
 
-        ThrowOn(result >= sizeof(sockaddr.sun_path), Exception, 
-                stringFormat("The socket name is too long (max %i).", 
+        ThrowOn(result >= sizeof(sockaddr.sun_path), Exception,
+                stringFormat("The socket name is too long (max %i).",
                     sizeof(sockaddr.sun_path)));
     }
 
@@ -187,7 +187,7 @@ namespace SimuTrace
 
         _createDomainSocket(handle, sockaddr);
 
-        int result = ::bind(handle, (const struct sockaddr*)&sockaddr, 
+        int result = ::bind(handle, (const struct sockaddr*)&sockaddr,
                             sizeof(struct sockaddr_un));
         ThrowOn(result < 0, PlatformException);
 
@@ -204,7 +204,7 @@ namespace SimuTrace
 
         _createDomainSocket(handle, sockaddr);
 
-        int result = ::connect(handle, (const struct sockaddr*)&sockaddr, 
+        int result = ::connect(handle, (const struct sockaddr*)&sockaddr,
                                sizeof(struct sockaddr_un));
         ThrowOn(result < 0, PlatformException);
 
@@ -212,7 +212,7 @@ namespace SimuTrace
     }
 
     struct msghdr* LocalChannel::_allocateHandleTransferMessage(
-        uint32_t handleCount) 
+        uint32_t handleCount)
     {
         struct iovec *iov = new iovec();
         int *iobuf        = new int();
@@ -224,13 +224,13 @@ namespace SimuTrace
         msg->msg_iovlen = 1;
 
         size_t size = sizeof(Handle) * handleCount;
-        
+
         void* buf = new char[CMSG_SPACE(size)];
         memset(buf, 0, CMSG_SPACE(size));
 
         msg->msg_control    = buf;
         msg->msg_controllen = CMSG_SPACE(size);
-        
+
         msg->msg_name    = nullptr;
         msg->msg_namelen = 0;
         msg->msg_flags   = 0;
@@ -240,12 +240,12 @@ namespace SimuTrace
 
     void LocalChannel::_freeHandleTransferMessage(struct msghdr* msg)
     {
-        delete [] static_cast<char*>(msg->msg_control);    
+        delete [] static_cast<char*>(msg->msg_control);
         delete static_cast<int*>(msg->msg_iov->iov_base);
         delete msg->msg_iov;
         delete msg;
     }
-    
+
     uint64_t LocalChannel::_sendHandleTransferMessage(struct msghdr* msg)
     {
         int* iov = static_cast<int*>(msg->msg_iov->iov_base);
@@ -270,7 +270,7 @@ namespace SimuTrace
         return result;
     }
 
-    uint64_t LocalChannel::_receiveHandleTransferMessage(struct msghdr* msg, 
+    uint64_t LocalChannel::_receiveHandleTransferMessage(struct msghdr* msg,
                                                          uint32_t handleCount)
     {
         ssize_t result;
@@ -289,7 +289,7 @@ namespace SimuTrace
         System::unmaskSignal(SIGPIPE);
 
         int* iov = static_cast<int*>(msg->msg_iov->iov_base);
-        ThrowOn(*iov != UNIX_DOMAIN_SOCKET_MAGIC_ID, Exception, 
+        ThrowOn(*iov != UNIX_DOMAIN_SOCKET_MAGIC_ID, Exception,
                 "Failed to receive handles. Protocol error.");
 
         return result;
@@ -327,7 +327,7 @@ namespace SimuTrace
 
             if (!clientConnected) {
 
-                switch (System::getLastErrorCode()) 
+                switch (System::getLastErrorCode())
                 {
                     case ERROR_PIPE_CONNECTED: {
                         clientConnected = true;
@@ -420,7 +420,7 @@ namespace SimuTrace
                     Throw(PlatformException, ECONNRESET);
                 }
 
-            } while((result < 0) || (bytesWritten < size)); 
+            } while((result < 0) || (bytesWritten < size));
 
         }
         System::unmaskSignal(SIGPIPE);
@@ -444,7 +444,7 @@ namespace SimuTrace
         size_t bytesSent;
 
     #ifdef WIN32
-        // In Windows, duplication of handles does not use the established 
+        // In Windows, duplication of handles does not use the established
         // connection, but instead works by calling the respective API. After
         // the call to duplicateHandles, the handles are valid in the target
         // process.
@@ -453,7 +453,7 @@ namespace SimuTrace
         _duplicateHandles(handles, remote);
 
         // Send the list of handles to the target process to inform the target
-        // about which handles have been to be transferred. 
+        // about which handles have been to be transferred.
 
         bytesSent = _send(remote.data(), size);
     #else
@@ -497,7 +497,7 @@ namespace SimuTrace
     #ifdef WIN32
         DWORD bytesRead;
         if (!::ReadFile(_endpoint, data, (DWORD) size, &bytesRead, nullptr)) {
-            Throw(PlatformException);    
+            Throw(PlatformException);
         }
     #else
         ssize_t bytesRead = 0;
@@ -537,7 +537,7 @@ namespace SimuTrace
         return bytesRead;
     }
 
-    size_t LocalChannel::_receive(std::vector<Handle>& handles, 
+    size_t LocalChannel::_receive(std::vector<Handle>& handles,
                                   uint32_t handleCount)
     {
         if (handleCount == 0) {
@@ -569,9 +569,9 @@ namespace SimuTrace
         try {
             bytesReceived = _receiveHandleTransferMessage(msgh, size);
 
-            for(cmsg = CMSG_FIRSTHDR(msgh); cmsg != nullptr; 
+            for(cmsg = CMSG_FIRSTHDR(msgh); cmsg != nullptr;
                 cmsg = CMSG_NXTHDR(msgh, cmsg)) {
-                
+
                 if( (cmsg->cmsg_level == SOL_SOCKET) &&
                     (cmsg->cmsg_type == SCM_RIGHTS) ) {
 
@@ -606,7 +606,7 @@ namespace SimuTrace
         return bytesReceived;
     }
 
-    std::unique_ptr<Channel> LocalChannel::factoryMethod(bool isServer, 
+    std::unique_ptr<Channel> LocalChannel::factoryMethod(bool isServer,
         const std::string& address)
     {
         return std::unique_ptr<Channel>(new LocalChannel(isServer, address));

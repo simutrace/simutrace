@@ -51,7 +51,7 @@ namespace SimuTrace
         void _send(const Message& msg);
         void _receive(Message& msg);
 
-        Channel& _getChannel() const;        
+        Channel& _getChannel() const;
     public:
         virtual ~Port();
 

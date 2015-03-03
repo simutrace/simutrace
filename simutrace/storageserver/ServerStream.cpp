@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ namespace SimuTrace
         std::map<SessionId, uint32_t> referenceMap;
         std::vector<StreamWait*> waitList;
 
-        SegmentLocation(StreamSegmentId sequenceNumber, SessionId session, 
+        SegmentLocation(StreamSegmentId sequenceNumber, SessionId session,
                         SegmentId buffer) :
             sequenceNumber(sequenceNumber),
             location(),
@@ -76,7 +76,7 @@ namespace SimuTrace
             prefetched(false)
         {
             location = std::move(loc);
-            
+
             // This constructor should be used to create segment locations
             // for already existing segments (e.g., on open).
             assert(sequenceNumber != INVALID_STREAM_SEGMENT_ID);
@@ -95,8 +95,8 @@ namespace SimuTrace
     };
 
 
-    ServerStream::ServerStream(ServerStore& store, StreamId id, 
-                               const StreamDescriptor& desc, 
+    ServerStream::ServerStream(ServerStore& store, StreamId id,
+                               const StreamDescriptor& desc,
                                StreamBuffer& buffer) :
         Stream(id, desc, buffer),
         _store(store),
@@ -156,12 +156,12 @@ namespace SimuTrace
     ServerStream::SegmentLocation* ServerStream::_addSegmentLocation(
         SegmentLocation* loc)
     {
-        // When calling the method, the caller must hold both: 
+        // When calling the method, the caller must hold both:
         // _lock and _appendLock ! _lock because we modify _segments.
         // _appendLock because we possibly change the last sequence number.
 
         assert(loc != nullptr);
-        assert((loc->sequenceNumber >= _segments.size()) || 
+        assert((loc->sequenceNumber >= _segments.size()) ||
                (_segments[loc->sequenceNumber] == nullptr));
 
         // Ensure there is a slot for the sequence number. This may add holes!
@@ -223,7 +223,7 @@ namespace SimuTrace
         return _segments[sequenceNumber];
     }
 
-    void ServerStream::_addSegment(StreamSegmentId sequenceNumber, 
+    void ServerStream::_addSegment(StreamSegmentId sequenceNumber,
                                    std::unique_ptr<StorageLocation>& location)
     {
         assert(location != nullptr);
@@ -240,21 +240,21 @@ namespace SimuTrace
             if ((range->start != INVALID_LARGE_OBJECT_ID) &&
                 (range->end   != INVALID_LARGE_OBJECT_ID)) {
 
-                // This throw also catches the case, where we previously 
+                // This throw also catches the case, where we previously
                 // inserted an invalid range and then try to add a valid one
-                // now. Note that, we do not test if the range is strictly 
+                // now. Note that, we do not test if the range is strictly
                 // monotonic increasing as it is needed for, e.g., the entry
                 // index.
                 // To ensure that the index tree works, we also need to
-                // introduce the limit, that elements with the same index 
+                // introduce the limit, that elements with the same index
                 // (e.g., may not span segments!).
                 ThrowOn((range->start > range->end) ||
-                        ((ploc != nullptr) && 
+                        ((ploc != nullptr) &&
                          (ploc->ranges.ranges[i].start == ploc->ranges.ranges[i].end) &&
                          (range->start <= ploc->ranges.ranges[i].end)) ||
                         ((nloc != nullptr) &&
                          (nloc->ranges.ranges[i].start == nloc->ranges.ranges[i].end) &&
-                         (range->end >= nloc->ranges.ranges[i].start)), 
+                         (range->end >= nloc->ranges.ranges[i].start)),
                         Exception, stringFormat("The specified range for "
                             "index %d violates monotonicity.", i));
             } else {
@@ -263,7 +263,7 @@ namespace SimuTrace
                 location->ranges.ranges[i].start = INVALID_LARGE_OBJECT_ID;
                 location->ranges.ranges[i].end   = INVALID_LARGE_OBJECT_ID;
 
-                ThrowOn(((ploc != nullptr) && 
+                ThrowOn(((ploc != nullptr) &&
                          (ploc->ranges.ranges[i].start != INVALID_LARGE_OBJECT_ID)) ||
                         ((nloc != nullptr) &&
                          (nloc->ranges.ranges[i].start != INVALID_LARGE_OBJECT_ID)),
@@ -278,7 +278,7 @@ namespace SimuTrace
             // the load phase of the store! It is illegal to get here from
             // completeSegment. At this point, _appendLock must be held!
 
-            loc = _addSegmentLocation(new SegmentLocation(sequenceNumber, 
+            loc = _addSegmentLocation(new SegmentLocation(sequenceNumber,
                                                           location));
 
             assert(loc->location != nullptr);
@@ -315,7 +315,7 @@ namespace SimuTrace
                     statRange->start = range->start;
                 }
 
-                if ((range->end > statRange->end) || 
+                if ((range->end > statRange->end) ||
                     (statRange->end == INVALID_LARGE_OBJECT_ID)) {
                     statRange->end = range->end;
                 }
@@ -379,8 +379,8 @@ namespace SimuTrace
 
         if (loc->location != nullptr) { // Decoding, Closing ------------------
             // Note to reference counting: It may happen that we get here, when
-            // the reference count of the segment is still 0. This is the case 
-            // if the open operation is completed asynchronously before we 
+            // the reference count of the segment is still 0. This is the case
+            // if the open operation is completed asynchronously before we
             // return in _open() to increment the counter. However, this is not
             // a problem for us here. Instead, _open() has to cope with a early
             // complete.
@@ -422,7 +422,7 @@ namespace SimuTrace
             }
 
             // Set the current sideId as active id (if the operation has
-            // been canceled or was not successful, this is also 
+            // been canceled or was not successful, this is also
             // INVALID_SEGMENT_ID).
             loc->id = loc->sideId;
             loc->sideId = INVALID_SEGMENT_ID;
@@ -439,8 +439,8 @@ namespace SimuTrace
             // the operation was synchronous and successful. Otherwise, we
             // have to free/purge it here.
             if (*location != nullptr) {
-                // The encoding was successful. We have to add the storage 
-                // location to our indices. After that operation the user can 
+                // The encoding was successful. We have to add the storage
+                // location to our indices. After that operation the user can
                 // access the data through an open call.
                 assert(success);
 
@@ -457,7 +457,7 @@ namespace SimuTrace
             assert(*location == nullptr);
 
             // We can update the internal state of the segment location
-            // only after (potentially) adding the segment, because the index 
+            // only after (potentially) adding the segment, because the index
             // check might throw an exception and we do not want to end with a
             // half completed segment.
             if (loc->location != nullptr) {
@@ -469,8 +469,8 @@ namespace SimuTrace
             } else {
                 // The storage location is nullptr:
                 //   1) something went wrong during encoding. In that case,
-                //      the encoder should, if 
-                //      a) synchronous: throw an exception and we should 
+                //      the encoder should, if
+                //      a) synchronous: throw an exception and we should
                 //         come only here if we force submission or
                 //      b) asynchronous: report the error through a nullptr
                 //         location.
@@ -519,7 +519,7 @@ namespace SimuTrace
         }
     }
 
-    bool ServerStream::_open(SessionId session, 
+    bool ServerStream::_open(SessionId session,
                              StreamSegmentId sequenceNumber,
                              StreamAccessFlags flags,
                              SegmentId& segmentId,
@@ -540,7 +540,7 @@ namespace SimuTrace
         assert(loc->referenceMap.empty());
 
         // We use the cancel flag to indicate that we are not interested in
-        // keeping the segment open after read completion when prefetching. 
+        // keeping the segment open after read completion when prefetching.
         // The prefetch flag will be kept alive until the next real open.
         // We use it to prevent us from prefetching the same segment multiple
         // times.
@@ -556,7 +556,7 @@ namespace SimuTrace
         // encoder asynchronously completes the operation before we return from
         // our call to openSegment().
 
-        bool complete = buffer.openSegment(loc->sideId, *this, flags, 
+        bool complete = buffer.openSegment(loc->sideId, *this, flags,
                                            *loc->location, prefetch);
 
         LockExclusive(_lock); {
@@ -566,7 +566,7 @@ namespace SimuTrace
 
                 // We must not increment the reference count if the operation
                 // already finished and failed. This is indicated by all ids
-                // being set to INVALID_SEGMENT_ID. This may also be the case 
+                // being set to INVALID_SEGMENT_ID. This may also be the case
                 // if the allocation of a new segment failed in the buffer.
                 if (loc->sideId == INVALID_SEGMENT_ID) {
                     assert(complete);
@@ -612,7 +612,7 @@ namespace SimuTrace
             _openList.push_back(loc);
 
             if (complete) {
-                _completeSegment(sequenceNumber, &loc->location, nullptr, 
+                _completeSegment(sequenceNumber, &loc->location, nullptr,
                                  nullptr, true, true);
             }
 
@@ -621,7 +621,7 @@ namespace SimuTrace
         return complete;
     }
 
-    void ServerStream::_close(SegmentLocation* loc, StreamWait* wait, 
+    void ServerStream::_close(SegmentLocation* loc, StreamWait* wait,
                               bool ignoreErrors, OpenListIterator* openListIt)
     {
         assert(loc != nullptr);
@@ -663,14 +663,14 @@ namespace SimuTrace
         try {
             complete = buffer.submitSegment(loc->id, location);
         } catch (const std::exception& e) {
-            // We always ignore errors and print a error message instead 
+            // We always ignore errors and print an error message instead
             // when we are closing a read-only segment.
             if (!ignoreErrors && (loc->location == nullptr)) {
                 throw;
             }
 
             LogError("Exception during forced submit for stream %d <sqn: %d>. "
-                     "Purging data. The exception is '%s'.", getId(), loc->id, 
+                     "Purging data. The exception is '%s'.", getId(), loc->id,
                      e.what());
 
             // We are forced to purge the data.
@@ -679,20 +679,20 @@ namespace SimuTrace
             location = nullptr;
         }
 
-        // We invalidate the segment mapping so that a further close 
+        // We invalidate the segment mapping so that a further close
         // attempt will fail. We do not perform this operation prior to
         // the submit() call, because the method might throw an exception!
         loc->sideId = loc->id;
         loc->id = INVALID_SEGMENT_ID;
 
         // Copy sequence number. _completeSegment might delete loc!
-        StreamSegmentId sqn = loc->sequenceNumber; 
+        StreamSegmentId sqn = loc->sequenceNumber;
 
         if (!complete) {
             // The operation did not complete and is still running. Install
             // the wait context in the segment (if supplied).
             // N.B.: We do not remove the segment from the open list and
-            // keep the reference alive. That way we can still find it if 
+            // keep the reference alive. That way we can still find it if
             // we should need to perform a close for the session.
 
             if (wait != nullptr) {
@@ -704,10 +704,11 @@ namespace SimuTrace
             // segment. Hence, the control element is guaranteed to be still
             // valid. Important: Use the ServerStreamBuffer here, so we get
             // the copied control element!
-            SegmentControlElement* ctrl = buffer.getControlElement(loc->sideId);
+            const SegmentControlElement* ctrl =
+                buffer.getControlElement(loc->sideId);
             assert(ctrl != nullptr);
 
-            entryCount = (ctrl->startIndex != INVALID_ENTRY_INDEX) ? 
+            entryCount = (ctrl->startIndex != INVALID_ENTRY_INDEX) ?
                 ctrl->entryCount : 0;
 
             if (openListIt != nullptr) {
@@ -715,14 +716,14 @@ namespace SimuTrace
             }
         } else {
             // The operation finished synchronously, so we complete the
-            // segment. This will remove all open references. 
+            // segment. This will remove all open references.
 
             if (location != nullptr) {
                 entryCount = location->getEntryCount();
             }
 
-            // location might be nullptr (e.g., if this was a read-only segment 
-            // and the submit immediately purged it or if the segment was 
+            // location might be nullptr (e.g., if this was a read-only segment
+            // and the submit immediately purged it or if the segment was
             // empty). This is also the case, if the submit was not successful.
             _completeSegment(sqn, &location, nullptr, openListIt, success, true);
 
@@ -738,11 +739,11 @@ namespace SimuTrace
         }
     }
 
-    StreamSegmentId ServerStream::_findSequenceNumber(QueryIndexType type, 
-                                                      uint64_t value)
+    StreamSegmentId ServerStream::_findSequenceNumber(QueryIndexType type,
+                                                      uint64_t value) const
     {
         if (type <= QueryIndexType::QMaxTree) {
-            std::set<Range*, RangeCompare>& tree = _trees[type];
+            const std::set<Range*, RangeCompare>& tree = _trees[type];
 
             Range range;
             range.start = range.end = value;
@@ -766,15 +767,15 @@ namespace SimuTrace
                 return INVALID_STREAM_SEGMENT_ID;
             }
 
-            // This is a small hack. We have inserted pointer to the range 
-            // structs in the storage locations into the trees. By taking the 
-            // address of the range we found in the tree and subtracting its 
+            // This is a small hack. We have inserted pointer to the range
+            // structs in the storage locations into the trees. By taking the
+            // address of the range we found in the tree and subtracting its
             // offset in the storage location, we get a pointer to the storage
-            // location itself. This structure then leads us to the segment 
+            // location itself. This structure then leads us to the segment
             // location.
 
         #ifdef __GNUC__
-        // GCC gives a warning for the offsetof because StorageLocation 
+        // GCC gives a warning for the offsetof because StorageLocation
         // defines a constructor which is not standard compliant.
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Winvalid-offsetof"
@@ -808,6 +809,17 @@ namespace SimuTrace
                     break;
                 }
 
+                case QueryIndexType::QPreviousValidSequenceNumber: {
+                    StreamSegmentId sqn0 = static_cast<StreamSegmentId>(value);
+                    SegmentLocation* loc = _getPreviousSegment(sqn0);
+
+                    if (loc != nullptr) {
+                        return loc->sequenceNumber;
+                    }
+
+                    break;
+                }
+
                 default: {
                     Throw(NotSupportedException);
                     break;
@@ -818,6 +830,168 @@ namespace SimuTrace
         return INVALID_STREAM_SEGMENT_ID;
     }
 
+    bool ServerStream::_adjustQuery(StreamAccessFlags& flags,
+        QueryIndexType& type, uint64_t& value) const
+    {
+        // Check if the query is specified relative to the end of the stream.
+        // This allows the user to request the nth element from the stream end.
+        // For further processing however, we need to reverse the request
+        // and make it look like the user specified the query relative from
+        // the start of the stream. Sequence numbers are NOT adjusted and
+        // can only be specified from the beginning.
+        if ((flags & StreamAccessFlags::SafReverseQuery) != 0) {
+
+            // We ignore the reverse flag for sequence number queries
+            if (type <= QueryIndexType::QMaxTree) {
+
+                // The stream stats (_stats) are updated under the lock. We
+                // therefore can use them to calculate the reverse value. Only
+                // update the value if the resulting value will be valid.
+                // Otherwise, let the request fail.
+                const uint64_t endValue = _stats.ranges.ranges[type].end;
+                if (value > endValue) {
+                    return false;
+                }
+
+                value = endValue - value;
+            }
+
+            flags = flags ^ StreamAccessFlags::SafReverseQuery;
+        }
+
+        return true;
+    }
+
+    size_t ServerStream::_findCycleCountBinarySearch(SegmentId bufferSegment,
+                                                     CycleCount cycle,
+                                                     bool reverse) const
+    {
+        ServerStreamBuffer& buffer = _getBuffer();
+        const SegmentControlElement* ctrl =
+            buffer.getControlElement(bufferSegment);
+        const StreamTypeDescriptor& stype = getType();
+        const byte* segmentStart = buffer.getSegment(bufferSegment);
+
+        assert(stype.temporalOrder != 0);
+        assert((cycle >= ctrl->startCycle) && (cycle <= ctrl->endCycle));
+        assert(ctrl->entryCount == ctrl->rawEntryCount);
+
+        int64_t start = 0;
+        int64_t end   = ctrl->entryCount - 1;
+
+        // The cycle count is only 48 bits wide. We therefore use a
+        // mask to cut off any unrelated data.
+        const CycleCount cycleMask = TEMPORAL_ORDER_CYCLE_COUNT_MASK;
+
+        // Deferred equality version from Wikipedia returns the smallest index
+        // of the region where entries have the same cycle count.
+        size_t offset = 0;
+        while (start < end) {
+            const int64_t mid = start + ((end - start) / 2);
+            offset = mid * stype.entrySize;
+
+            const CycleCount* pCycleCount = reinterpret_cast<const CycleCount*>(
+                segmentStart + offset);
+            const CycleCount cycleCount = (*pCycleCount & cycleMask);
+
+            assert(mid < end);
+
+            if (cycleCount < cycle) {
+                start = mid + 1;
+            } else if ((cycleCount == cycle) && reverse && (start != mid)) {
+                start = mid;
+            } else {
+                end = mid;
+            }
+        }
+
+        assert(start == end); // 'start < end' if empty, that cannot happen
+
+        return offset;
+    }
+
+    size_t ServerStream::_findOffset(SegmentId bufferSegment,
+                                     StreamAccessFlags flags,
+                                     QueryIndexType type, uint64_t value) const
+    {
+        ServerStreamBuffer& buffer = _getBuffer();
+        const SegmentControlElement* ctrl =
+            buffer.getControlElement(bufferSegment);
+        const StreamTypeDescriptor& stype = getType();
+        const byte* segmentStart = buffer.getSegment(bufferSegment);
+        const byte* segmentEnd   = buffer.getSegmentEnd(bufferSegment,
+                                                        stype.entrySize);
+        assert(segmentEnd >= segmentStart);
+
+        const size_t endOffset = segmentEnd - segmentStart;
+
+        // The query must already be adjusted
+        assert((flags & StreamAccessFlags::SafReverseQuery) == 0);
+
+        const bool reverseRead =
+            ((flags & StreamAccessFlags::SafReverseRead) != 0);
+
+        size_t offset;
+        switch (type)
+        {
+            case QueryIndexType::QIndex: {
+                ThrowOn(ctrl->startIndex == INVALID_ENTRY_INDEX,
+                        NotSupportedException);
+
+                assert(value >= ctrl->startIndex);
+                uint64_t idx = value - ctrl->startIndex;
+
+                // We now have the index (not raw index) of the entry the
+                // user wants the offset for. For fixed-sized entries we can
+                // calculate the entry position in memory.
+                // For variable-sized entries we have to scan through the
+                // segment.
+                if (isVariableEntrySize(stype.entrySize)) {
+                    offset = findVariableEntry(segmentStart, endOffset, idx);
+                } else {
+                    offset = idx * stype.entrySize;
+                }
+
+                break;
+            }
+
+            case QueryIndexType::QCycleCount: {
+                ThrowOn(stype.temporalOrder == 0, NotSupportedException);
+
+                offset = _findCycleCountBinarySearch(bufferSegment, value,
+                                                     reverseRead);
+                break;
+            }
+
+            case QueryIndexType::QRealTime:
+            case QueryIndexType::QSequenceNumber: {
+                offset = reverseRead ? (endOffset - getEntrySize(&stype)) : 0;
+                break;
+            }
+
+            // For forward direction reads, we set the pointer to the start
+            // of the segment.
+            case QueryIndexType::QNextValidSequenceNumber: {
+                offset = 0;
+                break;
+            }
+
+            // For backward direction reads, we set the pointer to the end
+            // of the segment.
+            case QueryIndexType::QPreviousValidSequenceNumber: {
+                offset = endOffset - getEntrySize(&stype);
+                break;
+            }
+
+            default: {
+                Throw(ArgumentException);
+            }
+        }
+
+        assert((offset >= 0) && (offset <= endOffset - getEntrySize(&stype)));
+        return offset;
+    }
+
     ServerStreamBuffer& ServerStream::_getBuffer() const
     {
         return static_cast<ServerStreamBuffer&>(getStreamBuffer());
@@ -825,7 +999,7 @@ namespace SimuTrace
 
     bool ServerStream::_segmentIsAllocated(StreamSegmentId sequenceNumber) const
     {
-        return (sequenceNumber < _segments.size()) && 
+        return (sequenceNumber < _segments.size()) &&
                (_segments[sequenceNumber] != nullptr);
     }
 
@@ -839,16 +1013,16 @@ namespace SimuTrace
         _encoder->queryInformationStream(informationOut);
     }
 
-    void ServerStream::addSegment(StreamSegmentId sequenceNumber, 
+    void ServerStream::addSegment(StreamSegmentId sequenceNumber,
                                   std::unique_ptr<StorageLocation>& location)
     {
         LockScope(_appendLock);
         LockScopeExclusive(_lock);
 
         ThrowOnNull(location, ArgumentNullException);
-        ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID, 
+        ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID,
                 ArgumentOutOfBoundsException);
-        ThrowOn(_segmentIsAllocated(sequenceNumber), 
+        ThrowOn(_segmentIsAllocated(sequenceNumber),
                 InvalidOperationException);
 
         _addSegment(sequenceNumber, location);
@@ -861,9 +1035,9 @@ namespace SimuTrace
         LockScope(_appendLock);
 
         ThrowOnNull(bufferSegmentOut, ArgumentNullException);
-        ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID, 
+        ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID,
                 ArgumentOutOfBoundsException);
-        ThrowOn(_segmentIsAllocated(sequenceNumber), 
+        ThrowOn(_segmentIsAllocated(sequenceNumber),
                 InvalidOperationException);
 
         StreamSegmentId sqn = sequenceNumber;
@@ -890,14 +1064,14 @@ namespace SimuTrace
                 InvalidOperationException);
 
         // We simply pass a pointer to our storage location pointer. If
-        // this is a for a write, then we are supposed to throw away the data. 
+        // this is a for a write, then we are supposed to throw away the data.
         // Our location pointer will and must be null in this case.
         // If this is a read, we pass the existing location pointer
-        _completeSegment(sequenceNumber, &_segments[sequenceNumber]->location, 
+        _completeSegment(sequenceNumber, &_segments[sequenceNumber]->location,
                          true);
     }
 
-    void ServerStream::completeSegment(StreamSegmentId sequenceNumber, 
+    void ServerStream::completeSegment(StreamSegmentId sequenceNumber,
                                        std::unique_ptr<StorageLocation>* location)
     {
         ThrowOn(!_segmentIsAllocated(sequenceNumber) ||
@@ -908,7 +1082,7 @@ namespace SimuTrace
     }
 
     StreamSegmentId ServerStream::append(SessionId session,
-                                         SegmentId* bufferSegmentOut, 
+                                         SegmentId* bufferSegmentOut,
                                          StreamWait* wait)
     {
         LockScope(_appendLock);
@@ -933,8 +1107,8 @@ namespace SimuTrace
             }
         } Unlock();
 
-        // If this is the first segment, _lastSequenceNumber should be set 
-        // to INVALID_STREAM_SEGMENT_ID, which itself must be defined as 
+        // If this is the first segment, _lastSequenceNumber should be set
+        // to INVALID_STREAM_SEGMENT_ID, which itself must be defined as
         // the maximum uint32_t value. The increment will overflow and give
         // us seq number 0.
         assert(INVALID_STREAM_SEGMENT_ID ==
@@ -968,11 +1142,16 @@ namespace SimuTrace
 
     StreamSegmentId ServerStream::open(SessionId session,
                                        QueryIndexType type, uint64_t value,
-                                       StreamAccessFlags flags, 
-                                       SegmentId* bufferSegmentOut, 
+                                       StreamAccessFlags flags,
+                                       SegmentId* bufferSegmentOut,
+                                       size_t* offsetOut,
                                        StreamWait* wait)
     {
         LockScope(_openLock);
+
+        StreamAccessFlags nflags = flags;
+        QueryIndexType ntype = type;
+        uint64_t nvalue = value;
 
         StreamSegmentId sqn;
         SegmentLocation* loc;
@@ -980,9 +1159,17 @@ namespace SimuTrace
         bool handled = false;
         SegmentId id;
 
-        LockExclusive(_lock); {
-            sqn = _findSequenceNumber(type, value);
+        ThrowOn((offsetOut != nullptr) && (wait == nullptr),
+                ArgumentException);
 
+        LockExclusive(_lock); {
+            // First adjust the query. This is necessary if the caller
+            // specified values relative to the end of the stream.
+            bool valid = _adjustQuery(nflags, ntype, nvalue);
+            ThrowOn(!valid, NotFoundException);
+
+            // Find the right sequence number with the adjusted query.
+            sqn = _findSequenceNumber(ntype, nvalue);
             ThrowOn(sqn >= _segments.size(), NotFoundException);
 
             // If we test under the lock that the segment does have a storage
@@ -996,11 +1183,11 @@ namespace SimuTrace
             assert(loc->sequenceNumber == sqn);
 
             if (loc->referenceCount > 0) {
-                // Only the server session is allowed to open segments which 
-                // are currently written. However, it may not open segments 
+                // Only the server session is allowed to open segments which
+                // are currently written. However, it may not open segments
                 // which are currently processed by an encoder for encoding!
                 if (session == SERVER_SESSION_ID) {
-                    ThrowOn((loc->location == nullptr) && 
+                    ThrowOn((loc->location == nullptr) &&
                             (loc->id == INVALID_SEGMENT_ID),
                             OperationInProgressException);
                 } else {
@@ -1031,8 +1218,8 @@ namespace SimuTrace
                 // Reset the cancel flag.
                 loc->cancel = false;
 
-                // If we are still loading the segment, we add the caller to 
-                // the waiters, so he gets informed as soon as the segment is 
+                // If we are still loading the segment, we add the caller to
+                // the waiters, so he gets informed as soon as the segment is
                 // available
                 if (loc->id == INVALID_SEGMENT_ID) {
                     if (wait != nullptr) {
@@ -1055,15 +1242,23 @@ namespace SimuTrace
             // read ahead before performing the requested open. While we are
             // holding the lock, we just find the right sequence numbers to
             // prefetch.
-            if ((flags & StreamAccessFlags::SafSequentialScan) != 0) {
+            if ((nflags & StreamAccessFlags::SafSequentialScan) != 0) {
+                QueryIndexType ratype;
+
+                // We first have to determine in which direction we have to
+                // perform read ahead.
+                ratype = ((flags & StreamAccessFlags::SafReverseRead) != 0) ?
+                    QueryIndexType::QPreviousValidSequenceNumber :
+                    QueryIndexType::QNextValidSequenceNumber;
+
                 uint32_t readAhead = _readAheadAmount;
                 StreamSegmentId raSqn = sqn;
 
                 while (readAhead > 0) {
-                    // Find the next valid sequence number after the requested 
-                    // or last prefetched one, respectively.
-                    raSqn = _findSequenceNumber(
-                        QueryIndexType::QNextValidSequenceNumber, raSqn);
+                    // Find the next/previous valid sequence number
+                    // after/before the requested or last prefetched one,
+                    // respectively.
+                    raSqn = _findSequenceNumber(ratype, raSqn);
 
                     _readAheadList[--readAhead] = raSqn;
 
@@ -1079,11 +1274,11 @@ namespace SimuTrace
 
         // Do the actual read ahead. Since we cannot delete finished segments
         // the collected sequence numbers must still be valid for read ahead!
-        if ((flags & StreamAccessFlags::SafSequentialScan) != 0) {
+        if ((nflags & StreamAccessFlags::SafSequentialScan) != 0) {
             uint32_t readAhead = _readAheadAmount;
 
             StreamAccessFlags raFlags = static_cast<StreamAccessFlags>(
-                    flags & ~StreamAccessFlags::SafSynchronous);
+                    nflags & ~StreamAccessFlags::SafSynchronous);
 
             while (readAhead > 0) {
                 StreamSegmentId raSqn = _readAheadList[readAhead - 1];
@@ -1094,14 +1289,15 @@ namespace SimuTrace
                     break;
                 }
 
+                assert(raSqn <= _segments.size());
                 SegmentLocation* raloc = _segments[raSqn];
                 assert(raloc != nullptr);
 
                 // The segment might be still in progress
                 if (raloc->location != nullptr) {
 
-                    // Only initiate an open, if the segment is not already 
-                    // open (which may also be a read ahead in progress) and 
+                    // Only initiate an open, if the segment is not already
+                    // open (which may also be a read ahead in progress) and
                     // has not been prefetched since the last real open. Since
                     // the reference count can only be incremented through this
                     // method, the state is protected by the openLock we hold.
@@ -1124,32 +1320,47 @@ namespace SimuTrace
         if (!handled) {
             ThrowOnNull(loc->location, OperationInProgressException);
 
-            // If we get here, the segment was not open (i.e., reference count 
+            // If we get here, the segment was not open (i.e., reference count
             // was zero), when we checked the reference counter under the lock.
-            // Since we are still holding the openlock, there is no way that 
+            // Since we are still holding the openlock, there is no way that
             // the reference count could be increased in the mean time.
             assert(loc->referenceCount == 0);
 
-            completed = _open(session, sqn, flags, id, false, wait);
+            completed = _open(session, sqn, nflags, id, false, wait);
         }
 
         if (bufferSegmentOut != nullptr) {
             *bufferSegmentOut = id;
         }
 
+        if (offsetOut != nullptr) {
+            assert(wait != nullptr);
+
+            // The caller requests an exact entry location. In that case we
+            // need to wait for the segment to be available in memory.
+            if (!wait->wait()) {
+                Throw(Exception, "Failed to complete query. "
+                      "See the server log for more information.");
+            }
+
+            *offsetOut = _findOffset(id, nflags, ntype, nvalue);
+
+            completed = true;
+        }
+
         // If the operation is still in progress, we will return
         // INVALID_STREAM_SEGMENT_ID. Otherwise, the valid sequence number
         // will be returned.
-        return (completed && (id != INVALID_SEGMENT_ID)) ? 
+        return (completed && (id != INVALID_SEGMENT_ID)) ?
             sqn : INVALID_STREAM_SEGMENT_ID;
     }
 
-    void ServerStream::close(SessionId session, StreamSegmentId sequenceNumber, 
+    void ServerStream::close(SessionId session, StreamSegmentId sequenceNumber,
                              StreamWait* wait, bool ignoreErrors)
     {
         // We do not need to get the open lock at this point, although a read
         // on the segment might be currently in progress. In that case, the
-        // operation will be only visible to us after the other thread has 
+        // operation will be only visible to us after the other thread has
         // acquired the global lock and incremented the reference count.
         // However, the effect of getting the openlock first is the same as if
         // the other thread opens the same segment immediately after us. This
@@ -1203,7 +1414,7 @@ namespace SimuTrace
         }
     }
 
-    void ServerStream::close(SessionId session, StreamWait* wait, 
+    void ServerStream::close(SessionId session, StreamWait* wait,
                              bool ignoreErrors)
     {
         LockScopeExclusive(_lock);
@@ -1220,8 +1431,8 @@ namespace SimuTrace
                 if (loc->referenceCount == it->second) {
                     assert(loc->referenceMap.size() == 1);
 
-                    // If we get here, all references to the segment are done 
-                    // from within the specified session and we have to free 
+                    // If we get here, all references to the segment are done
+                    // from within the specified session and we have to free
                     // all those references.
 
                     _close(loc, wait, ignoreErrors, &lit);

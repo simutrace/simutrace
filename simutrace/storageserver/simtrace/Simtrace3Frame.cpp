@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -25,10 +25,10 @@
 #include "../ServerStreamBuffer.h"
 
 namespace SimuTrace {
-namespace Simtrace 
+namespace Simtrace
 {
 
-    Simtrace3Frame::Simtrace3Frame(Stream* stream, 
+    Simtrace3Frame::Simtrace3Frame(Stream* stream,
                                    SegmentControlElement* control) :
         _attributes(),
         _mapping(nullptr),
@@ -41,7 +41,7 @@ namespace Simtrace
         if (stream != nullptr) {
             // The caller supplied a stream. We are either building a frame for
             // a real stream segment, or we are building the zero frame.
-            const StreamTypeDescriptor& type = stream->getType(); 
+            const StreamTypeDescriptor& type = stream->getType();
 
             _header.streamId = stream->getId();
             _header.typeId   = type.id;
@@ -94,7 +94,7 @@ namespace Simtrace
 
     }
 
-    void Simtrace3Frame::map(const FileBackedMemorySegment& store, 
+    void Simtrace3Frame::map(const FileBackedMemorySegment& store,
                              FileOffset offset, size_t size)
     {
         std::unique_ptr<FileBackedMemorySegment> mapping(
@@ -103,7 +103,7 @@ namespace Simtrace
         mapping->updateSize();
 
         _buffer = mapping->map(offset, size);
-        
+
         _mapping = std::move(mapping);
         _offset = offset;
     }
@@ -123,7 +123,7 @@ namespace Simtrace
         AttributeHeaderDescription description = {0};
         uint8_t index = _header.attributeCount;
 
-        ThrowOn(index >= SIMTRACE_V3_FRAME_ATTRIBUTE_TABLE_SIZE, 
+        ThrowOn(index >= SIMTRACE_V3_FRAME_ATTRIBUTE_TABLE_SIZE,
                 InvalidOperationException);
 
         AttributeHeader* attrHeader  = &description.header;

@@ -28,23 +28,24 @@
 namespace SimuTrace
 {
 
-    ClientStore::ClientStore(ClientSession& session, const std::string& name, 
-                             bool alwaysCreate) :
+    ClientStore::ClientStore(ClientSession& session, const std::string& name,
+                             bool alwaysCreate, bool open) :
         Store(CLIENT_STORE_ID, name),
         ClientObject(session)
     {
         Message response = {0};
         ClientPort& port = _getPort();
 
-        // Send the request to create the store
-        port.call(&response, RpcApi::CCV30_StoreCreate, name, 
-                  (alwaysCreate) ? TRUE : FALSE, 0);
+        // Send the request to open the store
+        port.call(&response, RpcApi::CCV31_StoreCreate, name,
+                  (alwaysCreate && !open) ? _true : _false,
+                  (open) ? _true : _false);
 
         try {
             _replicateConfiguration(false);
 
         } catch (...) {
-            port.call(nullptr, RpcApi::CCV30_StoreClose);
+            port.call(nullptr, RpcApi::CCV31_StoreClose);
 
             throw;
         }
@@ -55,13 +56,13 @@ namespace SimuTrace
 
     }
 
-    void ClientStore::_replicateStreamBuffer(BufferId buffer)
+    StreamBuffer* ClientStore::_replicateStreamBuffer(BufferId buffer)
     {
         Message response = {0};
         ClientPort& port = _getPort();
         std::unique_ptr<StreamBuffer> buf;
 
-        port.call(&response, RpcApi::CCV30_StreamBufferQuery, buffer, TRUE);
+        port.call(&response, RpcApi::CCV31_StreamBufferQuery, buffer, _true);
 
         uint32_t numSegments = response.parameter0;
         size_t segmentSize   = response.handles.parameter1;
@@ -76,25 +77,28 @@ namespace SimuTrace
             ThrowOn(response.handles.handleCount != 1,
                     RpcMessageMalformedException);
 
-            Handle& bufferHandle = response.handles.handles->at(0); 
+            Handle& bufferHandle = response.handles.handles->at(0);
 
             buf = std::unique_ptr<StreamBuffer>(
                     new StreamBuffer(buffer, segmentSize, numSegments,
                                      bufferHandle));
         } else {
             buf = std::unique_ptr<StreamBuffer>(
-                    new StreamBuffer(buffer, segmentSize, numSegments));
+                    new StreamBuffer(buffer, segmentSize, numSegments, false));
         }
 
+        StreamBuffer* pbuf = buf.get(); // Make a shortcut for the return value
         _addStreamBuffer(buf);
+
+        return pbuf;
     }
 
-    void ClientStore::_replicateStream(StreamId stream)
+    Stream* ClientStore::_replicateStream(StreamId stream)
     {
         Message response = {0};
         ClientPort& port = _getPort();
 
-        port.call(&response, RpcApi::CCV30_StreamQuery, stream);
+        port.call(&response, RpcApi::CCV31_StreamQuery, stream);
 
         ThrowOn((response.payloadType != MessagePayloadType::MptData) ||
                 (response.data.payloadLength != sizeof(StreamQueryInformation)),
@@ -105,13 +109,16 @@ namespace SimuTrace
         StreamBuffer* buffer = _getStreamBuffer(response.parameter0);
         ThrowOn(buffer == nullptr, NotFoundException);
 
-        StreamQueryInformation* desc = 
+        StreamQueryInformation* desc =
             reinterpret_cast<StreamQueryInformation*>(response.data.payload);
 
-        std::unique_ptr<Stream> str(new ClientStream(stream, desc->descriptor, 
+        std::unique_ptr<Stream> str(new ClientStream(stream, desc->descriptor,
                                                      *buffer, getSession()));
 
+        Stream* pstr = str.get(); // Make a shortcut for the return value
         _addStream(str);
+
+        return pstr;
     }
 
     void ClientStore::_replicateConfiguration(bool update)
@@ -121,7 +128,11 @@ namespace SimuTrace
         }
 
         try {
-            // Replicate stream buffers -----
+            // We only replicate the stream buffers to allow an early fail
+            // if the client does not have enough buffer space to hold the
+            // default stream buffer(s). Streams and other objects are
+            // replicated on-demand.
+
             std::vector<BufferId> buffers;
             _enumerateStreamBuffers(buffers);
 
@@ -129,23 +140,10 @@ namespace SimuTrace
             assert(!buffers.empty());
 
             for (auto buffer : buffers) {
-                if (_getStreamBuffer(buffer) == nullptr) {
+                if (this->Store::_getStreamBuffer(buffer) == nullptr) {
                     _replicateStreamBuffer(buffer);
                 }
             }
-
-            // Replicate streams -----
-            std::vector<StreamId> streams;
-            _enumerateStreams(streams, false);
-
-            for (auto stream : streams) {
-                if (_getStream(stream) == nullptr) {
-                    _replicateStream(stream);
-                }
-            }
-
-            // Replicate data pools -----
-            // TODO
 
         } catch (...) {
             if (!update) {
@@ -163,7 +161,7 @@ namespace SimuTrace
         ClientPort& port = _getPort();
         std::unique_ptr<StreamBuffer> buffer = nullptr;
 
-        port.call(&response, RpcApi::CCV30_StreamBufferRegister, numSegments,
+        port.call(&response, RpcApi::CCV31_StreamBufferRegister, numSegments,
                   static_cast<uint64_t>(segmentSize));
 
         BufferId id = static_cast<BufferId>(response.parameter0);
@@ -181,16 +179,17 @@ namespace SimuTrace
             Handle& bufferHandle = response.handles.handles->at(0);
 
             buffer = std::unique_ptr<StreamBuffer>(
-                     new StreamBuffer(id, segmentSize, numSegments, bufferHandle));
+                     new StreamBuffer(id, segmentSize, numSegments,
+                                      bufferHandle));
         } else {
             buffer = std::unique_ptr<StreamBuffer>(
-                     new StreamBuffer(id, segmentSize, numSegments));
+                     new StreamBuffer(id, segmentSize, numSegments, false));
         }
 
         return buffer;
     }
 
-    std::unique_ptr<Stream> ClientStore::_createStream(StreamId id, 
+    std::unique_ptr<Stream> ClientStore::_createStream(StreamId id,
         StreamDescriptor& desc, BufferId buffer)
     {
         Message response = {0};
@@ -201,30 +200,13 @@ namespace SimuTrace
 
         desc.hidden = false;
 
-        port.call(&response, RpcApi::CCV30_StreamRegister, &desc, 
+        port.call(&response, RpcApi::CCV31_StreamRegister, &desc,
                   sizeof(StreamDescriptor), buffer);
 
-        StreamId rid = static_cast<PoolId>(response.parameter0);
+        StreamId rid = static_cast<StreamId>(response.parameter0);
 
         return std::unique_ptr<ClientStream>(
                     new ClientStream(rid, desc, *buf, getSession()));
-    }
-
-    std::unique_ptr<DataPool> ClientStore::_createDataPool(PoolId id, 
-                                                           StreamId stream)
-    {
-        Message response = {0};
-        ClientPort& port = _getPort();
-
-        Stream* s = _getStream(stream);
-        ThrowOnNull(s, NotFoundException);
-
-        port.call(&response, RpcApi::CCV30_DataPoolRegister, stream);
-
-        PoolId rid = static_cast<PoolId>(response.parameter0);
-
-        return std::unique_ptr<DataPool>(
-               new DataPool(rid, *s)); 
     }
 
     void ClientStore::_enumerateStreamBuffers(std::vector<BufferId>& out) const
@@ -232,7 +214,7 @@ namespace SimuTrace
         Message response = {0};
         ClientPort& port = _getPort();
 
-        port.call(&response, RpcApi::CCV30_StreamBufferEnumerate);
+        port.call(&response, RpcApi::CCV31_StreamBufferEnumerate);
 
         uint32_t n = response.parameter0;
 
@@ -258,7 +240,7 @@ namespace SimuTrace
         Message response = {0};
         ClientPort& port = _getPort();
 
-        port.call(&response, RpcApi::CCV30_StreamEnumerate, 
+        port.call(&response, RpcApi::CCV31_StreamEnumerate,
                   (includeHidden) ? 1 : 0);
 
         uint32_t n = response.parameter0;
@@ -279,15 +261,44 @@ namespace SimuTrace
         }
     }
 
-    void ClientStore::_enumerateDataPools(std::vector<PoolId>& out) const
+    StreamBuffer* ClientStore::_getStreamBuffer(BufferId id)
     {
-        Throw(NotImplementedException);
+        StreamBuffer* buffer = this->Store::_getStreamBuffer(id);
+        if (buffer == nullptr) {
+            // We might not have the buffer replicated, yet. Check the server.
+            // As this can fail if the id is not valid, we catch any errors
+            // here and just return nullptr.
+            try {
+                buffer = _replicateStreamBuffer(id);
+            } catch (...) { }
+        }
+
+        return buffer;
+    }
+
+    Stream* ClientStore::_getStream(StreamId id)
+    {
+        Stream* stream = this->Store::_getStream(id);
+        if (stream == nullptr) {
+            // We might not have the stream replicated, yet. Check the server.
+            // As this can fail if the id is not valid, we catch any errors
+            // here and just return nullptr.
+            try {
+                stream = _replicateStream(id);
+            } catch (...) { }
+        }
+
+        return stream;
     }
 
     void ClientStore::detach(SessionId session)
     {
         LockScopeExclusive(_lock);
 
+        // We first flush all streams to get any pending data to the server.
+        // Afterwards, we can close the store. The server will process the
+        // data we send here (and any other pending data), before closing the
+        // server instance of the store.
         std::vector<Stream*> streams;
         this->Store::_enumerateStreams(streams, true);
 
@@ -297,6 +308,23 @@ namespace SimuTrace
 
             stream->flush();
         }
+
+        ClientPort& port = _getPort();
+
+        port.call(nullptr, RpcApi::CCV31_StoreClose);
+    }
+
+    ClientStore* ClientStore::create(ClientSession& session,
+                                     const std::string& name,
+                                     bool alwaysCreate)
+    {
+        return new ClientStore(session, name, alwaysCreate, false);
+    }
+
+    ClientStore* ClientStore::open(ClientSession& session,
+                                   const std::string& name)
+    {
+        return new ClientStore(session, name, false, true);
     }
 
 }

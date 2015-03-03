@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -28,14 +28,14 @@
 #include <libconfig.h++>
 #pragma warning(pop)
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     class WorkerPool;
     class ServerStreamBuffer;
     class ServerSessionManager;
     class ServerStoreManager;
-    
+
     class StorageServer
     {
     private:
@@ -52,7 +52,7 @@ namespace SimuTrace
 
         std::unique_ptr<WorkerPool> _workerPool;
         std::unique_ptr<ServerStreamBuffer> _memoryPool;
-        
+
         std::unique_ptr<ServerSessionManager> _sessionManager;
         std::unique_ptr<ServerStoreManager> _storeManager;
 
@@ -71,7 +71,7 @@ namespace SimuTrace
         void _determineMemoryPoolConfiguration(uint32_t& numSegments);
 
         void _initialize(int argc, const char* argv[]);
-        void _initializeLogging();
+        void _initializeLogging(int phase);
         bool _initializeConfiguration(int argc, const char* argv[]);
         void _initializeServer();
         void _applyConfiguration();
@@ -88,7 +88,7 @@ namespace SimuTrace
         static StorageServer* _instance;
 
         static std::map<int, RequestHandler> _handlers;
-        
+
         static void _initializeHandlerMap();
         static void _init(int argc, const char* argv[]);
         static void _free();
@@ -120,6 +120,7 @@ namespace SimuTrace
                                     const std::string* fileName);
 
         const Environment& getEnvironment() const;
+        bool hasLocalBindings() const;
     };
 
 }

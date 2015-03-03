@@ -3,10 +3,10 @@
  * Marc Rittinghaus, Thorsten Groeninger
  *
  *             _____ _                 __
- *            / ___/(_)___ ___  __  __/ /__________ _________ 
+ *            / ___/(_)___ ___  __  __/ /__________ _________
  *            \__ \/ / __ `__ \/ / / / __/ ___/ __ `/ ___/ _ \
  *           ___/ / / / / / / / /_/ / /_/ /  / /_/ / /__/  __/
- *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/ 
+ *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/
  *                         http://simutrace.org
  *
  * Simutrace Store Library (libsimustor) is part of Simutrace.
@@ -57,6 +57,5 @@
 
 #include "StreamBuffer.h"
 #include "Stream.h"
-#include "DataPool.h"
 
 #endif // SIMUSTOR_H

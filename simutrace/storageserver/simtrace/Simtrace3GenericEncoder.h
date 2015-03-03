@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -38,9 +38,9 @@ namespace Simtrace
 
         static const int defaultCompressionLevel = 4;
 
-        virtual void _encode(Simtrace3Frame& frame, SegmentId id, 
+        virtual void _encode(Simtrace3Frame& frame, SegmentId id,
                              StreamSegmentId sequenceNumber) override;
-        virtual void _decode(Simtrace3StorageLocation& location, SegmentId id, 
+        virtual void _decode(Simtrace3StorageLocation& location, SegmentId id,
                              StreamSegmentId sequenceNumber) override;
 
     public:

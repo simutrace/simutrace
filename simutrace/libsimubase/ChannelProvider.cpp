@@ -33,7 +33,7 @@ namespace SimuTrace {
 namespace ChannelProvider
 {
 
-    std::unique_ptr<Channel> createChannelFromSpecifier(bool isServer, 
+    std::unique_ptr<Channel> createChannelFromSpecifier(bool isServer,
         const std::string& specifier)
     {
         // Define supported channel prefixes and corresponding constructors
@@ -41,7 +41,7 @@ namespace ChannelProvider
         static struct {
             std::string prefix;
             std::unique_ptr<Channel> (*factoryMethod)(bool, const std::string&);
-        } prefix[numPrefixes] = { 
+        } prefix[numPrefixes] = {
             { "local:", LocalChannel::factoryMethod },
             { "socket:", SocketChannel::factoryMethod }
         };
@@ -52,12 +52,12 @@ namespace ChannelProvider
         std::unique_ptr<Channel> channel;
         for (int i = 0; i < numPrefixes; i++) {
 
-            if (specifier.compare(0, prefix[i].prefix.length(), 
+            if (specifier.compare(0, prefix[i].prefix.length(),
                                   prefix[i].prefix) == 0) {
 
                 // We have identified the channel type. Cut away the prefix and
                 // create the requested channel.
-                std::string addr = specifier.substr(prefix[i].prefix.length(), 
+                std::string addr = specifier.substr(prefix[i].prefix.length(),
                                                     std::string::npos);
 
                 channel = prefix[i].factoryMethod(isServer, addr);

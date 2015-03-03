@@ -96,7 +96,7 @@ namespace SimuTrace
         return bytesReceived;
     }
 
-    size_t Channel::receive(std::vector<Handle>& handles, 
+    size_t Channel::receive(std::vector<Handle>& handles,
         uint32_t handleCount)
     {
         ThrowOn(!isConnected(), InvalidOperationException);

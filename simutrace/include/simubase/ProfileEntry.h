@@ -58,7 +58,7 @@ namespace SimuTrace
 
         bool _delta;
     public:
-        ProfileVariableReference(const std::string& name, T& variable, 
+        ProfileVariableReference(const std::string& name, T& variable,
                                  bool delta = false) :
             ProfileEntry(name),
             _lastValue(0),
@@ -89,7 +89,7 @@ namespace SimuTrace
     };
 
     template<typename T>
-    class ProfileVariable : 
+    class ProfileVariable :
         public ProfileVariableReference<T>
     {
     private:
@@ -115,12 +115,12 @@ namespace SimuTrace
         fastdelegate::FastDelegate0<T> _delegate;
 
     public:
-        ProfileMemberDelegate0(const std::string& name, C& instance, 
+        ProfileMemberDelegate0(const std::string& name, C& instance,
                                T (C::*func)()) :
             ProfileEntry(name),
             _delegate(&instance, func) {}
 
-        ProfileMemberDelegate0(const std::string& name, C& instance, 
+        ProfileMemberDelegate0(const std::string& name, C& instance,
                                T (C::*func)() const) :
             ProfileEntry(name),
             _delegate(&instance, func) {}

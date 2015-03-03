@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -95,7 +95,7 @@ namespace SimuTrace
         } catch (const std::exception& e) {
 
             LogError("<worker: %d> Failed to process work item. "
-                     "Exception: '%s'.", 
+                     "Exception: '%s'.",
                      ThreadBase::getCurrentSystemThreadId(),
                      e.what());
 
@@ -136,7 +136,7 @@ namespace SimuTrace
 
     }
 
-    void WorkerPool::submitWork(std::unique_ptr<WorkItemBase>& item, 
+    void WorkerPool::submitWork(std::unique_ptr<WorkItemBase>& item,
                                 WorkQueue::Priority priority)
     {
         _queue.enqueueWork(item, priority);

@@ -43,17 +43,17 @@ namespace SimuTrace
         virtual ~ClientPort();
 
         uint32_t call(Message* response, Message& msg);
-        uint32_t call(Message* response, uint32_t controlCode, 
+        uint32_t call(Message* response, uint32_t controlCode,
                       uint32_t parameter0 = 0, uint64_t parameter1 = 0);
-        uint32_t call(Message* response, uint32_t controlCode, 
-                      const void* data, uint32_t length, 
+        uint32_t call(Message* response, uint32_t controlCode,
+                      const void* data, uint32_t length,
                       uint32_t parameter0 = 0, uint32_t parameter1 = 0);
 
         uint32_t call(Message* response, uint32_t controlCode,
-                      const std::string& data, uint32_t parameter0 = 0, 
-                      uint32_t parameter1 = 0) 
+                      const std::string& data, uint32_t parameter0 = 0,
+                      uint32_t parameter1 = 0)
         {
-            return call(response, controlCode, data.c_str(), 
+            return call(response, controlCode, data.c_str(),
                         static_cast<uint32_t>(data.length()),
                         parameter0, parameter1);
         }

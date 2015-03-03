@@ -36,7 +36,7 @@ namespace SimuTrace
         _priority(priority),
         _timestamp(Clock::timeToTimestamp(Clock::getTime()))
     {
-    
+
     }
 
     LogEvent::~LogEvent()

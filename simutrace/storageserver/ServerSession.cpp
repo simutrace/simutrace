@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -29,8 +29,8 @@
 namespace SimuTrace
 {
 
-    ServerSession::ServerSession(SessionManager& manager, 
-                                 std::unique_ptr<Port>& port,  
+    ServerSession::ServerSession(SessionManager& manager,
+                                 std::unique_ptr<Port>& port,
                                  uint16_t clientApiVersion, SessionId localId,
                                  const Environment& root) :
         Session(manager, clientApiVersion, localId, root),
@@ -87,7 +87,7 @@ namespace SimuTrace
         }
 
         // Ensure that the worker is not in the running state, but calls us
-        // from within it's finalize method.        
+        // from within it's finalize method.
         ThrowOn(thread->isRunning(), InvalidOperationException);
 
         int index;
@@ -116,7 +116,7 @@ namespace SimuTrace
         return true;
     }
 
-    Store::Reference ServerSession::_createStore(const std::string& specifier, 
+    Store::Reference ServerSession::_createStore(const std::string& specifier,
                                                  bool alwaysCreate)
     {
         ServerStoreManager& mgr = StorageServer::getInstance().getStoreManager();
@@ -124,9 +124,16 @@ namespace SimuTrace
         return mgr.createStore(*this, specifier, alwaysCreate);
     }
 
+    Store::Reference ServerSession::_openStore(const std::string& specifier)
+    {
+        ServerStoreManager& mgr = StorageServer::getInstance().getStoreManager();
+
+        return mgr.openStore(*this, specifier);
+    }
+
     void ServerSession::_close()
     {
-        const int confTimeout = 
+        const int confTimeout =
             Configuration::get<int>("server.session.closeTimeout");
 
         for (int i = 0; i < _workers.size(); ++i) {
@@ -144,13 +151,13 @@ namespace SimuTrace
 
             int timeout = confTimeout;
             const int sleepTime = 500;
-            while (!worker->hasFinished()) { 
+            while (!worker->hasFinished()) {
                 ThreadBase::sleep(sleepTime);
 
                 timeout -= sleepTime;
                 ThrowOn(timeout <= 0, Exception, stringFormat(
                         "Failed to close session worker thread %d within "
-                        "grace period. See also: server.session.closeTimeout.", 
+                        "grace period. See also: server.session.closeTimeout.",
                         worker->getCurrentSystemThreadId()));
             }
         }
@@ -173,7 +180,7 @@ namespace SimuTrace
         store->enumerateStreamBuffers(out);
     }
 
-    void ServerSession::enumerateStreams(std::vector<Stream*>& out, 
+    void ServerSession::enumerateStreams(std::vector<Stream*>& out,
                                          bool includeHidden) const
     {
         LockScopeShared(_storeLock);
@@ -184,18 +191,6 @@ namespace SimuTrace
         assert(isAlive());
 
         store->enumerateStreams(out, includeHidden);
-    }
-
-    void ServerSession::enumerateDataPools(std::vector<DataPool*>& out) const
-    {
-        LockScopeShared(_storeLock);
-
-        ServerStore* store = static_cast<ServerStore*>(_getStore());
-        ThrowOnNull(store, InvalidOperationException);
-
-        assert(isAlive());
-
-        store->enumerateDataPools(out);
     }
 
     const Environment& ServerSession::getWorkerEnvironment() const

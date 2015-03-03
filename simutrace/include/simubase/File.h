@@ -71,31 +71,31 @@ namespace SimuTrace
         ///
         /// Opens the requested file
         ///
-        File(const std::string& fileName, 
+        File(const std::string& fileName,
              CreateMode createMode = CreateMode::OpenExisting,
              AccessMode accessMode = AccessMode::ReadWrite);
         ~File();
 
         ///
-        /// Closes the file handle, it is automatically closed when 
+        /// Closes the file handle, it is automatically closed when
         /// the object is freed
         ///
         void close();
 
         ///
-        /// 
+        ///
         ///
         size_t read(void* buffer, size_t size, FileOffset offset);
         size_t read(void* buffer, size_t size);
 
         template<typename T>
-        size_t read(T* buffer, FileOffset offset) 
+        size_t read(T* buffer, FileOffset offset)
         {
             return read(reinterpret_cast<void*>(buffer), sizeof(T), offset);
         }
 
         template<typename T>
-        size_t read(T* buffer) 
+        size_t read(T* buffer)
         {
             return read(reinterpret_cast<void*>(buffer), sizeof(T));
         }
@@ -104,9 +104,9 @@ namespace SimuTrace
         size_t write(const void* buffer, size_t size);
 
         template<typename T>
-        size_t write(const T* buffer, FileOffset offset) 
+        size_t write(const T* buffer, FileOffset offset)
         {
-            return write(reinterpret_cast<const void*>(buffer), sizeof(T), 
+            return write(reinterpret_cast<const void*>(buffer), sizeof(T),
                          offset);
         }
 
@@ -115,13 +115,6 @@ namespace SimuTrace
         {
             return write(reinterpret_cast<const void*>(buffer), sizeof(T));
         }
-
-        ///
-        /// Ensures that multiple threads can write to the same file 
-        /// without destroying the content the returned offset can be 
-        /// used to write exactly size bytes to the file
-        ///
-        FileOffset seek(size_t size);
 
         ///
         /// Flushes the buffers associated with the file handle to disk
@@ -142,7 +135,7 @@ namespace SimuTrace
         /// Returns the filename
         ///
         const std::string& getName() const;
- 
+
         ///
         /// Returns the access mode used during open
         ///

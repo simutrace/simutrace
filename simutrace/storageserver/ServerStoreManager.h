@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -43,32 +43,39 @@ namespace SimuTrace
         IdAllocator<StoreId> _storeIdAllocator;
         std::map<StoreId, Store::Reference> _stores;
 
-        void _releaseStore(StoreId store); // Called from the store
+        Store::Reference _createOrOpenStore(ServerSession& session,
+                                            const std::string& specifier,
+                                            bool alwaysCreate,
+                                            bool open);
 
-        static void _getPrefixDescriptors(const StorePrefixDescriptor** out, 
+        void _releaseStore(StoreId store); // Called from within the store!
+
+        static void _getPrefixDescriptors(const StorePrefixDescriptor** out,
                                           uint32_t* outNumPrefixes);
 
-        static bool _findPrefixDescriptor(const std::string& specifier, 
-                                          const StorePrefixDescriptor** out, 
+        static bool _findPrefixDescriptor(const std::string& specifier,
+                                          const StorePrefixDescriptor** out,
                                           bool perfectMatch);
 
-        static std::string _getPath(const StorePrefixDescriptor& desc, 
+        static std::string _getPath(const StorePrefixDescriptor& desc,
                                     const std::string& specifier);
 
         static bool _isValidPrefix(const std::string& prefix);
-        static void _splitSpecifier(const std::string& specifier, 
-                                   std::string* prefix, 
+        static void _splitSpecifier(const std::string& specifier,
+                                   std::string* prefix,
                                    std::string* path);
 
     public:
         ServerStoreManager();
         ~ServerStoreManager();
 
-        Store::Reference createStore(ServerSession& session, 
+        Store::Reference createStore(ServerSession& session,
                                      const std::string& specifier,
                                      bool alwaysCreate);
+        Store::Reference openStore(ServerSession& session,
+                                   const std::string& specifier);
 
-        static void enumerateStores(const ServerSession& session, 
+        static void enumerateStores(const ServerSession& session,
                                     std::vector<std::string>& out);
 
         ServerStore& getStore(StoreId id) const;

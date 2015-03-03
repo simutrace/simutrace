@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -106,7 +106,7 @@ namespace SimuTrace
             return data;
         }
 
-        PredictorId _evaluateContext(PredictorId** codeBuffer, T** dataBuffer, 
+        PredictorId _evaluateContext(PredictorId** codeBuffer, T** dataBuffer,
                                      PredictionContext<T>& context, T data)
         {
             // If we could predict the value, we increment the usage count of
@@ -157,7 +157,7 @@ namespace SimuTrace
         static const PredictorId NotPredictedId = maxPredictor;
 
     #ifdef SIMUTRACE_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE
-        void addToProfileContext(ProfileContext& context, const char* prefix) 
+        void addToProfileContext(ProfileContext& context, const char* prefix)
         {
             for (int i = 0; i < maxPredictor + 1; ++i) {
                 context.add(stringFormat("%s[%d]", prefix, i).c_str(),

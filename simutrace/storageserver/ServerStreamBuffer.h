@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -44,12 +44,12 @@ namespace SimuTrace
                 StreamSegmentLink(),
                 store(INVALID_STORE_ID) { }
 
-            StoreStreamSegmentLink(StoreId store, 
+            StoreStreamSegmentLink(StoreId store,
                                    const StreamSegmentLink& link) :
                 StreamSegmentLink(link),
                 store(store) { }
 
-            StoreStreamSegmentLink(StoreId store, StreamId stream, 
+            StoreStreamSegmentLink(StoreId store, StreamId stream,
                                    StreamSegmentId sequenceNumber) :
                 StreamSegmentLink(stream, sequenceNumber),
                 store(store) { }
@@ -73,7 +73,7 @@ namespace SimuTrace
             #error "The maximum number of streams exceeds the link hash capacity."
             #endif
 
-                triple |= seg.stream << 16;
+                triple |= (static_cast<uint64_t>(seg.stream) & 0xFFFF) << 16;
 
                 StoreId store = seg.store;
                 while (store > 0) {
@@ -102,12 +102,12 @@ namespace SimuTrace
         CriticalSection _standbyLock;
         StandbyIndex _standbyIndex;
         Segment* _standbyHead;
-  
+
         void _initializeSegments();
 
-        uint64_t _computeControlCookie(SegmentControlElement& control, 
+        uint64_t _computeControlCookie(SegmentControlElement& control,
                                        Segment& segment) const;
-        bool _testControlCookie(SegmentControlElement& control, 
+        bool _testControlCookie(SegmentControlElement& control,
                                 Segment& segment) const;
         void _notifyEncoderCacheClosed(Segment& segment) const;
 
@@ -140,25 +140,25 @@ namespace SimuTrace
         void _purgeSegment(SegmentId segment);
         bool _submitSegment(SegmentId segment,
                             std::unique_ptr<StorageLocation>& locationOut);
-        bool _requestSegment(SegmentId& segment,  
-                             ServerStream* stream = nullptr, 
+        bool _requestSegment(SegmentId& segment,
+                             ServerStream* stream = nullptr,
                              StreamSegmentId sequenceNumber = INVALID_STREAM_SEGMENT_ID,
-                             StreamAccessFlags flags = SafNone, 
+                             StreamAccessFlags flags = SafNone,
                              StorageLocation* location = nullptr,
                              bool prefetch = false);
 
     public:
-        ServerStreamBuffer(BufferId id, size_t segmentSize, 
+        ServerStreamBuffer(BufferId id, size_t segmentSize,
                            uint32_t numSegments, bool sharedMemory = true);
         virtual ~ServerStreamBuffer() override;
 
-        SegmentId requestSegment(ServerStream& stream, 
+        SegmentId requestSegment(ServerStream& stream,
                                  StreamSegmentId sequenceNumber);
         SegmentId requestScratchSegment();
 
         void freeSegment(SegmentId segment, bool prefetch = false);
         void purgeSegment(SegmentId segment);
-        bool submitSegment(SegmentId segment, 
+        bool submitSegment(SegmentId segment,
                            std::unique_ptr<StorageLocation>& locationOut);
         bool openSegment(SegmentId& segment, ServerStream& stream,
                          StreamAccessFlags flags, StorageLocation& location,

@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -31,11 +31,13 @@ namespace Simtrace
 
     namespace SimtraceStoreProvider
     {
-        std::unique_ptr<ServerStore> factoryMethod(StoreId id, 
-                                                   const std::string& path, 
-                                                   bool alwaysCreate);
+        std::unique_ptr<ServerStore> createMethod(StoreId id,
+                                                  const std::string& path,
+                                                  bool alwaysCreate);
+        std::unique_ptr<ServerStore> openMethod(StoreId id,
+                                                const std::string& path);
         std::string makePath(const std::string& path);
-        void enumerationMethod(const std::string& path, 
+        void enumerationMethod(const std::string& path,
                                std::vector<std::string>& out);
     }
 

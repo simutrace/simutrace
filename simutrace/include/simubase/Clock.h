@@ -31,12 +31,12 @@ namespace SimuTrace
         const uint64_t getTicks();
         const uint64_t getTimerFrequency();
 
-        const TimeType getTime();
+        const time_t getTime();
         const Timestamp getTimestamp();
 
         const double ticksToSeconds(uint64_t ticks);
-        const Timestamp timeToTimestamp(const TimeType t);
-        const TimeType timestampToTime(const Timestamp ts);
+        const Timestamp timeToTimestamp(const time_t t);
+        const time_t timestampToTime(const Timestamp ts);
 
         std::string formatTime(const std::string& format, const Timestamp ts);
         std::string formatTimeIso8601(const Timestamp ts);

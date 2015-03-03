@@ -154,7 +154,7 @@ namespace SimuTrace
     #ifdef WIN32
         DWORD oldpro;
         DWORD prot = (writeable) ? PAGE_READONLY : PAGE_READWRITE;
-        if (!::VirtualProtect(_buffer, _mapSize, prot, &oldpro)) {    
+        if (!::VirtualProtect(_buffer, _mapSize, prot, &oldpro)) {
     #else
         unsigned int prot = (writeable) ? PROT_READ : PROT_READ | PROT_WRITE;
         if (!::mprotect(_buffer, _mapSize, prot)) {
@@ -174,12 +174,12 @@ namespace SimuTrace
     {
         ThrowOn(!isMapped() || isReadOnly(), InvalidOperationException);
 
-        memset(_buffer, value, _mapSize); 
+        memset(_buffer, value, _mapSize);
     }
 
     void MemorySegment::copy(MemorySegment& source, size_t offset)
     {
-        ThrowOn(!isMapped() || isReadOnly() || !source.isMapped(), 
+        ThrowOn(!isMapped() || isReadOnly() || !source.isMapped(),
                 InvalidOperationException);
 
         copy(source.getBuffer(), source.getMappedSize(), offset);

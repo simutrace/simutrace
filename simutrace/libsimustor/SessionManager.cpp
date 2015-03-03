@@ -51,7 +51,7 @@ namespace SimuTrace
         _sessionIdAllocator.retireId(id);
     }
 
-    SessionId SessionManager::_createSession(std::unique_ptr<Port>& sessionPort, 
+    SessionId SessionManager::_createSession(std::unique_ptr<Port>& sessionPort,
                                              uint16_t peerApiVersion)
     {
         LockScopeExclusive(_lock);
@@ -67,7 +67,7 @@ namespace SimuTrace
         auto session = _startSession(id, sessionPort, peerApiVersion);
         assert(session != nullptr);
 
-        _sessions.insert(std::pair<SessionId, Session::Reference>(id, 
+        _sessions.insert(std::pair<SessionId, Session::Reference>(id,
             Session::makeOwnerReference(session.release())));
 
         LogInfo("Created session for peer '%s' (RPCv%d.%d) <id: %d>.",
@@ -79,8 +79,8 @@ namespace SimuTrace
         return id;
     }
 
-    void SessionManager::_openLocalSession(SessionId session, 
-                                           std::unique_ptr<Port>& sessionPort, 
+    void SessionManager::_openLocalSession(SessionId session,
+                                           std::unique_ptr<Port>& sessionPort,
                                            uint16_t peerApiVersion)
     {
         Session* s = _getSession(session);
@@ -88,7 +88,7 @@ namespace SimuTrace
 
         assert(_canCreateSession);
 
-        ThrowOn(s->getPeerApiVersion() != peerApiVersion, Exception, 
+        ThrowOn(s->getPeerApiVersion() != peerApiVersion, Exception,
                 "Incompatible API version.");
 
         std::string address = sessionPort->getAddress();
@@ -134,7 +134,7 @@ namespace SimuTrace
 
         out.clear();
         out.reserve(_sessions.size());
- 
+
         for (auto& pair : _sessions) {
             out.push_back(pair.second->getLocalId());
         }

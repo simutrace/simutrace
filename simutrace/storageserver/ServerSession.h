@@ -23,7 +23,7 @@
 
 #include "SimuStor.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     class SessionManager;
@@ -45,20 +45,20 @@ namespace SimuTrace
 
         virtual Store::Reference _createStore(const std::string& specifier,
                                               bool alwaysCreate) override;
+        virtual Store::Reference _openStore(const std::string& specifier) override;
 
         virtual void _close() override;
 
         virtual void _enumerateStores(std::vector<std::string>& out) const override;
     public:
-        ServerSession(SessionManager& manager, std::unique_ptr<Port>& port, 
+        ServerSession(SessionManager& manager, std::unique_ptr<Port>& port,
                       uint16_t clientApiVersion, SessionId localId,
                       const Environment& root);
         virtual ~ServerSession() override;
 
         void enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
-        void enumerateStreams(std::vector<Stream*>& out, 
-                              bool includeHidden) const;   
-        void enumerateDataPools(std::vector<DataPool*>& out) const;
+        void enumerateStreams(std::vector<Stream*>& out,
+                              bool includeHidden) const;
 
         const Environment& getWorkerEnvironment() const;
     };

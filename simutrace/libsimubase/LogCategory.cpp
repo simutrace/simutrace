@@ -43,10 +43,10 @@ namespace SimuTrace
         _additivity(false),
         _priorityThreshold(LogPriority::NotSet)
     {
-    
+
     }
 
-    LogCategory::LogCategory(const std::string& name, 
+    LogCategory::LogCategory(const std::string& name,
                              LogCategory* parent) :
         LogCategory(name)
     {
@@ -127,7 +127,7 @@ namespace SimuTrace
         Throw(NotFoundException);
     }
 
-    void LogCategory::log(LogPriority::Value priority, 
+    void LogCategory::log(LogPriority::Value priority,
                           const std::string& format, ...)
     {
         if (priority > _priorityThreshold) {

@@ -30,7 +30,7 @@ namespace SimuTrace
     class Channel;
 
     namespace ChannelProvider {
-        std::unique_ptr<Channel> createChannelFromSpecifier(bool isServer, 
+        std::unique_ptr<Channel> createChannelFromSpecifier(bool isServer,
             const std::string& specifier);
     }
 

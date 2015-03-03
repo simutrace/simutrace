@@ -25,7 +25,7 @@
 #include "Exceptions.h"
 
 namespace SimuTrace {
-namespace Clock 
+namespace Clock
 {
 
     const uint64_t getTimerFrequency()
@@ -67,7 +67,7 @@ namespace Clock
     #endif
     }
 
-    const TimeType getTime()
+    const time_t getTime()
     {
         return time(nullptr);
     }
@@ -103,9 +103,9 @@ namespace Clock
         return (double)ticks / (double)getTimerFrequency();
     }
 
-    const Timestamp timeToTimestamp(const TimeType t)
+    const Timestamp timeToTimestamp(const time_t t)
     {
-        //TDOO: Add comment: Conversion from UNIX time to FILETIME    
+        //TDOO: Add comment: Conversion from UNIX time to FILETIME
 #ifdef WIN32
         return Int32x32To64(t, 10000000) + 116444736000000000;
 #else
@@ -113,9 +113,9 @@ namespace Clock
 #endif
     }
 
-    const TimeType timestampToTime(const Timestamp ts)
+    const time_t timestampToTime(const Timestamp ts)
     {
-        TimeType ll = ts - 116444736000000000;
+        time_t ll = ts - 116444736000000000;
         return ll / 10000000;
     }
 
@@ -123,7 +123,7 @@ namespace Clock
     {
         // Convert timestamp to struct tm so we can use it with strftime()
         struct tm time;
-        TimeType t = timestampToTime(ts);
+        time_t t = timestampToTime(ts);
     #ifdef WIN32
         ::localtime_s(&time, &t);
     #else

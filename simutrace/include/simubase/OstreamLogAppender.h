@@ -39,9 +39,9 @@ namespace SimuTrace
 
         std::ostream& _stream;
 
-        virtual void _append(const LogEvent& event);
+        virtual void _append(const LogEvent& event) override;
     public:
-        OstreamLogAppender(const std::string& name, std::ostream& stream, 
+        OstreamLogAppender(const std::string& name, std::ostream& stream,
                            std::unique_ptr<LogLayout>& layout, bool inherit);
         virtual ~OstreamLogAppender();
 

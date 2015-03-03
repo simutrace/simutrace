@@ -58,13 +58,13 @@ namespace SimuTrace
         attr.bInheritHandle       = TRUE;
         attr.lpSecurityDescriptor = nullptr;
 
-        handle = ::CreateFileA(fileName.c_str(), accessMode, 
+        handle = ::CreateFileA(fileName.c_str(), accessMode,
                                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                               &attr, createMode, 
+                               &attr, createMode,
                                FILE_ATTRIBUTE_ARCHIVE |
                                FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     #else
-        handle = ::open(fileName.c_str(), accessMode | createMode, 
+        handle = ::open(fileName.c_str(), accessMode | createMode,
                         S_IRUSR | S_IWUSR | S_IWGRP | S_IRGRP);
     #endif
 
@@ -74,7 +74,7 @@ namespace SimuTrace
         _fileName    = fileName;
         _accessMode  = accessMode;
         _curReadPos  = 0;
-        _curWritePos = 0;
+        _curWritePos = getSize();
     }
 
     void File::close()
@@ -97,7 +97,7 @@ namespace SimuTrace
         _overlappedRead.Offset     = off.LowPart;
         _overlappedRead.OffsetHigh = off.HighPart;
 
-        if (!::ReadFile(_file, buffer, (DWORD)size, &bytesRead, 
+        if (!::ReadFile(_file, buffer, (DWORD)size, &bytesRead,
                         &_overlappedRead)) {
             Throw(PlatformException);
         }
@@ -113,8 +113,8 @@ namespace SimuTrace
 
     size_t File::read(void* buffer, size_t size)
     {
-        // Seek returns the file offset before the seek.
-        FileOffset offset = seek(size);
+        // Returns the file offset before the seek.
+        FileOffset offset = Interlocked::interlockedAdd(&_curReadPos, size);
         return read(buffer, size, offset);
     }
 
@@ -133,7 +133,7 @@ namespace SimuTrace
         _overlappedWrite.Offset     = off.LowPart;
         _overlappedWrite.OffsetHigh = off.HighPart;
 
-        if (!::WriteFile(_file, buffer, static_cast<DWORD>(size), 
+        if (!::WriteFile(_file, buffer, static_cast<DWORD>(size),
                          &result, &_overlappedWrite)) {
             Throw(PlatformException);
         }
@@ -151,11 +151,6 @@ namespace SimuTrace
     {
         FileOffset offset = reserveSpace(size);
         return write(buffer, size, offset);
-    }
-
-    FileOffset File::seek(size_t size)
-    {
-        return Interlocked::interlockedAdd(&_curReadPos, size);
     }
 
     void File::flush()

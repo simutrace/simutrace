@@ -54,11 +54,10 @@ namespace SimuTrace
 
         static bool _handleStoreCreate(MessageContext& ctx);
         static bool _handleStoreClose(MessageContext& ctx);
- 
+
         static bool _handleStreamBufferRegister(MessageContext& ctx);
         static bool _handleStreamBufferEnumerate(MessageContext& ctx);
         static bool _handleStreamBufferQuery(MessageContext& ctx);
-        static bool _handleDataPoolRegister(MessageContext& ctx);
 
         static bool _handleStreamRegister(MessageContext& ctx);
         static bool _handleStreamEnumerate(MessageContext& ctx);
@@ -67,7 +66,7 @@ namespace SimuTrace
         static bool _handleStreamCloseAndOpen(MessageContext& ctx);
         static bool _handleStreamClose(MessageContext& ctx);
 
-        static void _messagePayloadAllocator(Message& msg, bool free, 
+        static void _messagePayloadAllocator(Message& msg, bool free,
                                              void* args);
     private:
         virtual int _run() override;

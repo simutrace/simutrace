@@ -27,7 +27,7 @@
 namespace SimuTrace
 {
 
-    Stream::Stream(StreamId id, const StreamDescriptor& desc, 
+    Stream::Stream(StreamId id, const StreamDescriptor& desc,
                    StreamBuffer& buffer) :
         _id(id),
         _buffer(buffer),
@@ -35,7 +35,7 @@ namespace SimuTrace
     {
         ThrowOn(id == INVALID_STREAM_ID, ArgumentException);
         ThrowOn((getEntrySize(&_desc.type) == 0) ||
-                (getEntrySize(&_desc.type) > buffer.getSegmentSize()), 
+                (getEntrySize(&_desc.type) > buffer.getSegmentSize()),
                 Exception, "Invalid entry size specified.");
 
         ThrowOn(isVariableEntrySize(desc.type.entrySize) &&
@@ -43,8 +43,8 @@ namespace SimuTrace
                 stringFormat("The specified variable entry size exceeds the "
                     "supported maximum of %d bytes.", VARIABLE_ENTRY_MAX_SIZE));
 
-        ThrowOn(_desc.type.temporalOrder && 
-                (getEntrySize(&_desc.type) < sizeof(CycleCount)), 
+        ThrowOn(_desc.type.temporalOrder &&
+                (getEntrySize(&_desc.type) < sizeof(CycleCount)),
                 Exception, "The specified type is marked as temporally "
                            "ordered, however, its too small to include "
                            "a time stamp.");
@@ -82,7 +82,7 @@ namespace SimuTrace
 
     bool Stream::isHidden() const
     {
-        return (_desc.hidden == TRUE);
+        return (_desc.hidden == _true);
     }
 
     StreamBuffer& Stream::getStreamBuffer() const

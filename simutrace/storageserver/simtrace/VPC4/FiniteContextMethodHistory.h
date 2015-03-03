@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 namespace SimuTrace
 {
 
-    template<typename T, typename K, uint32_t tableSize, 
+    template<typename T, typename K, uint32_t tableSize,
              uint32_t hashSize, uint32_t order>
     class KeyedFcmHistory
     {
@@ -84,7 +84,7 @@ namespace SimuTrace
             HashType hash = _hash(value);
 
             for (int i = order - 1; i > 0; --i) {
-                _historyTable[this->_index][i] = 
+                _historyTable[this->_index][i] =
                     (_historyTable[this->_index][i - 1] << 1) ^ hash;
             }
 
@@ -96,9 +96,9 @@ namespace SimuTrace
     template<typename T, uint32_t hashSize, uint32_t order>
     using FcmHistory = KeyedFcmHistory<T, T, 0, hashSize, order>;
 
-    template<typename T, typename hKey, uint32_t hTableSize, 
+    template<typename T, typename hKey, uint32_t hTableSize,
              uint32_t hHashSize, uint32_t hOrder>
-    using HistoryReference = 
+    using HistoryReference =
         ObjectReference<KeyedFcmHistory<T, hKey, hTableSize, hHashSize, hOrder>>;
 
 }

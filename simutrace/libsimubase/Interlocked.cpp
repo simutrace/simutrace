@@ -30,7 +30,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedExchangeAdd(
-            reinterpret_cast<volatile LONG*>(dst), 
+            reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(value));
     #else
         return __sync_fetch_and_add(dst, value);
@@ -41,7 +41,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedExchangeAdd64(
-            reinterpret_cast<volatile LONGLONG*>(dst), 
+            reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(value));
     #else
         return __sync_fetch_and_add(dst, value);
@@ -52,7 +52,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedExchangeSubtract(
-            reinterpret_cast<volatile unsigned long*>(dst), 
+            reinterpret_cast<volatile unsigned long*>(dst),
             static_cast<unsigned long>(value));
     #else
         return __sync_fetch_and_sub(dst, value);
@@ -63,29 +63,29 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedExchangeSubtract(
-            reinterpret_cast<volatile unsigned long*>(dst), 
+            reinterpret_cast<volatile unsigned long*>(dst),
             static_cast<unsigned long>(value));
     #else
         return __sync_fetch_and_sub(dst, value);
     #endif
     }
 
-    uint32_t interlockedCompareExchange(volatile uint32_t* dst, 
-                                        uint32_t exchange, 
+    uint32_t interlockedCompareExchange(volatile uint32_t* dst,
+                                        uint32_t exchange,
                                         uint32_t comperand)
     {
     #ifdef WIN32
         return ::InterlockedCompareExchange(
-            reinterpret_cast<volatile LONG*>(dst), 
-            static_cast<LONG>(exchange), 
+            reinterpret_cast<volatile LONG*>(dst),
+            static_cast<LONG>(exchange),
             static_cast<LONG>(comperand));
     #else
         return __sync_val_compare_and_swap(dst, exchange, comperand);
     #endif
     }
 
-    uint64_t interlockedCompareExchange(volatile uint64_t* dst, 
-                                        uint64_t exchange, 
+    uint64_t interlockedCompareExchange(volatile uint64_t* dst,
+                                        uint64_t exchange,
                                         uint64_t comperand)
     {
     #ifdef WIN32
@@ -102,7 +102,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedAnd(
-            reinterpret_cast<volatile LONG*>(dst), 
+            reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(value));
     #else
         return __sync_fetch_and_and(dst, value);
@@ -113,7 +113,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedAnd64(
-            reinterpret_cast<volatile LONGLONG*>(dst), 
+            reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(value));
     #else
         return __sync_fetch_and_and(dst, value);
@@ -124,7 +124,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedOr(
-            reinterpret_cast<volatile LONG*>(dst), 
+            reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(value));
     #else
         return __sync_fetch_and_or(dst, value);
@@ -135,7 +135,7 @@ namespace Interlocked
     {
     #ifdef WIN32
         return ::InterlockedOr64(
-            reinterpret_cast<volatile LONGLONG*>(dst), 
+            reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(value));
     #else
         return __sync_fetch_and_or(dst, value);

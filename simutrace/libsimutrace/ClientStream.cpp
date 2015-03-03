@@ -52,7 +52,7 @@ namespace SimuTrace
         assert(lengthOut != nullptr);
 
         StreamBuffer& buffer = getStreamBuffer();
-        if (buffer.isMaster()) {            
+        if (buffer.isMaster()) {
             size_t size;
 
             payload = buffer.getSegmentAsPayload(segment, size);
@@ -65,35 +65,42 @@ namespace SimuTrace
         return payload;
     }
 
-    void ClientStream::_initializeHandle(StreamHandle handle, SegmentId segment, 
-                                         bool readOnly, StreamAccessFlags flags)
+    void ClientStream::_initializeHandle(StreamHandle handle, SegmentId segment,
+                                         bool readOnly, StreamAccessFlags flags,
+                                         size_t offset)
     {
-        StreamBuffer& buffer = getStreamBuffer();
+        StreamBuffer& buffer   = getStreamBuffer();
 
-        handle->isReadOnly  = (readOnly) ? TRUE : FALSE;
-        handle->accessFlags = flags;
+        handle->isReadOnly     = (readOnly) ? _true : _false;
+        handle->accessFlags    = flags;
 
-        handle->stream      = this;
-        handle->entrySize   = getType().entrySize;
+        handle->stream         = this;
+        handle->entrySize      = getType().entrySize;
 
-        handle->segment     = segment;
-        handle->control     = buffer.getControlElement(segment);
-        handle->entry       = buffer.getSegment(segment);
+        handle->segment        = segment;
+        handle->control        = buffer.getControlElement(segment);
 
-        handle->sequenceNumber     = handle->control->link.sequenceNumber;
+        handle->sequenceNumber = handle->control->link.sequenceNumber;
+
+        handle->segmentStart   = buffer.getSegment(segment);
 
         // If this segment is read-only, we move the segmentEnd pointer right
         // behind the last valid entry.
-        size_t endOffset = (readOnly) ?
-            getEntrySize(&getType()) * handle->control->rawEntryCount :
-            buffer.getSegmentSize();
+        handle->segmentEnd     = (readOnly) ?
+            buffer.getSegmentEnd(segment, handle->entrySize) :
+            handle->segmentStart + buffer.getSegmentSize();
 
-        assert(endOffset <= buffer.getSegmentSize());
+        assert(handle->segmentEnd > handle->segmentStart);
 
-        handle->segmentStart = handle->entry;
-        handle->segmentEnd   = handle->segmentStart + endOffset;
+        // Position the handle at the offset that the server determined for
+        // the query.
+        handle->entry = handle->segmentStart + offset;
 
-        assert(handle->entry != nullptr);
+        assert((handle->entry != nullptr) &&
+               (handle->entry >= handle->segmentStart) &&
+               (handle->entry <= handle->segmentEnd -
+                (isVariableEntrySize(handle->entrySize) ?
+                getSizeHint(handle->entrySize) : handle->entrySize)));
         assert(handle->control != nullptr);
     }
 
@@ -112,7 +119,7 @@ namespace SimuTrace
             payload = _getPayload(handle->segment, &payloadLength);
         }
 
-        _getPort().call(nullptr, RpcApi::CCV30_StreamClose, payload,
+        _getPort().call(nullptr, RpcApi::CCV31_StreamClose, payload,
                         payloadLength, getId(),
                         handle->control->link.sequenceNumber);
     }
@@ -128,7 +135,7 @@ namespace SimuTrace
             _writeHandle = nullptr;
         } else {
             bool found = false;
-            for (auto it = _readHandles.begin(); 
+            for (auto it = _readHandles.begin();
                  it != _readHandles.end(); ++it) {
 
                 if ((*it).get() == handle) {
@@ -196,7 +203,7 @@ namespace SimuTrace
 
         assert(msg.response.status == RpcApi::SC_Success);
 
-        SegmentId id = static_cast<SegmentId>(msg.data.parameter1);
+        SegmentId id = static_cast<SegmentId>(msg.parameter0);
 
         size_t size;
         void* segment = buffer.getSegmentAsPayload(id, size);
@@ -212,7 +219,7 @@ namespace SimuTrace
     {
         Message response = {0};
 
-        _getPort().call(&response, RpcApi::CCV30_StreamQuery, getId());
+        _getPort().call(&response, RpcApi::CCV31_StreamQuery, getId());
 
         ThrowOn((response.payloadType != MessagePayloadType::MptData) ||
                 (response.data.payloadLength != sizeof(StreamQueryInformation)),
@@ -220,7 +227,7 @@ namespace SimuTrace
 
         assert(response.data.payload != nullptr);
 
-        StreamQueryInformation* desc = 
+        StreamQueryInformation* desc =
             reinterpret_cast<StreamQueryInformation*>(response.data.payload);
 
         informationOut = *desc;
@@ -241,14 +248,14 @@ namespace SimuTrace
             ThrowOn(handle != nullptr, InvalidOperationException);
         }
 
-        // Set the payload allocator so we accept segment control elements in 
+        // Set the payload allocator so we accept segment control elements in
         // remote connections.
         Message response = {0};
         response.allocator = _payloadAllocatorWrite;
         response.allocatorArgs = this;
 
         try {
-            _getPort().call(&response, RpcApi::CCV30_StreamAppend, payload,
+            _getPort().call(&response, RpcApi::CCV31_StreamAppend, payload,
                             payloadLength, getId());
 
         } catch (...) {
@@ -272,7 +279,7 @@ namespace SimuTrace
             std::unique_ptr<StreamStateDescriptor> desc(
                 new StreamStateDescriptor());
 
-            _initializeHandle(desc.get(), id, false, StreamAccessFlags::SafNone);
+            _initializeHandle(desc.get(), id, false);
 
             // Set the handle only after we could successfully initialize
             // it. Otherwise, we might throw and would need to manually
@@ -281,8 +288,7 @@ namespace SimuTrace
 
             LogDebug("Created new write handle for stream %d.", getId());
         } else {
-            _initializeHandle(_writeHandle.get(), id, false,
-                              StreamAccessFlags::SafNone);
+            _initializeHandle(_writeHandle.get(), id, false);
         }
 
         return _writeHandle.get();
@@ -329,13 +335,13 @@ namespace SimuTrace
             }
         }
 
-        StreamSegmentId closeSqn = 
-            ((handle != nullptr) && (handle->control != nullptr)) ? 
+        StreamSegmentId closeSqn =
+            ((handle != nullptr) && (handle->control != nullptr)) ?
                 handle->control->link.sequenceNumber :
                 INVALID_STREAM_SEGMENT_ID;
 
         try {
-            _getPort().call(&response, RpcApi::CCV30_StreamCloseAndOpen, &query,
+            _getPort().call(&response, RpcApi::CCV31_StreamCloseAndOpen, &query,
                             sizeof(StreamOpenQuery), getId(), closeSqn);
 
         } catch (...) {
@@ -350,9 +356,9 @@ namespace SimuTrace
             }
 
             throw;
-        } 
+        }
 
-        SegmentId id = response.data.parameter1;
+        SegmentId id = response.parameter0;
         if (id == INVALID_SEGMENT_ID) {
             if (handle != nullptr) {
                 _invalidateHandle(handle);
@@ -360,11 +366,12 @@ namespace SimuTrace
             return handle;
         }
 
+        size_t offset = response.data.parameter1;
         if (handle == nullptr) {
             std::unique_ptr<StreamStateDescriptor> desc(
                 new StreamStateDescriptor());
 
-            _initializeHandle(desc.get(), id, true, flags);
+            _initializeHandle(desc.get(), id, true, flags, offset);
 
             handle = desc.get();
 
@@ -375,7 +382,7 @@ namespace SimuTrace
 
             LogDebug("Created new read handle for stream %d.", getId());
         } else {
-            _initializeHandle(handle, id, true, flags);
+            _initializeHandle(handle, id, true, flags, offset);
         }
 
         return handle;
@@ -400,7 +407,7 @@ namespace SimuTrace
 
         // For a stream to contain new data, a corresponding stream handle has
         // to be allocated. A write handle therefore points to a segment that
-        // needs to be submitted. However, for segments backed by a 
+        // needs to be submitted. However, for segments backed by a
         // shared-memory buffer, we let the server submit it automatically.
 
         if (getStreamBuffer().isMaster()) {

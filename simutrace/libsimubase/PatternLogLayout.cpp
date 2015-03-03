@@ -47,7 +47,7 @@ namespace SimuTrace
         StringLiteralComponent(const std::string& literal) :
             _literal(literal) { }
 
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             out << _literal;
@@ -58,7 +58,7 @@ namespace SimuTrace
         public PatternLogLayout::PatternComponent
     {
     public:
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             out << event.getCategory().getName();
@@ -77,7 +77,7 @@ namespace SimuTrace
             _constructed(false),
             _space() {}
 
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             if (!_constructed) {
@@ -99,12 +99,12 @@ namespace SimuTrace
         MessageComponent(const std::shared_ptr<NewLineSpaceComponent>& space) :
             _space(space) {}
 
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             if (_space != nullptr) {
                 std::string msg = event.getMessage();
-                
+
                 std::string::size_type pos;
                 while ((pos = msg.find('\n')) != std::string::npos) {
                     out << msg.substr(0, pos + 1)
@@ -124,7 +124,7 @@ namespace SimuTrace
         public PatternLogLayout::PatternComponent
     {
     public:
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             out << LogPriority::getPriorityName(event.getPriority());
@@ -141,7 +141,7 @@ namespace SimuTrace
         NewLineComponent(std::shared_ptr<NewLineSpaceComponent>& space) :
             _space(space) {}
 
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             out << "\n";
@@ -163,7 +163,7 @@ namespace SimuTrace
         TimestampComponent(const std::string& format) :
             _format(format) { }
 
-        virtual void append(std::ostringstream& out, 
+        virtual void append(std::ostringstream& out,
                             const LogEvent& event) override
         {
             out << Clock::formatTime(_format, event.getTimestamp());
@@ -263,7 +263,7 @@ namespace SimuTrace
                             cmp = std::make_shared<TimestampComponent>(postfix);
                             break;
                         }
-                        
+
                         case 'm': {
                             cmp = std::make_shared<MessageComponent>(newLineSpace);
                             break;
@@ -280,7 +280,7 @@ namespace SimuTrace
                         }
 
                         case 's': {
-                            newLineSpace = 
+                            newLineSpace =
                                 std::make_shared<NewLineSpaceComponent>();
                             cmp = newLineSpace;
                             break;

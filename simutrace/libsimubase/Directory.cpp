@@ -66,6 +66,17 @@ namespace SimuTrace
         }
     }
 
+    void Directory::create(const std::string& path)
+    {
+    #ifdef WIN32
+        BOOL result = CreateDirectoryA(path.c_str(), NULL);
+        ThrowOn(!result, PlatformException);
+    #else
+        int result = ::mkdir(path.c_str(), 0777);
+        ThrowOn(result != 0, PlatformException);
+    #endif
+    }
+
     std::string Directory::getWorkingDirectory()
     {
     #ifdef WIN32

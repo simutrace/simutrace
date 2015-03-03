@@ -26,12 +26,12 @@
 using namespace libconfig;
 
 namespace SimuTrace {
-namespace Configuration 
+namespace Configuration
 {
 
     const char* settingTypeToString(Setting::Type type)
     {
-        static const char* typeNames[9] {
+        static const char* typeNames[] {
             "None",
             "Integer",
             "Integer (64 Bit)",
@@ -43,7 +43,7 @@ namespace Configuration
             "List"
         };
 
-        assert(type < sizeof(typeNames));
+        assert(type < (sizeof(typeNames) / sizeof(char*)));
         return typeNames[type];
     }
 
@@ -139,7 +139,7 @@ namespace Configuration
                     if (_isLocked(*s, true, lockList)) {
                         LogWarn("Ignored updating configuration '%s' to value "
                                 "'%s'. Setting locked to value '%s'.",
-                                s->getPath().c_str(), 
+                                s->getPath().c_str(),
                                 settingToString(source).c_str(),
                                 settingToString(*s).c_str());
 
@@ -156,7 +156,7 @@ namespace Configuration
                     if (_isLocked(*s, false, lockList)) {
                         LogWarn("Ignored creating configuration '%s' with "
                                 "value '%s'. Setting locked.",
-                                s->getPath().c_str(), 
+                                s->getPath().c_str(),
                                 settingToString(*s).c_str());
 
                         root.remove(s->getIndex());
@@ -171,7 +171,7 @@ namespace Configuration
             s = &root;
         }
 
-        switch (source.getType()) 
+        switch (source.getType())
         {
             case Setting::Type::TypeInt: {
                 *s = (int)source;

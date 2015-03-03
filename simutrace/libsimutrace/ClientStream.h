@@ -38,7 +38,9 @@ namespace SimuTrace
         std::list<std::unique_ptr<StreamStateDescriptor>> _readHandles;
 
         void _initializeHandle(StreamHandle handle, SegmentId segment,
-                               bool readOnly, StreamAccessFlags flags);
+                               bool readOnly,
+                               StreamAccessFlags flags = SafNone,
+                               size_t offset = 0);
         void _closeHandle(StreamHandle handle);
         void _releaseHandle(StreamHandle handle);
         void _invalidateHandle(StreamHandle handle);
@@ -47,6 +49,7 @@ namespace SimuTrace
 
         static void _payloadAllocatorWrite(Message& msg, bool free, void* args);
         static void _payloadAllocatorRead(Message& msg, bool free, void* args);
+
     public:
         ClientStream(StreamId id, const StreamDescriptor& desc,
                      StreamBuffer& buffer, ClientSession& session);
@@ -56,7 +59,7 @@ namespace SimuTrace
             StreamQueryInformation& informationOut) const override;
 
         StreamHandle append(StreamHandle handle);
-        StreamHandle open(QueryIndexType type, uint64_t value, 
+        StreamHandle open(QueryIndexType type, uint64_t value,
                           StreamAccessFlags flags, StreamHandle handle);
 
         void close(StreamHandle handle);

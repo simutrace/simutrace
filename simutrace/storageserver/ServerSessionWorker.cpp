@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 #include "ServerStream.h"
 #include "ServerStreamBuffer.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     struct ServerSessionWorker::MessageContext
@@ -40,14 +40,14 @@ namespace SimuTrace
             worker(sessionWorker) { }
     };
 
-    ServerSessionWorker::ServerSessionWorker(ServerSession& session, 
+    ServerSessionWorker::ServerSessionWorker(ServerSession& session,
                                              std::unique_ptr<Port>& port) :
         _session(session),
         _port()
     {
         _initializeHandlerMap();
 
-        ThrowOnNull(dynamic_cast<ServerPort*>(port.get()), 
+        ThrowOnNull(dynamic_cast<ServerPort*>(port.get()),
                     ArgumentNullException);
 
         // Take ownership of port. Do not throw exceptions afterwards!
@@ -65,29 +65,28 @@ namespace SimuTrace
         std::map<int, MessageHandler>& m = _handlers; // short alias
 
         /* =======  Session API  ======= */
-        m[RpcApi::CCV30_SessionClose]            = _handleSessionClose;
-        m[RpcApi::CCV30_SessionSetConfiguration] = _handleSessionSetConfiguration;
+        m[RpcApi::CCV31_SessionClose]            = _handleSessionClose;
+        m[RpcApi::CCV31_SessionSetConfiguration] = _handleSessionSetConfiguration;
 
         /* =======  Store API  ======= */
-        m[RpcApi::CCV30_StoreCreate]            = _handleStoreCreate;
-        m[RpcApi::CCV30_StoreClose]             = _handleStoreClose;
+        m[RpcApi::CCV31_StoreCreate]            = _handleStoreCreate;
+        m[RpcApi::CCV31_StoreClose]             = _handleStoreClose;
 
-        m[RpcApi::CCV30_StreamBufferRegister]   = _handleStreamBufferRegister;
-        m[RpcApi::CCV30_StreamBufferEnumerate]  = _handleStreamBufferEnumerate;
-        m[RpcApi::CCV30_StreamBufferQuery]      = _handleStreamBufferQuery;
-
-        m[RpcApi::CCV30_DataPoolRegister]       = _handleDataPoolRegister;
+        m[RpcApi::CCV31_StreamBufferRegister]   = _handleStreamBufferRegister;
+        m[RpcApi::CCV31_StreamBufferEnumerate]  = _handleStreamBufferEnumerate;
+        m[RpcApi::CCV31_StreamBufferQuery]      = _handleStreamBufferQuery;
 
         /* =======  Stream API  ======= */
-        m[RpcApi::CCV30_StreamRegister]         = _handleStreamRegister;
-        m[RpcApi::CCV30_StreamEnumerate]        = _handleStreamEnumerate;
-        m[RpcApi::CCV30_StreamQuery]            = _handleStreamQuery;
-        m[RpcApi::CCV30_StreamAppend]           = _handleStreamAppend;
+        m[RpcApi::CCV31_StreamRegister]         = _handleStreamRegister;
+        m[RpcApi::CCV31_StreamEnumerate]        = _handleStreamEnumerate;
+        m[RpcApi::CCV31_StreamQuery]            = _handleStreamQuery;
+        m[RpcApi::CCV31_StreamAppend]           = _handleStreamAppend;
         m[RpcApi::CCV30_StreamCloseAndOpen]     = _handleStreamCloseAndOpen;
-        m[RpcApi::CCV30_StreamClose]            = _handleStreamClose;
+        m[RpcApi::CCV31_StreamCloseAndOpen]     = _handleStreamCloseAndOpen;
+        m[RpcApi::CCV31_StreamClose]            = _handleStreamClose;
     }
 
-    void ServerSessionWorker::_acknowledgeSessionCreate() 
+    void ServerSessionWorker::_acknowledgeSessionCreate()
     {
         Message msg = {0};
 
@@ -101,10 +100,10 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleSessionClose(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(SessionClose, ctx.msg);
+        TEST_REQUEST_V31(SessionClose, ctx.msg);
 
-        // We break out of the processing loop and return from the thread 
-        // function. This will invoke the thread finish handler, which 
+        // We break out of the processing loop and return from the thread
+        // function. This will invoke the thread finish handler, which
         // closes the session.
         ctx.worker.stop();
         return true;
@@ -113,11 +112,11 @@ namespace SimuTrace
     bool ServerSessionWorker::_handleSessionSetConfiguration(
         MessageContext& ctx)
     {
-        TEST_REQUEST_V30(SessionSetConfiguration, ctx.msg);
+        TEST_REQUEST_V31(SessionSetConfiguration, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
         std::string setting = std::string(
-            static_cast<char*>(ctx.msg.data.payload), 
+            static_cast<char*>(ctx.msg.data.payload),
             ctx.msg.data.payloadLength);
 
         session.applySetting(setting);
@@ -126,21 +125,28 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStoreCreate(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StoreCreate, ctx.msg);
+        TEST_REQUEST_V31(StoreCreate, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
-        bool alwaysCreate = (ctx.msg.parameter0 == 1);
+        bool alwaysCreate = (ctx.msg.parameter0 == _true);
+        bool open = (ctx.msg.data.parameter1 == _true);
         std::string specifier = std::string(
-            static_cast<char*>(ctx.msg.data.payload), 
+            static_cast<char*>(ctx.msg.data.payload),
             ctx.msg.data.payloadLength);
 
-        session.createStore(specifier, alwaysCreate);
+        if (open) {
+            assert(!alwaysCreate);
+            session.openStore(specifier);
+        } else {
+            session.createStore(specifier, alwaysCreate);
+        }
+
         return true;
     }
 
     bool ServerSessionWorker::_handleStoreClose(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StoreClose, ctx.msg);
+        TEST_REQUEST_V31(StoreClose, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
         session.closeStore();
@@ -150,7 +156,7 @@ namespace SimuTrace
     bool ServerSessionWorker::_handleStreamBufferRegister(
         MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamBufferRegister, ctx.msg);
+        TEST_REQUEST_V31(StreamBufferRegister, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -165,7 +171,7 @@ namespace SimuTrace
         // otherwise we have to utilize slower copy based buffers.
         if (ctx.worker.channelSupportsSharedMemory()) {
             std::vector<Handle> handleList;
-            const ServerStreamBuffer& buffer = 
+            const ServerStreamBuffer& buffer =
                 dynamic_cast<const ServerStreamBuffer&>(
                 session.getStreamBuffer(id));
 
@@ -182,15 +188,15 @@ namespace SimuTrace
     bool ServerSessionWorker::_handleStreamBufferEnumerate(
         MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamBufferEnumerate, ctx.msg);
+        TEST_REQUEST_V31(StreamBufferEnumerate, ctx.msg);
         Session& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
         std::vector<BufferId> buffers;
         session.enumerateStreamBuffers(buffers);
 
-        port->ret(ctx.msg, RpcApi::SC_Success, buffers.data(), 
-                  static_cast<uint32_t>(buffers.size() * sizeof(BufferId)), 
+        port->ret(ctx.msg, RpcApi::SC_Success, buffers.data(),
+                  static_cast<uint32_t>(buffers.size() * sizeof(BufferId)),
                   static_cast<uint32_t>(buffers.size()));
 
         return false;
@@ -198,11 +204,11 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamBufferQuery(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamBufferQuery, ctx.msg);
+        TEST_REQUEST_V31(StreamBufferQuery, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
-        const ServerStreamBuffer& buffer = 
+        const ServerStreamBuffer& buffer =
             dynamic_cast<const ServerStreamBuffer&>(
             session.getStreamBuffer(ctx.msg.parameter0));
 
@@ -210,39 +216,25 @@ namespace SimuTrace
             std::vector<Handle> handleList;
 
             handleList.push_back(buffer.getBufferHandle());
-            
-            port->ret(ctx.msg, RpcApi::SC_Success, handleList, 
-                      buffer.getNumSegments(), 
+
+            port->ret(ctx.msg, RpcApi::SC_Success, handleList,
+                      buffer.getNumSegments(),
                       static_cast<uint32_t>(buffer.getSegmentSize()));
         } else {
-            port->ret(ctx.msg, RpcApi::SC_Success, buffer.getNumSegments(), 
+            port->ret(ctx.msg, RpcApi::SC_Success, buffer.getNumSegments(),
                       static_cast<uint32_t>(buffer.getSegmentSize()));
         }
 
         return false;
     }
 
-    bool ServerSessionWorker::_handleDataPoolRegister(MessageContext& ctx)
-    {
-        TEST_REQUEST_V30(DataPoolRegister, ctx.msg);
-        ServerSession& session = ctx.worker._session;
-        ServerPort* port = ctx.worker._port.get();
-
-        StreamId stream = ctx.msg.parameter0;
-
-        PoolId id = session.registerDataPool(stream);
-
-        port->ret(ctx.msg, RpcApi::SC_Success, static_cast<uint32_t>(id));
-        return false;
-    }
-
     bool ServerSessionWorker::_handleStreamRegister(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamRegister, ctx.msg);
+        TEST_REQUEST_V31(StreamRegister, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
-        StreamDescriptor* desc = 
+        StreamDescriptor* desc =
             static_cast<StreamDescriptor*>(ctx.msg.data.payload);
         BufferId buffer = ctx.msg.parameter0;
 
@@ -257,7 +249,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamEnumerate(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamBufferEnumerate, ctx.msg);
+        TEST_REQUEST_V31(StreamBufferEnumerate, ctx.msg);
         Session& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -266,8 +258,8 @@ namespace SimuTrace
         std::vector<StreamId> streams;
         session.enumerateStreams(streams, false);
 
-        port->ret(ctx.msg, RpcApi::SC_Success, streams.data(), 
-                  static_cast<uint32_t>(streams.size() * sizeof(BufferId)), 
+        port->ret(ctx.msg, RpcApi::SC_Success, streams.data(),
+                  static_cast<uint32_t>(streams.size() * sizeof(BufferId)),
                   static_cast<uint32_t>(streams.size()));
 
         return false;
@@ -275,7 +267,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamQuery(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamQuery, ctx.msg);
+        TEST_REQUEST_V31(StreamQuery, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -285,7 +277,7 @@ namespace SimuTrace
         stream.queryInformation(information);
 
         port->ret(ctx.msg, RpcApi::SC_Success, &information,
-                  static_cast<uint32_t>(sizeof(StreamQueryInformation)), 
+                  static_cast<uint32_t>(sizeof(StreamQueryInformation)),
                   stream.getStreamBuffer().getId());
 
         return false;
@@ -293,7 +285,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamAppend(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamAppend, ctx.msg);
+        TEST_REQUEST_V31(StreamAppend, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -302,24 +294,32 @@ namespace SimuTrace
             session.getStream(id));
 
         SegmentId seg = INVALID_SEGMENT_ID;
-        StreamSegmentId sseg;
+        StreamSegmentId sqn;
 
         // At this point the control element already needs to be
         // updated via shared memory or through a payload allocator.
 
-        sseg = stream.append(session.getLocalId(), &seg);
+        sqn = stream.append(session.getLocalId(), &seg);
 
-        if (ctx.worker.channelSupportsSharedMemory() ||
-            (seg == INVALID_SEGMENT_ID)) {
+        try {
+            if (ctx.worker.channelSupportsSharedMemory() ||
+                (seg == INVALID_SEGMENT_ID)) {
 
-            port->ret(ctx.msg, RpcApi::SC_Success, nullptr, 0, sseg, seg);
-        } else {
-            // If the channel does not support shared memory, we send the
-            // initialized control element to the client.
-            StreamBuffer& buffer = stream.getStreamBuffer();
-            SegmentControlElement* control = buffer.getControlElement(seg);
-            port->ret(ctx.msg, RpcApi::SC_Success, control,
-                      sizeof(SegmentControlElement), sseg, seg);
+                port->ret(ctx.msg, RpcApi::SC_Success, nullptr, 0, sqn, seg);
+            } else {
+                // If the channel does not support shared memory, we send the
+                // initialized control element to the client.
+                StreamBuffer& buffer = stream.getStreamBuffer();
+                SegmentControlElement* control = buffer.getControlElement(seg);
+                port->ret(ctx.msg, RpcApi::SC_Success, control,
+                          sizeof(SegmentControlElement), sqn, seg);
+            }
+
+        } catch (...) {
+            assert(sqn != INVALID_STREAM_SEGMENT_ID);
+            stream.close(session.getLocalId(), sqn, nullptr, true);
+
+            throw;
         }
 
         return false;
@@ -327,7 +327,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamCloseAndOpen(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamCloseAndOpen, ctx.msg);
+        TEST_REQUEST_V31(StreamCloseAndOpen, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -349,41 +349,66 @@ namespace SimuTrace
             ctx.msg.data.payload);
 
         SegmentId seg = INVALID_SEGMENT_ID;
-        StreamSegmentId sseg;
+        StreamSegmentId sqn;
+        size_t offset;
 
-        // The open must be performed synchronously, because the remote 
-        // call is synchronous. However, the open may be performed 
-        // asynchronously, despite the specified flag. This may be the case if 
+        // The open must be performed synchronously, because the remote
+        // call is synchronous. However, the open may be performed
+        // asynchronously, despite the specified flag. This may be the case if
         // there is already a read in progress. We then need to wait for it to
         // finish.
         query->flags = static_cast<StreamAccessFlags>(
-            query->flags | StreamAccessFlags::SafSynchronous); 
+            query->flags | StreamAccessFlags::SafSynchronous);
 
         ctx.worker._wait.reset();
 
-        sseg = stream.open(session.getLocalId(), query->type, 
-                           query->value, query->flags, &seg, 
-                           &ctx.worker._wait);
+        sqn = stream.open(session.getLocalId(), query->type,
+                          query->value, query->flags, &seg,
+                          &offset, &ctx.worker._wait);
 
-        if (!ctx.worker._wait.wait()) {
-            Throw(Exception, "Failed to decode segment. "
-                  "See the server log for more information.");
-        }
+        StreamBuffer& buffer = stream.getStreamBuffer();
 
-        if (ctx.worker.channelSupportsSharedMemory() ||
-            (seg == INVALID_SEGMENT_ID)) {
+        assert((ctx.worker._wait.getCount() == 0));
+        assert((offset <= buffer.getSegmentSize()) &&
+               (offset <= std::numeric_limits<uint32_t>::max()));
 
-            port->ret(ctx.msg, RpcApi::SC_Success, nullptr, 0, sseg, seg);
-        } else {
-            // If the channel does not support shared memory, we send whole
-            // segment to the client.
-            StreamBuffer& buffer = stream.getStreamBuffer();
+        // We now have the segment in memory and need to find the exact entry
+        // that the caller requests. The open operation has already transformed
+        // the query to be prepared for findOffset().
+        try {
+            if (ctx.worker.channelSupportsSharedMemory() ||
+                (seg == INVALID_SEGMENT_ID)) {
 
-            size_t size;
-            void* segment = buffer.getSegmentAsPayload(seg, size);
+                if (ctx.code == RpcApi::CCV30_StreamCloseAndOpen) {   // v3.0
+                    port->ret(ctx.msg, RpcApi::SC_Success, nullptr, 0, sqn,
+                              seg);
+                } else {                                              // v3.1+
+                    port->ret(ctx.msg, RpcApi::SC_Success, nullptr, 0, seg,
+                              static_cast<uint32_t>(offset));
+                }
+            } else {
+                // If the channel does not support shared memory, we send whole
+                // segment to the client.
 
-            port->ret(ctx.msg, RpcApi::SC_Success, segment, 
-                      static_cast<uint32_t>(size), sseg, seg);
+                size_t size;
+                void* segment = buffer.getSegmentAsPayload(seg, size);
+
+                if (ctx.code == RpcApi::CCV30_StreamCloseAndOpen) {   // v3.0
+                    port->ret(ctx.msg, RpcApi::SC_Success, segment,
+                              static_cast<uint32_t>(size), sqn, seg);
+                } else {                                              // v3.1+
+                    port->ret(ctx.msg, RpcApi::SC_Success, segment,
+                              static_cast<uint32_t>(size), seg,
+                              static_cast<uint32_t>(offset));
+                }
+
+            }
+
+        } catch (...) {
+            assert(sqn != INVALID_STREAM_SEGMENT_ID);
+            stream.close(session.getLocalId(), sqn, nullptr, true);
+
+            throw;
         }
 
         return false;
@@ -391,7 +416,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamClose(MessageContext& ctx)
     {
-        TEST_REQUEST_V30(StreamClose, ctx.msg);
+        TEST_REQUEST_V31(StreamClose, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -407,11 +432,11 @@ namespace SimuTrace
         return true;
     }
 
-    void ServerSessionWorker::_messagePayloadAllocator(Message& msg, bool free, 
+    void ServerSessionWorker::_messagePayloadAllocator(Message& msg, bool free,
                                                        void* args)
     {
         // We employ the custom allocator to use the real segment
-        // buffer for copy stream buffers as payload receive buffer. We 
+        // buffer for copy stream buffers as payload receive buffer. We
         // therefore do not need to free the buffer.
         if (free) {
             return;
@@ -423,9 +448,9 @@ namespace SimuTrace
 
         switch (code)
         {
-            case RpcApi::CCV30_StreamAppend:
-            case RpcApi::CCV30_StreamClose: {
-                TEST_REQUEST_V30(StreamAppend, msg); // Same characteristics
+            case RpcApi::CCV31_StreamAppend:
+            case RpcApi::CCV31_StreamClose: {
+                TEST_REQUEST_V31(StreamAppend, msg); // Same characteristics
 
                 StreamId id = msg.parameter0;
                 ServerStream& stream = dynamic_cast<ServerStream&>(
@@ -433,11 +458,11 @@ namespace SimuTrace
 
                 // It is important to NOT use the ServerStreamBuffer here.
                 // Otherwise, getControlElement() might return a pointer to the
-                // copied control element (in the internal data structures of 
+                // copied control element (in the internal data structures of
                 // the buffer), if the segment has already been submitted.
                 StreamBuffer& buffer = stream.getStreamBuffer();
 
-                StreamSegmentId sqn = (code == RpcApi::CCV30_StreamAppend) ?
+                StreamSegmentId sqn = (code == RpcApi::CCV31_StreamAppend) ?
                     stream.getCurrentSegmentId() :
                     msg.data.parameter1;
 
@@ -449,7 +474,7 @@ namespace SimuTrace
                 // then seg is INVALID_SEGMENT_ID.
                 msg.data.payload = buffer.getSegmentAsPayload(seg, lineSize);
 
-                ThrowOn(msg.data.payloadLength != lineSize, 
+                ThrowOn(msg.data.payloadLength != lineSize,
                         RpcMessageMalformedException);
 
                 break;
@@ -480,7 +505,7 @@ namespace SimuTrace
                 memset(&ctx.msg, 0, sizeof(Message));
 
                 // If the channel does not support shared memory, we use a
-                // payload allocator to speed up segment transfer. 
+                // payload allocator to speed up segment transfer.
                 ChannelCapabilities caps = _port->getChannelCaps();
                 if (!channelSupportsSharedMemory()) {
                     ctx.msg.allocatorArgs = &_session;
@@ -491,7 +516,7 @@ namespace SimuTrace
 
                 try {
 
-                    ctx.code = RPC_VER_AND_CODE(ver, 
+                    ctx.code = RPC_VER_AND_CODE(ver,
                         ctx.msg.request.controlCode);
 
                     auto it = _handlers.find(ctx.code);
@@ -529,13 +554,13 @@ namespace SimuTrace
                         return 0;
                     }
 
-                    // We catch all other Simutrace related exceptions and 
+                    // We catch all other Simutrace related exceptions and
                     // return these to the caller.
                     //
                     // We do not catch std::exception here, because we expect
                     // std::exceptions to denote internal server errors. In
                     // that case, we better close the session.
- 
+
                     try {
                         LogWarn("<client: %s, code: 0x%x> Exception: '%s'",
                                 _port->getAddress().c_str(),
@@ -596,7 +621,7 @@ namespace SimuTrace
         // Set shouldStop
         stop();
 
-        // Disconnect the port so the worker will break out of any 
+        // Disconnect the port so the worker will break out of any
         // communication or wait for new messages.
         _port->close();
     }

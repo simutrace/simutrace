@@ -22,7 +22,7 @@ using namespace SimuTrace;
 
 std::string errorSiteToString(ExceptionSite site)
 {
-    switch (site) 
+    switch (site)
     {
         case EsServer: return "Server";
         case EsClient: return "Client";
@@ -33,7 +33,7 @@ std::string errorSiteToString(ExceptionSite site)
 
 std::string errorClassToString(ExceptionClass errorClass)
 {
-    switch (errorClass) 
+    switch (errorClass)
     {
         case EcRuntime:         return "Runtime";
         case EcPlatform:        return "Platform";
@@ -78,7 +78,7 @@ void initializeOptionParser(ez::ezOptionParser& parser)
                0,
                "The frequency in which to repeat the query in seconds.",
                OPT_SHORT_PREFIX "f");
-    
+
     parser.add("local:/tmp/.simutrace",
                false,
                1,
@@ -92,7 +92,7 @@ void printUsage(ez::ezOptionParser& parser)
 {
     std::string usage;
     parser.getUsage(usage);
-    std::cout << usage << std::endl; 
+    std::cout << usage << std::endl;
 }
 
 std::string outputStreamHeader(StreamId id, bool isCsv)
@@ -117,19 +117,19 @@ std::string outputStreamHeader(StreamId id, bool isCsv)
 }
 
 std::string outputStreamStats(StreamId id, const StreamQueryInformation& info,
-                              const StreamStatistics& lastInfo, int freq, 
+                              const StreamStatistics& lastInfo, int freq,
                               int secs, bool isCsv)
 {
     std::ostringstream out;
     std::string delim((isCsv) ? ";" : "  ");
 
-    size_t esize = getEntrySize(&info.descriptor.type);
+    uint32_t esize = getEntrySize(&info.descriptor.type);
 
     if (!isCsv) {
         std::ostringstream esizeStr;
         esizeStr << esize << ((isVariableEntrySize(info.descriptor.type.entrySize)) ? " (V)" : "");
 
-        out << std::setw( 4) << id << delim 
+        out << std::setw( 4) << id << delim
             << std::setw(20) << std::string(info.descriptor.name).substr(0, 20) << delim
             << std::setw(10) << esizeStr.str() << delim;
     }
@@ -165,7 +165,7 @@ std::string outputStreamStats(StreamId id, const StreamQueryInformation& info,
 int main(int argc, const char *argv[])
 {
     // This sample connects to a storage server and outputs statistics about
-    // the supplied store and its streams. It is an example on how to monitor 
+    // the supplied store and its streams. It is an example on how to monitor
     // the progress of a tracing session.
     //
     // Note: Start the monitor AFTER the tracing session has been started.
@@ -197,10 +197,10 @@ int main(int argc, const char *argv[])
     int freq;
     std::string server;
     std::string store(*options.lastArgs[0]);
- 
+
     options.get(OPT_SHORT_PREFIX "f")->getInt(freq);
     options.get(OPT_SHORT_PREFIX "s")->getString(server);
-    
+
     SessionId session = INVALID_SESSION_ID;
     int result = 0;
 
@@ -221,9 +221,8 @@ int main(int argc, const char *argv[])
 
         std::cout << "Opening store '" << store << "'..." << std::endl;
 
-        // We create the store with alwaysCreate = FALSE, which will open the 
-        // existing store and not create a new one. 
-        BOOL success = StSessionCreateStore(session, store.c_str(), FALSE);
+        // Open the specified store
+        _bool success = StSessionOpenStore(session, store.c_str());
         ThrowOn(!success, Exception);
 
         StreamStatistics lastStreamStats[10];
@@ -231,7 +230,7 @@ int main(int argc, const char *argv[])
 
         int rounds = 0;
         do {
-            
+
         #ifdef WIN32
             std::system("cls");
         #else
@@ -241,8 +240,8 @@ int main(int argc, const char *argv[])
             std::cout << outputStreamHeader(0, false) << std::endl;
 
             // Enumerate streams and query stream stats ---------------------
-            // With StStreamEnumerate we can get a list of all valid stream 
-            // ids. These ids can then be fed into the query function to get 
+            // With StStreamEnumerate we can get a list of all valid stream
+            // ids. These ids can then be fed into the query function to get
             // detailed information on the streams contained in the store.
             StreamId ids[10];
             int count = StStreamEnumerate(session, sizeof(ids), ids);
@@ -254,7 +253,7 @@ int main(int argc, const char *argv[])
                 success = StStreamQuery(session, ids[i], &info);
                 ThrowOn(!success, Exception);
 
-                std::cout << outputStreamStats(ids[i], info, lastStreamStats[i], 
+                std::cout << outputStreamStats(ids[i], info, lastStreamStats[i],
                                                freq, rounds * freq, false) << std::endl;
 
                 lastStreamStats[i] = info.stats;

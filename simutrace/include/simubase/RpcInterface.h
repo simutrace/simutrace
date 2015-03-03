@@ -62,17 +62,17 @@ namespace SimuTrace
     // only available in DEBUG builds.
     //
 
-    static std::string payloadTypeToStr(uint8_t payloadType) 
+    static std::string payloadTypeToStr(uint8_t payloadType)
     {
         switch (payloadType)
         {
-            case MessagePayloadType::MptEmbedded: 
+            case MessagePayloadType::MptEmbedded:
                 return std::string("Embedded");
 
-            case MessagePayloadType::MptData: 
+            case MessagePayloadType::MptData:
                 return std::string("Data");
 
-            case MessagePayloadType::MptHandles: 
+            case MessagePayloadType::MptHandles:
                 return std::string("Handles");
 
             default:
@@ -82,20 +82,19 @@ namespace SimuTrace
 
     static std::string messageFlagsToStr(uint8_t flags)
     {
-        static const char* flagChar[1] = {
-            "r", // LmfResponse
+        static const char* flagChars[] = {
+            "r" // LmfResponse
         };
 
         std::stringstream str;
-
-        uint32_t i = 0;
-        while (true) {
-            uint32_t flag = (1 << i++);
+        for (uint32_t i = 0; ; ++i) {
+            const uint32_t flag = (1 << i);
             if (flag >= MessageFlags::MfMax) {
                 break;
             }
 
-            str << ((flags && flag) != 0) ? flagChar[i] : "-";
+            assert(i < sizeof(flagChars) / sizeof(char*));
+            str << ((flags && flag) != 0) ? flagChars[i] : "-";
         }
 
         return str.str();
@@ -103,21 +102,20 @@ namespace SimuTrace
 
     static std::string localMessageFlagsToStr(uint8_t flags)
     {
-        static const char* flagChar[2] = {
-            "c", // LmfCustomAllocation 
+        static const char* flagChars[] = {
+            "c", // LmfCustomAllocation
             "o"  // LmfAllocationOwner
         };
 
         std::stringstream str;
-
-        uint32_t i = 0;
-        while (true) {
-            uint32_t flag = (1 << i++);
+        for (uint32_t i = 0; ; ++i) {
+            const uint32_t flag = (1 << i);
             if (flag >= LocalMessageFlags::LmfMax) {
                 break;
             }
 
-            str << ((flags && flag) != 0) ? flagChar[i] : "-";
+            assert(i < sizeof(flagChars) / sizeof(char*));
+            str << ((flags && flag) != 0) ? flagChars[i] : "-";
         }
 
         return str.str();
@@ -130,7 +128,7 @@ namespace SimuTrace
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
-    struct Message 
+    struct Message
     {
         uint8_t sequenceNumber;
         uint8_t payloadType : 2;
@@ -173,6 +171,10 @@ namespace SimuTrace
 
         };
 
+        // ^                                                    ^
+        // | All fields up to this point are send over the wire |
+        // +----------------------------------------------------+
+
         void* allocatorArgs;
         PayloadAllocator allocator;
         uint8_t localFlags;
@@ -181,9 +183,9 @@ namespace SimuTrace
 
         void setupEmpty();
         void setupEmbedded(uint32_t parameter0, uint64_t parameter1);
-        void setupData(uint32_t parameter0, uint32_t parameter1, 
+        void setupData(uint32_t parameter0, uint32_t parameter1,
                        const void* data, uint32_t length);
-        void setupHandle(uint32_t parameter0, uint32_t parameter1, 
+        void setupHandle(uint32_t parameter0, uint32_t parameter1,
                          std::vector<Handle>& handles);
 
         bool test(MessagePayloadType payloadType, size_t expectedLength);

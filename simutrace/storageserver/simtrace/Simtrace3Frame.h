@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -25,12 +25,12 @@
 #include "Simtrace3Format.h"
 
 namespace SimuTrace {
-namespace Simtrace 
+namespace Simtrace
 {
 
     typedef std::vector<AttributeHeaderDescription> AttributeList;
 
-    class Simtrace3Frame 
+    class Simtrace3Frame
     {
     private:
         DISABLE_COPY(Simtrace3Frame);
@@ -43,19 +43,19 @@ namespace Simtrace
 
         FileOffset _offset;
     public:
-        Simtrace3Frame(Stream* stream = nullptr, 
+        Simtrace3Frame(Stream* stream = nullptr,
                        SegmentControlElement* control = nullptr);
         Simtrace3Frame(const FrameHeader& header);
         ~Simtrace3Frame();
 
-        void map(const FileBackedMemorySegment& store, FileOffset offset, 
+        void map(const FileBackedMemorySegment& store, FileOffset offset,
                  size_t size);
 
         void addAttribute(Simtrace3AttributeType type,
                           uint64_t uncompressedSize,
                           void* buffer);
-        void addAttribute(Simtrace3AttributeType type, 
-                          uint64_t uncompressedSize, 
+        void addAttribute(Simtrace3AttributeType type,
+                          uint64_t uncompressedSize,
                           uint64_t size, void* buffer);
         void addAttribute(AttributeHeaderDescription& desc);
 

@@ -23,7 +23,7 @@
 
 #include "SimuPlatform.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     namespace Compression {

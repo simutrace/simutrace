@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -47,7 +47,6 @@ namespace SimuTrace
 
         IdAllocator<BufferId> _bufferIdAllocator;
         IdAllocator<StreamId> _streamIdAllocator;
-        IdAllocator<PoolId> _dataPoolIdAllocator;
 
         std::map<StreamTypeId, EncoderDescriptor> _encoderMap;
 
@@ -58,20 +57,17 @@ namespace SimuTrace
 
         ServerStore(StoreId id, const std::string& name);
 
-        void _registerEncoder(const StreamTypeId& type, 
+        void _registerEncoder(const StreamTypeId& type,
                               EncoderDescriptor& descriptor);
 
         virtual std::unique_ptr<StreamBuffer> _createStreamBuffer(
             size_t segmentSize, uint32_t numSegments) override;
-        virtual std::unique_ptr<Stream> _createStream(StreamId id, 
+        virtual std::unique_ptr<Stream> _createStream(StreamId id,
             StreamDescriptor& desc, BufferId buffer) override;
-        virtual std::unique_ptr<DataPool> _createDataPool(PoolId id, 
-            StreamId stream) override;
 
         virtual void _enumerateStreamBuffers(std::vector<BufferId>& out) const override;
-        virtual void _enumerateStreams(std::vector<StreamId>& out, 
+        virtual void _enumerateStreams(std::vector<StreamId>& out,
                                        bool includeHidden) const override;
-        virtual void _enumerateDataPools(std::vector<PoolId>& out) const override;
     public:
         virtual ~ServerStore() override;
 
@@ -79,9 +75,8 @@ namespace SimuTrace
         virtual void detach(SessionId session) override;
 
         void enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
-        void enumerateStreams(std::vector<Stream*>& out, 
-                              bool includeHidden) const;   
-        void enumerateDataPools(std::vector<DataPool*>& out) const;
+        void enumerateStreams(std::vector<Stream*>& out,
+                              bool includeHidden) const;
 
         StreamEncoder::FactoryMethod getEncoderFactory(const StreamTypeId& type);
     };

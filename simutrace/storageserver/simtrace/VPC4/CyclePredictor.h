@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -52,7 +52,7 @@ namespace SimuTrace
 
         T _referenceCycleCount;
 
-        inline bool _getCycleCount(PredictorId** codeBuffer, T** dataBuffer, 
+        inline bool _getCycleCount(PredictorId** codeBuffer, T** dataBuffer,
                                    T& out)
         {
             PredictorId id = this->_readPredictorId(codeBuffer);
@@ -82,7 +82,7 @@ namespace SimuTrace
         CyclePredictor() :
             CyclePredictor(0) { }
 
-        PredictorId encodeCycle(PredictorId** codeBuffer, T** dataBuffer, 
+        PredictorId encodeCycle(PredictorId** codeBuffer, T** dataBuffer,
                                 const T cycle, const K ip)
         {
             PredictionContext<T> context;
@@ -102,7 +102,7 @@ namespace SimuTrace
             return this->_evaluateContext(codeBuffer, dataBuffer, context, stride);
         }
 
-        void decodeCycle(PredictorId** codeBuffer, T** dataBuffer, const K ip, 
+        void decodeCycle(PredictorId** codeBuffer, T** dataBuffer, const K ip,
                          T& out)
         {
             T stride, update;
@@ -125,7 +125,7 @@ namespace SimuTrace
             out = _referenceCycleCount;
         }
 
-        void setCycleCount(const T cycleCount) 
+        void setCycleCount(const T cycleCount)
         {
             _referenceCycleCount = cycleCount;
         }

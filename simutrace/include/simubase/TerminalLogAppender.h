@@ -39,7 +39,7 @@ namespace SimuTrace
     {
     private:
         // Define common console colors. Intensity comes from the Windows
-        // console that allow to choose between 127er and 255er color 
+        // console that allow to choose between 127er and 255er color
         // intensities.
         enum Color {
             Black       = 0x0000,
@@ -72,13 +72,13 @@ namespace SimuTrace
 
         bool _enableColor;
         std::map<LogPriority::Value, uint16_t> _colorMap;
-        
+
         virtual void _append(const LogEvent& event) override;
 
         void _setTerminalColor(uint16_t color);
         void _setColorOff();
     public:
-        TerminalLogAppender(const std::string& name, 
+        TerminalLogAppender(const std::string& name,
                             std::unique_ptr<LogLayout>& layout, bool inherit);
         virtual ~TerminalLogAppender();
 

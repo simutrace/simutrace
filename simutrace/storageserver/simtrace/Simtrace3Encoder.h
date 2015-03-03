@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -43,22 +43,22 @@ namespace Simtrace
 
         struct WorkerContext;
 
-        virtual void _encode(Simtrace3Frame& frame, SegmentId id, 
+        virtual void _encode(Simtrace3Frame& frame, SegmentId id,
                              StreamSegmentId sequenceNumber) = 0;
-        virtual void _decode(Simtrace3StorageLocation& location, SegmentId id, 
+        virtual void _decode(Simtrace3StorageLocation& location, SegmentId id,
                              StreamSegmentId sequenceNumber) = 0;
 
-        static void _writerMain(WorkItem<WorkerContext>& workItem, 
+        static void _writerMain(WorkItem<WorkerContext>& workItem,
                                 WorkerContext& context);
 
-        static void _readerMain(WorkItem<WorkerContext>& workItem, 
+        static void _readerMain(WorkItem<WorkerContext>& workItem,
                                 WorkerContext& context);
 
     protected:
         ServerStream* _getStream() const;
 
     public:
-        Simtrace3Encoder(ServerStore& store, const std::string& friendlyName, 
+        Simtrace3Encoder(ServerStore& store, const std::string& friendlyName,
                          ServerStream* stream);
         virtual ~Simtrace3Encoder() override;
 

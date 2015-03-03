@@ -3,10 +3,10 @@
  * Marc Rittinghaus, Thorsten Groeninger
  *
  *             _____ _                 __
- *            / ___/(_)___ ___  __  __/ /__________ _________ 
+ *            / ___/(_)___ ___  __  __/ /__________ _________
  *            \__ \/ / __ `__ \/ / / / __/ ___/ __ `/ ___/ _ \
  *           ___/ / / / / / / / /_/ / /_/ /  / /_/ / /__/  __/
- *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/ 
+ *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/
  *                         http://simutrace.org
  *
  * Simutrace Base Library (libsimubase) is part of Simutrace.
@@ -105,6 +105,7 @@
 #include "LogAppender.h"
 #include "OstreamLogAppender.h"
 #include "TerminalLogAppender.h"
+#include "FileLogAppender.h"
 
 #include "LogLayout.h"
 #include "SimpleLogLayout.h"

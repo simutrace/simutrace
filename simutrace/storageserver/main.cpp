@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@
 
 using namespace SimuTrace;
 
-int main(int argc, const char* argv[]){
+int main(int argc, const char* argv[])
+{
     return StorageServer::run(argc, argv);
 }

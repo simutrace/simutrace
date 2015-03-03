@@ -24,12 +24,11 @@
 #include "SimuBase.h"
 #include "SimuStorTypes.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     class StreamBuffer;
     class Stream;
-    class DataPool;
 
     struct StorageLocation
     {
@@ -45,6 +44,21 @@ namespace SimuTrace
             ranges(),
             compressedSize(0),
             rawEntryCount(0) { }
+
+        StorageLocation(SegmentControlElement& ctrl) :
+            link(ctrl.link),
+            ranges(),
+            compressedSize(0),
+            rawEntryCount(ctrl.rawEntryCount)
+        {
+            assert(ctrl.rawEntryCount > 0);
+            ranges.startIndex = ctrl.startIndex;
+            ranges.endIndex = ctrl.startIndex + ctrl.rawEntryCount - 1;
+            ranges.startCycle = ctrl.startCycle;
+            ranges.endCycle = ctrl.endCycle;
+            ranges.startTime = ctrl.startTime;
+            ranges.endTime = ctrl.endTime;
+        }
 
         virtual ~StorageLocation() { }
 
@@ -77,7 +91,6 @@ namespace SimuTrace
         std::string _name;
 
         std::map<BufferId, std::unique_ptr<StreamBuffer>> _buffers;
-        std::map<PoolId, std::unique_ptr<DataPool>> _dataPools;
         std::map<StreamId, std::unique_ptr<Stream>> _streams;
     protected:
         mutable ReaderWriterLock _lock;
@@ -86,35 +99,28 @@ namespace SimuTrace
 
         virtual std::unique_ptr<StreamBuffer> _createStreamBuffer(
             size_t segmentSize, uint32_t numSegments) = 0;
-        virtual std::unique_ptr<Stream> _createStream(StreamId id, 
+        virtual std::unique_ptr<Stream> _createStream(StreamId id,
             StreamDescriptor& desc, BufferId buffer) = 0;
-        virtual std::unique_ptr<DataPool> _createDataPool(PoolId id, 
-            StreamId stream) = 0;
 
         virtual void _enumerateStreamBuffers(std::vector<BufferId>& out) const = 0;
         virtual void _enumerateStreams(std::vector<StreamId>& out,
                                        bool includeHidden) const = 0;
-        virtual void _enumerateDataPools(std::vector<PoolId>& out) const = 0;
 
         void _lockConfiguration();
         void _freeConfiguration();
 
         BufferId _addStreamBuffer(std::unique_ptr<StreamBuffer>& buffer);
         StreamId _addStream(std::unique_ptr<Stream>& stream);
-        PoolId _addDataPool(std::unique_ptr<DataPool>& pool);
 
         BufferId _registerStreamBuffer(size_t segmentSize, uint32_t numSegments);
-        StreamId _registerStream(StreamId id, StreamDescriptor& desc, 
+        StreamId _registerStream(StreamId id, StreamDescriptor& desc,
                                  BufferId buffer);
-        PoolId _registerDataPool(PoolId id, StreamId stream);
 
         void _enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
         void _enumerateStreams(std::vector<Stream*>& out, bool includeHidden) const;
-        void _enumerateDataPools(std::vector<DataPool*>& out) const;
 
-        StreamBuffer* _getStreamBuffer(BufferId id) const;
-        Stream* _getStream(StreamId id) const;
-        DataPool* _getDataPool(PoolId id) const;
+        virtual StreamBuffer* _getStreamBuffer(BufferId id);
+        virtual Stream* _getStream(StreamId id);
     public:
         virtual ~Store();
 
@@ -122,21 +128,17 @@ namespace SimuTrace
 
         BufferId registerStreamBuffer(size_t segmentSize, uint32_t numSegments);
         StreamId registerStream(StreamDescriptor& desc, BufferId buffer);
-        PoolId registerDataPool(StreamId id);
 
         void enumerateStreamBuffers(std::vector<BufferId>& out) const;
         void enumerateStreams(std::vector<StreamId>& out, bool includeHidden) const;
-        void enumerateDataPools(std::vector<PoolId>& out) const;
 
         StoreId getId() const;
         const std::string& getName() const;
 
-        StreamBuffer& getStreamBuffer(BufferId id) const;
-        
-        Stream& getStream(StreamId id) const;
-        Stream* findStream(StreamId id) const;
+        StreamBuffer& getStreamBuffer(BufferId id);
 
-        DataPool& getDataPool(PoolId id) const;
+        Stream& getStream(StreamId id);
+        Stream* findStream(StreamId id);
     };
 
 }

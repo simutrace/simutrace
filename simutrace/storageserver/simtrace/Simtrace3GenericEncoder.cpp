@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ namespace Simtrace
         profileCreateProfiler();
     }
 
-    void Simtrace3GenericEncoder::_encode(Simtrace3Frame& frame, SegmentId id, 
+    void Simtrace3GenericEncoder::_encode(Simtrace3Frame& frame, SegmentId id,
                                          StreamSegmentId sequenceNumber)
     {
         StreamBuffer& buffer = _getStream()->getStreamBuffer();
@@ -58,7 +58,7 @@ namespace Simtrace
         void* sourceBuffer = buffer.getSegment(id);
 
         size_t targetLength = targetSeg.getLength();
-        size_t sourceLength = getEntrySize(&_getStream()->getType()) * 
+        size_t sourceLength = getEntrySize(&_getStream()->getType()) *
             ctrl->rawEntryCount;
 
         targetLength = Compression::lzmaCompress(sourceBuffer, sourceLength,
@@ -69,8 +69,8 @@ namespace Simtrace
                            targetLength, targetBuffer);
     }
 
-    void Simtrace3GenericEncoder::_decode(Simtrace3StorageLocation& location, 
-                                          SegmentId id, 
+    void Simtrace3GenericEncoder::_decode(Simtrace3StorageLocation& location,
+                                          SegmentId id,
                                           StreamSegmentId sequenceNumber)
     {
         StreamBuffer& buffer = _getStream()->getStreamBuffer();
@@ -101,19 +101,19 @@ namespace Simtrace
         size_t targetLength = static_cast<size_t>(buffer.getSegmentSize());
         size_t sourceLength = static_cast<size_t>(dataAttr->header.size);
 
-        targetLength = Compression::lzmaDecompress(sourceBuffer, 
+        targetLength = Compression::lzmaDecompress(sourceBuffer,
                                                     sourceLength,
-                                                    targetBuffer, 
+                                                    targetBuffer,
                                                     targetLength);
 
         if (targetLength != dataAttr->header.uncompressedSize) {
             LogWarn("Size mismatch after decompression "
-                    "<stream: %d, sqn: %d>", location.link.stream, 
+                    "<stream: %d, sqn: %d>", location.link.stream,
                     location.link.sequenceNumber);
         }
     }
 
-    StreamEncoder* Simtrace3GenericEncoder::factoryMethod(ServerStore& store, 
+    StreamEncoder* Simtrace3GenericEncoder::factoryMethod(ServerStore& store,
                                                           ServerStream* stream)
     {
         return new Simtrace3GenericEncoder(store, stream);

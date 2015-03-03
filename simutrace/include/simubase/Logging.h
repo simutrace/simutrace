@@ -29,14 +29,14 @@
 #include "LogCategory.h"
 #include "LogPriority.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
 #ifdef _MSC_VER
 #define Log(level, msg, ...)                                \
     do {                                                    \
         LogCategory* log = Environment::getLog();           \
-        if (log != nullptr) {                                  \
+        if (log != nullptr) {                               \
             log->log((level), (msg), __VA_ARGS__);          \
         } else {                                            \
             std::cout << "[PreLog] " +                      \
@@ -91,7 +91,7 @@ namespace SimuTrace
 #define LogDebug(msg, ...) \
     Log(LogPriority::Debug, msg, ##__VA_ARGS__)
 #define LogMem(msg, ...) \
-    Log(LogPriority::RpcDebug, msg, ##__VA_ARGS__)
+    Log(LogPriority::MemDebug, msg, ##__VA_ARGS__)
 #define LogRpc(msg, ...) \
     Log(LogPriority::RpcDebug, msg, ##__VA_ARGS__)
 #else
@@ -100,7 +100,7 @@ namespace SimuTrace
 #define LogRpc(msg, ...)
 #endif
 
-#endif // _MSC_VER  
+#endif // _MSC_VER
 
 }
 

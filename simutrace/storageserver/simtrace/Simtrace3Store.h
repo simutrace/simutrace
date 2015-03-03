@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -43,7 +43,7 @@ namespace Simtrace
 
         Simtrace3StorageLocation(Simtrace3Frame& frame) :
             StorageLocation(StreamSegmentLink(
-                                frame.getHeader().streamId, 
+                                frame.getHeader().streamId,
                                 frame.getHeader().sequenceNumber)),
             offset(INVALID_FILE_OFFSET),
             size(0)
@@ -52,7 +52,7 @@ namespace Simtrace
             ranges.startCycle = header.startCycle;
             ranges.endCycle   = header.endCycle;
 
-            if ((header.entryCount > 0) && 
+            if ((header.entryCount > 0) &&
                 (header.startIndex != INVALID_ENTRY_INDEX)) {
                 ranges.startIndex = header.startIndex;
                 ranges.endIndex   = header.startIndex + header.entryCount - 1;
@@ -99,32 +99,31 @@ namespace Simtrace
         void _mapHeader();
         void _initalizeHeader();
         void _finalizeHeader();
-        
+
         void _mapDirectory(uint64_t offset);
         void _addDirectory();
-        void _addFrameToDirectory(Simtrace3Frame& frame, 
+        void _addFrameToDirectory(Simtrace3Frame& frame,
                                   FileOffset offset);
         void _addFrameToStoreInformation(Simtrace3Frame& frame,
                                          uint64_t uncompressedSize);
 
-        FileOffset _writeFrame(Simtrace3Frame& frame, 
+        FileOffset _writeFrame(Simtrace3Frame& frame,
                                uint64_t& uncompressedBytesWritten);
         uint64_t _readFrame(Simtrace3Frame& frame,
                             FileOffset offset, size_t size);
 
-        virtual std::unique_ptr<Stream> _createStream(StreamId id, 
+        virtual std::unique_ptr<Stream> _createStream(StreamId id,
             StreamDescriptor& desc, BufferId buffer) override;
     public:
-        Simtrace3Store(StoreId store, const std::string& path, 
-                       bool alwaysCreate);
+        Simtrace3Store(StoreId store, const std::string& path);
         virtual ~Simtrace3Store() override;
 
         FileOffset commitFrame(Simtrace3Frame& frame);
 
-        void readFrame(Simtrace3Frame& frame, 
+        void readFrame(Simtrace3Frame& frame,
                        Simtrace3StorageLocation& location);
 
-        void readAttribute(Simtrace3Frame& frame, uint32_t index, 
+        void readAttribute(Simtrace3Frame& frame, uint32_t index,
                            void* buffer);
     };
 

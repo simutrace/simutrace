@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -59,8 +59,8 @@ namespace Simtrace
         StreamId streams[numStreams];
 
         AttributeAssociatedStreams() :
-            streamCount(0) 
-        { 
+            streamCount(0)
+        {
             memset(streams, INVALID_STREAM_ID, sizeof(streams));
         }
     };
@@ -104,7 +104,7 @@ namespace Simtrace
         uint32_t reserved0;
 
         uint64_t fileSize;
-        uint64_t uncompressedFileSize; 
+        uint64_t uncompressedFileSize;
         uint64_t frameCount;
 
         uint64_t entryCount;
@@ -115,9 +115,9 @@ namespace Simtrace
         CycleCount startCycle;
         CycleCount endCycle;
 
-        /* The directory table provides O(1) lookup for the file offsets for 
+        /* The directory table provides O(1) lookup for the file offsets for
            the "first" directories. With the recommended 64 MiB frame size,
-           the table will overflow for (uncompressed) traces larger than 
+           the table will overflow for (uncompressed) traces larger than
            28 TiB. The directories are linked as a singly linked list, allowing
            for more than <tableSize> directories. */
         uint32_t directoryCount;
@@ -175,8 +175,8 @@ namespace Simtrace
         uint64_t reserved1;
 
         /* Storing a table of the first attributes improves the chance that we
-           are able to recover meta data in case of corruption. This way, the 
-           attribute table is included in the checksum (to detect corruption) 
+           are able to recover meta data in case of corruption. This way, the
+           attribute table is included in the checksum (to detect corruption)
            and replicated into the frame directory. */
 
         AttributeHeaderLink attributes[SIMTRACE_V3_FRAME_ATTRIBUTE_TABLE_SIZE];

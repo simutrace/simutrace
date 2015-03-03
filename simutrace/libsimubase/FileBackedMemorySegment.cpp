@@ -29,7 +29,7 @@
 namespace SimuTrace
 {
 
-    FileBackedMemorySegment::FileBackedMemorySegment(const std::string& fileName, 
+    FileBackedMemorySegment::FileBackedMemorySegment(const std::string& fileName,
                                                      bool writeable) :
         MemorySegment(writeable),
         _name(fileName),
@@ -60,8 +60,8 @@ namespace SimuTrace
 
     }
 
-    FileBackedMemorySegment::FileBackedMemorySegment(Handle fileMapping, 
-                                                     bool writeable, 
+    FileBackedMemorySegment::FileBackedMemorySegment(Handle fileMapping,
+                                                     bool writeable,
                                                      size_t size,
                                                      const std::string* name) :
         MemorySegment(writeable, size),
@@ -99,14 +99,14 @@ namespace SimuTrace
         attr.bInheritHandle       = TRUE;
         attr.lpSecurityDescriptor = nullptr;
 
-        unsigned int fileAccess = (writeable) ? 
+        unsigned int fileAccess = (writeable) ?
             GENERIC_WRITE | GENERIC_READ : GENERIC_READ;
 
-        SafeHandle file = ::CreateFileA(_name.c_str(), fileAccess, 
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE, 
+        SafeHandle file = ::CreateFileA(_name.c_str(), fileAccess,
+                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
                                         &attr, OPEN_EXISTING, 0, NULL);
     #else
-        unsigned int fileAccess = (writeable) ? 
+        unsigned int fileAccess = (writeable) ?
             O_RDWR : O_RDONLY;
 
         SafeHandle file = ::open(_name.c_str(), fileAccess);
@@ -168,8 +168,8 @@ namespace SimuTrace
         assert(!(_file.isValid() && (name != nullptr)));
         assert((name == nullptr) || (!_name.empty()));
 
-        _fileMapping = ::CreateFileMappingA(_file, &attr, prot, 
-                                            size.HighPart, size.LowPart, 
+        _fileMapping = ::CreateFileMappingA(_file, &attr, prot,
+                                            size.HighPart, size.LowPart,
                                             name);
 
         ThrowOn(!_fileMapping.isValid(), PlatformException);
@@ -181,8 +181,8 @@ namespace SimuTrace
     {
         void* buffer;
 
-        // The offset needs to be aligned according to the system's allocation 
-        // granularity. We therefore map more memory if necessary and add the 
+        // The offset needs to be aligned according to the system's allocation
+        // granularity. We therefore map more memory if necessary and add the
         // difference to the buffer address at the end.
         static const uint64_t mask = ~(static_cast<uint64_t>(
             System::getMemoryAllocationGranularity()) - 1);
@@ -194,17 +194,17 @@ namespace SimuTrace
         LARGE_INTEGER offset;
         offset.QuadPart = mappingOffset;
 
-        unsigned int prot = (isReadOnly()) ?  
+        unsigned int prot = (isReadOnly()) ?
             FILE_MAP_READ : FILE_MAP_READ | FILE_MAP_WRITE;
 
-        buffer = ::MapViewOfFile(_fileMapping, prot, offset.HighPart, 
+        buffer = ::MapViewOfFile(_fileMapping, prot, offset.HighPart,
                                  offset.LowPart, size + mappingSizeDiff);
         if (buffer == nullptr) {
     #else
-        unsigned int prot = (isReadOnly()) ? 
+        unsigned int prot = (isReadOnly()) ?
             PROT_READ : PROT_READ | PROT_WRITE;
 
-        buffer = ::mmap(0, size + mappingSizeDiff, prot, MAP_SHARED, _file, 
+        buffer = ::mmap(0, size + mappingSizeDiff, prot, MAP_SHARED, _file,
                         mappingOffset);
         if (buffer == (char*)-1) {
     #endif
@@ -234,7 +234,7 @@ namespace SimuTrace
 
     void FileBackedMemorySegment::flush()
     {
-        ThrowOn((!_file.isValid()) || (isReadOnly()), 
+        ThrowOn((!_file.isValid()) || (isReadOnly()),
                 InvalidOperationException);
 
     #ifdef WIN32

@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -36,11 +36,11 @@ namespace SimuTrace
 
     template<typename T> class Predictor;
 
-    // In VPC, multiple predictors are used to predict a certain value 
-    // (e.g., Ip). If more than one predictor is correct, VPC picks the 
-    // predictor with the highest usage count [3.3 The VPC3 Algorithm] to 
-    // generate an output stream with high homogeneity. We thus send a 
-    // prediction context through all predictors and each predictor may set 
+    // In VPC, multiple predictors are used to predict a certain value
+    // (e.g., Ip). If more than one predictor is correct, VPC picks the
+    // predictor with the highest usage count [3.3 The VPC3 Algorithm] to
+    // generate an output stream with high homogeneity. We thus send a
+    // prediction context through all predictors and each predictor may set
     // itself as best predictor, if its usage count exceeds the current one.
     template<typename T>
     struct PredictionContext {
@@ -56,14 +56,14 @@ namespace SimuTrace
 
         inline bool isPredicted() const
         {
-            assert((predictor == nullptr) || 
+            assert((predictor == nullptr) ||
                    (predictorId != INVALID_PREDICTOR_INDEX));
 
             return (predictor != nullptr);
         }
     };
 
-    template<typename T> 
+    template<typename T>
     class Predictor
     {
     protected:
@@ -77,7 +77,7 @@ namespace SimuTrace
 
         Predictor(PredictorId idBase, uint32_t maxPredictors) :
             _idBase(idBase),
-            _usageCount(new uint64_t[maxPredictors]) 
+            _usageCount(new uint64_t[maxPredictors])
         {
             memset(_usageCount.get(), 0, sizeof(_usageCount));
         }

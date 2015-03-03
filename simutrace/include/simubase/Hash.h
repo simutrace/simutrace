@@ -28,7 +28,7 @@ namespace SimuTrace
 
     namespace Hash {
 
-        void murmur3_32(const void* buffer, size_t length, void* hashBuffer, 
+        void murmur3_32(const void* buffer, size_t length, void* hashBuffer,
                         size_t hashBufferLength, uint32_t seed);
 
         void murmur3_128(const void* buffer, size_t length, void* hashBuffer,

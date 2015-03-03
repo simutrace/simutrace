@@ -45,10 +45,10 @@ namespace SimuTrace
         void _createServerNamedPipe();
         void _connectServerNamedPipe();
 
-        void _duplicateHandles(const std::vector<Handle>& local, 
+        void _duplicateHandles(const std::vector<Handle>& local,
                                std::vector<Handle>& remote);
     #else
-        void _createDomainSocket(SafeHandle& handle, 
+        void _createDomainSocket(SafeHandle& handle,
                                  struct sockaddr_un& sockaddr);
         void _createServerDomainSocket();
         void _connectServerDomainSocket();
@@ -57,7 +57,7 @@ namespace SimuTrace
         static void _freeHandleTransferMessage(struct msghdr* msg);
 
         uint64_t _sendHandleTransferMessage(struct msghdr* msg);
-        uint64_t _receiveHandleTransferMessage(struct msghdr* msg, 
+        uint64_t _receiveHandleTransferMessage(struct msghdr* msg,
                                                uint32_t handleCount);
     #endif
 
@@ -72,11 +72,11 @@ namespace SimuTrace
         virtual size_t _send(const void* data, size_t size) override;
         virtual size_t _send(const std::vector<Handle>& handles) override;
         virtual size_t _receive(void* data, size_t size) override;
-        virtual size_t _receive(std::vector<Handle>& handles, 
+        virtual size_t _receive(std::vector<Handle>& handles,
                                 uint32_t handleCount) override;
 
     public:
-        static std::unique_ptr<Channel> factoryMethod(bool isServer, 
+        static std::unique_ptr<Channel> factoryMethod(bool isServer,
             const std::string& address);
 
     public:

@@ -23,10 +23,9 @@
 #include "Store.h"
 
 #include "StreamBuffer.h"
-#include "DataPool.h"
 #include "Stream.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     Store::Store(StoreId id, const std::string& name) :
@@ -44,13 +43,13 @@ namespace SimuTrace
         LogInfo("<store: %s> Store closed.", _name.c_str());
     }
 
-    Store::Reference Store::makeOwnerReference(Store* store) 
+    Store::Reference Store::makeOwnerReference(Store* store)
     {
         return Reference(store, [](Store* instance){
             std::string name = instance->getName();
             delete instance;
 
-            LogDebug("Store '%s' released.", name.c_str()); 
+            LogDebug("Store '%s' released.", name.c_str());
         });
     }
 
@@ -71,11 +70,13 @@ namespace SimuTrace
         _buffers[id] = std::move(buffer);
 
         LogInfo("<store: %s> Registered stream buffer "
-                "<id: %d, segs: %d, size: %s (%s)>.",
+                "<id: %d, segs: %d, size: %s (%s), type: %s>.",
                 _name.c_str(), id,
                 buf->getNumSegments(),
                 sizeToString(buf->getSegmentSize()).c_str(),
-                sizeToString(buf->getBufferSize()).c_str());
+                sizeToString(buf->getBufferSize()).c_str(),
+                (buf->getBufferHandle() == INVALID_HANDLE_VALUE) ?
+                    "private" : "shared");
 
         return id;
     }
@@ -84,7 +85,7 @@ namespace SimuTrace
     {
         assert(stream != nullptr);
         Stream* str = stream.get();
-        
+
         StreamId id = stream->getId();
         assert(id != INVALID_STREAM_ID);
         assert(_streams.find(id) == _streams.end());
@@ -104,24 +105,7 @@ namespace SimuTrace
         return id;
     }
 
-    PoolId Store::_addDataPool(std::unique_ptr<DataPool>& pool)
-    {
-        assert(pool != nullptr);
-        DataPool* pl = pool.get();
-
-        PoolId id = pool->getId();
-        assert(id != INVALID_POOL_ID);
-        assert(_dataPools.find(id) == _dataPools.end());
-
-        _dataPools[id] = std::move(pool);
-
-        LogInfo("<store: %s> Registered data pool for stream %d <id: %d>.",
-                _name.c_str(), pl->getStream().getId(), id);
-
-        return id;
-    }
-
-    BufferId Store::_registerStreamBuffer(size_t segmentSize, 
+    BufferId Store::_registerStreamBuffer(size_t segmentSize,
                                           uint32_t numSegments)
     {
         ThrowOn(_buffers.size() > SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS,
@@ -132,7 +116,7 @@ namespace SimuTrace
         return _addStreamBuffer(buffer);
     }
 
-    StreamId Store::_registerStream(StreamId id, StreamDescriptor& desc, 
+    StreamId Store::_registerStream(StreamId id, StreamDescriptor& desc,
                                     BufferId buffer)
     {
         ThrowOn(_streams.size() > SIMUTRACE_STORE_MAX_NUM_STREAMS,
@@ -141,16 +125,6 @@ namespace SimuTrace
         auto stream = _createStream(id, desc, buffer);
 
         return _addStream(stream);
-    }
-
-    PoolId Store::_registerDataPool(PoolId id, StreamId stream)
-    {
-        ThrowOn(_dataPools.size() > SIMUTRACE_STORE_MAX_NUM_DATAPOOLS,
-                InvalidOperationException);
-
-        auto dataPool = _createDataPool(id, stream);
-
-        return _addDataPool(dataPool);
     }
 
     void Store::_lockConfiguration()
@@ -162,7 +136,6 @@ namespace SimuTrace
 
     void Store::_freeConfiguration()
     {
-        _dataPools.clear();
         _streams.clear();
         _buffers.clear();
 
@@ -179,7 +152,7 @@ namespace SimuTrace
         }
     }
 
-    void Store::_enumerateStreams(std::vector<Stream*>& out, 
+    void Store::_enumerateStreams(std::vector<Stream*>& out,
                                   bool includeHidden) const
     {
         out.clear();
@@ -194,17 +167,7 @@ namespace SimuTrace
         }
     }
 
-    void Store::_enumerateDataPools(std::vector<DataPool*>& out) const
-    {
-        out.clear();
-        out.reserve(_dataPools.size());
-
-        for (auto& pair : _dataPools) {
-            out.push_back(pair.second.get());
-        }
-    }
-
-    StreamBuffer* Store::_getStreamBuffer(BufferId id) const
+    StreamBuffer* Store::_getStreamBuffer(BufferId id)
     {
         auto it = _buffers.find(id);
         if (it == _buffers.end()) {
@@ -214,7 +177,7 @@ namespace SimuTrace
         return it->second.get();
     }
 
-    Stream* Store::_getStream(StreamId id) const
+    Stream* Store::_getStream(StreamId id)
     {
         auto it = _streams.find(id);
         if (it == _streams.end()) {
@@ -224,17 +187,7 @@ namespace SimuTrace
         return it->second.get();
     }
 
-    DataPool* Store::_getDataPool(PoolId id) const
-    {
-        auto it = _dataPools.find(id);
-        if (it == _dataPools.end()) {
-            return nullptr;
-        }
-
-        return it->second.get();
-    }
-
-    BufferId Store::registerStreamBuffer(size_t segmentSize, 
+    BufferId Store::registerStreamBuffer(size_t segmentSize,
                                          uint32_t numSegments)
     {
         LockScopeExclusive(_lock);
@@ -243,21 +196,13 @@ namespace SimuTrace
         return _registerStreamBuffer(segmentSize, numSegments);
     }
 
-    StreamId Store::registerStream(StreamDescriptor& desc, 
+    StreamId Store::registerStream(StreamDescriptor& desc,
                                    BufferId buffer)
     {
         LockScopeExclusive(_lock);
         ThrowOn(_configurationLocked, InvalidOperationException);
-        
+
         return _registerStream(INVALID_STREAM_ID, desc, buffer);
-    }
-
-    PoolId Store::registerDataPool(StreamId id)
-    {
-        LockScopeExclusive(_lock);
-        ThrowOn(_configurationLocked, InvalidOperationException);
-
-        return _registerDataPool(INVALID_POOL_ID, id);
     }
 
     void Store::enumerateStreamBuffers(std::vector<BufferId>& out) const
@@ -266,17 +211,11 @@ namespace SimuTrace
         _enumerateStreamBuffers(out);
     }
 
-    void Store::enumerateStreams(std::vector<StreamId>& out, 
+    void Store::enumerateStreams(std::vector<StreamId>& out,
                                  bool includeHidden) const
     {
         LockScopeShared(_lock);
         _enumerateStreams(out, includeHidden);
-    }
-
-    void Store::enumerateDataPools(std::vector<PoolId>& out) const
-    {
-        LockScopeShared(_lock);
-        _enumerateDataPools(out);
     }
 
     StoreId Store::getId() const
@@ -289,7 +228,7 @@ namespace SimuTrace
         return _name;
     }
 
-    StreamBuffer& Store::getStreamBuffer(BufferId id) const
+    StreamBuffer& Store::getStreamBuffer(BufferId id)
     {
         LockScopeShared(_lock);
 
@@ -299,7 +238,7 @@ namespace SimuTrace
         return *buffer;
     }
 
-    Stream& Store::getStream(StreamId id) const
+    Stream& Store::getStream(StreamId id)
     {
         LockScopeShared(_lock);
 
@@ -309,21 +248,11 @@ namespace SimuTrace
         return *stream;
     }
 
-    Stream* Store::findStream(StreamId id) const
+    Stream* Store::findStream(StreamId id)
     {
         LockScopeShared(_lock);
 
         return _getStream(id);
-    }
-
-    DataPool& Store::getDataPool(PoolId id) const
-    {
-        LockScopeShared(_lock);
-
-        DataPool* pool = _getDataPool(id);
-        ThrowOnNull(pool, NotFoundException);
-
-        return *pool;
     }
 
 }

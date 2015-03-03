@@ -28,7 +28,7 @@ namespace SimuTrace
 {
 
     namespace LogPriority {
-   
+
         // Predefined Priority Levels
         typedef enum {
             Fatal        = 0,

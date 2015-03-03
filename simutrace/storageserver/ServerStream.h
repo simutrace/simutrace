@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ namespace SimuTrace
     /* Wait context used by server streams */
     typedef WaitContext<StreamSegmentLink> StreamWait;
 
-    class ServerStream : 
+    class ServerStream :
         public Stream
     {
     private:
@@ -41,14 +41,14 @@ namespace SimuTrace
 
         struct RangeCompare
         {
-            bool operator() (const Range* left, const Range* right)
+            bool operator() (const Range* left, const Range* right) const
             {
                 assert((left != nullptr) && (right != nullptr));
                 return (left->start < right->start);
             }
         };
 
-        typedef std::set<Range*, RangeCompare>::reverse_iterator 
+        typedef std::set<Range*, RangeCompare>::reverse_iterator
             ReverseRangeIterator;
 
         typedef std::list<SegmentLocation*>::iterator OpenListIterator;
@@ -85,7 +85,7 @@ namespace SimuTrace
         SegmentLocation* _getPreviousSegment(StreamSegmentId sequenceNumber) const;
         SegmentLocation* _getNextSegment(StreamSegmentId sequenceNumber) const;
 
-        void _addSegment(StreamSegmentId sequenceNumber, 
+        void _addSegment(StreamSegmentId sequenceNumber,
                          std::unique_ptr<StorageLocation>& location);
         void _completeSegment(StreamSegmentId sequenceNumber,
                               std::unique_ptr<StorageLocation>* location,
@@ -103,41 +103,50 @@ namespace SimuTrace
         void _close(SegmentLocation* loc, StreamWait* wait, bool ignoreErrors,
                     OpenListIterator* openListIt);
 
-        StreamSegmentId _findSequenceNumber(QueryIndexType type, 
-                                            uint64_t value);
-        StreamSegmentId _querySequenceNumber(QueryIndexType type,
-                                             uint64_t value);
+        StreamSegmentId _findSequenceNumber(QueryIndexType type,
+                                            uint64_t value) const;
+
+        bool _adjustQuery(StreamAccessFlags& flags, QueryIndexType& type,
+                          uint64_t& value) const;
+
+        size_t _findCycleCountBinarySearch(SegmentId bufferSegment,
+                                           CycleCount cycle,
+                                           bool reverse) const;
+
+        size_t _findOffset(SegmentId bufferSegment, StreamAccessFlags flags,
+                           QueryIndexType type, uint64_t value) const;
 
         ServerStreamBuffer& _getBuffer() const;
         bool _segmentIsAllocated(StreamSegmentId sequenceNumber) const;
     public:
-        ServerStream(ServerStore& store, StreamId id, 
+        ServerStream(ServerStore& store, StreamId id,
                      const StreamDescriptor& desc, StreamBuffer& buffer);
         virtual ~ServerStream() override;
 
         virtual void queryInformation(
             StreamQueryInformation& informationOut) const override;
 
-        void addSegment(StreamSegmentId sequenceNumber, 
+        void addSegment(StreamSegmentId sequenceNumber,
                         std::unique_ptr<StorageLocation>& location);
         void addSegment(SessionId session,
                         StreamSegmentId sequenceNumber,
                         SegmentId* bufferSegmentOut);
 
         void completeSegment(StreamSegmentId sequenceNumber);
-        void completeSegment(StreamSegmentId sequenceNumber, 
+        void completeSegment(StreamSegmentId sequenceNumber,
                              std::unique_ptr<StorageLocation>* location);
 
-        StreamSegmentId append(SessionId session, SegmentId* bufferSegmentOut, 
+        StreamSegmentId append(SessionId session, SegmentId* bufferSegmentOut,
                                StreamWait* wait = nullptr);
-        StreamSegmentId open(SessionId session, QueryIndexType type, 
-                             uint64_t value, StreamAccessFlags flags, 
-                             SegmentId* bufferSegmentOut, 
+        StreamSegmentId open(SessionId session, QueryIndexType type,
+                             uint64_t value, StreamAccessFlags flags,
+                             SegmentId* bufferSegmentOut,
+                             size_t* offsetOut = nullptr,
                              StreamWait* wait = nullptr);
 
-        void close(SessionId session, StreamSegmentId sequenceNumber, 
+        void close(SessionId session, StreamSegmentId sequenceNumber,
                    StreamWait* wait = nullptr, bool ignoreErrors = false);
-        void close(SessionId session, StreamWait* wait = nullptr, 
+        void close(SessionId session, StreamWait* wait = nullptr,
                    bool ignoreErrors = false);
 
         SegmentId getBufferMapping(StreamSegmentId sequenceNumber) const;

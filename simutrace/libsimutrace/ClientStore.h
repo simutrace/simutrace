@@ -36,28 +36,35 @@ namespace SimuTrace
     private:
         DISABLE_COPY(ClientStore);
 
-        void _replicateStreamBuffer(BufferId buffer);
-        void _replicateStream(StreamId stream);
+        ClientStore(ClientSession& session, const std::string& name,
+                    bool alwaysCreate, bool open);
+
+        StreamBuffer* _replicateStreamBuffer(BufferId buffer);
+        Stream* _replicateStream(StreamId stream);
 
         void _replicateConfiguration(bool update);
 
         virtual std::unique_ptr<StreamBuffer> _createStreamBuffer(
             size_t segmentSize, uint32_t numSegments) override;
-        virtual std::unique_ptr<Stream> _createStream(StreamId id, 
+        virtual std::unique_ptr<Stream> _createStream(StreamId id,
             StreamDescriptor& desc, BufferId buffer) override;
-        virtual std::unique_ptr<DataPool> _createDataPool(PoolId id, 
-            StreamId stream) override;
 
         virtual void _enumerateStreamBuffers(std::vector<BufferId>& out) const override;
         virtual void _enumerateStreams(std::vector<StreamId>& out,
                                        bool includeHidden) const override;
-        virtual void _enumerateDataPools(std::vector<PoolId>& out) const override;
+
+        virtual StreamBuffer* _getStreamBuffer(BufferId id) override;
+        virtual Stream* _getStream(StreamId id) override;
     public:
-        ClientStore(ClientSession& session, const std::string& name, 
-                    bool alwaysCreate);
         virtual ~ClientStore() override;
 
         virtual void detach(SessionId session) override;
+
+        static ClientStore* create(ClientSession& session,
+                                   const std::string& name,
+                                   bool alwaysCreate);
+        static ClientStore* open(ClientSession& session,
+                                 const std::string& name);
     };
 
 }

@@ -40,7 +40,7 @@ namespace SimuTrace
         _messagesReceived(0),
         _messagesSent(0)
     {
-        _channel = ChannelProvider::createChannelFromSpecifier(isServer, 
+        _channel = ChannelProvider::createChannelFromSpecifier(isServer,
                                                                specifier);
     }
 
@@ -72,14 +72,14 @@ namespace SimuTrace
                localMessageFlagsToStr(msg.localFlags).c_str(),
                msg.parameter0,
                msg.data.parameter1,
-               (msg.payloadType == MessagePayloadType::MptData) ? 
+               (msg.payloadType == MessagePayloadType::MptData) ?
                     "len" : "param2",
                msg.data.payloadLength);
 
         _lastSequenceNumber = msg.sequenceNumber;
         _channel->send(&msg, MESSAGE_SIZE);
 
-        switch (msg.payloadType) 
+        switch (msg.payloadType)
         {
             case MessagePayloadType::MptEmbedded: {
                 break;
@@ -91,10 +91,10 @@ namespace SimuTrace
                 }
 
                 assert(msg.data.payload != nullptr);
-                size_t bytesSend = _channel->send(msg.data.payload, 
+                size_t bytesSend = _channel->send(msg.data.payload,
                                                   msg.data.payloadLength);
 
-                ThrowOn(bytesSend != msg.data.payloadLength, 
+                ThrowOn(bytesSend != msg.data.payloadLength,
                         RpcMessageMalformedException);
 
                 break;
@@ -112,7 +112,7 @@ namespace SimuTrace
             }
 
             default: {
-                _DEBUG_BREAK_
+                assert(_false);
 
                 break;
             }
@@ -146,8 +146,8 @@ namespace SimuTrace
                     // Use custom memory allocator if possible. However, do not
                     // use it if this is a response and the status indicates a
                     // failure. In that case the payload may be the error text.
-                    if ((msg.allocator != nullptr) && 
-                        (((msg.flags & MessageFlags::MfResponse) == 0) || 
+                    if ((msg.allocator != nullptr) &&
+                        (((msg.flags & MessageFlags::MfResponse) == 0) ||
                          (msg.response.status != RpcApi::SC_Failed))) {
 
                         msg.allocator(msg, false, msg.allocatorArgs);
@@ -163,10 +163,10 @@ namespace SimuTrace
                         msg.localFlags |= LocalMessageFlags::LmfCustomAllocation;
                     }
 
-                    size_t bytesRead = _channel->receive(msg.data.payload, 
+                    size_t bytesRead = _channel->receive(msg.data.payload,
                                                          msg.data.payloadLength);
 
-                    ThrowOn(bytesRead != msg.data.payloadLength, 
+                    ThrowOn(bytesRead != msg.data.payloadLength,
                             RpcMessageMalformedException);
 
                     break;
@@ -183,7 +183,7 @@ namespace SimuTrace
 
                     msg.handles.handles = new std::vector<Handle>();
 
-                    _channel->receive(*msg.handles.handles, 
+                    _channel->receive(*msg.handles.handles,
                                       msg.handles.handleCount);
 
                     break;
@@ -214,7 +214,7 @@ namespace SimuTrace
                localMessageFlagsToStr(msg.localFlags).c_str(),
                msg.parameter0,
                msg.data.parameter1,
-               (msg.payloadType == MessagePayloadType::MptData) ? 
+               (msg.payloadType == MessagePayloadType::MptData) ?
                     "len" : "param2",
                msg.data.payloadLength);
 

@@ -25,7 +25,6 @@
 #include "StreamBuffer.h"
 #include "Store.h"
 #include "Stream.h"
-#include "DataPool.h"
 #include "SessionManager.h"
 
 using namespace libconfig;
@@ -33,7 +32,7 @@ using namespace libconfig;
 namespace SimuTrace
 {
 
-    Session::Session(SessionManager& manager, uint16_t peerApiVersion, 
+    Session::Session(SessionManager& manager, uint16_t peerApiVersion,
                      SessionId localId, const Environment& root) :
         _peerApiVersion(peerApiVersion),
         _manager(manager),
@@ -50,7 +49,7 @@ namespace SimuTrace
         _environment.config = &_config;
 
         _initializeConfiguration(root.config);
- 
+
         LogInfo("Created session %d (RPCv%d.%d).",
                 localId,
                 RPC_VER_MAJOR(peerApiVersion),
@@ -165,15 +164,15 @@ namespace SimuTrace
 
     void Session::detach()
     {
-        /* This method should only be called from a thread that is attached 
+        /* This method should only be called from a thread that is attached
            to the session. Otherwise, we throw an exception.                 */
 
         ThrowOn(!_isAlive, InvalidOperationException);
 
-        Lock(_lock); { 
+        Lock(_lock); {
             uint32_t refCount = _referenceCount;
 
-            // Detach the calling thread if it is part of the session and 
+            // Detach the calling thread if it is part of the session and
             // not the last one in the session.
             if (!_dodetach()) {
                 Throw(InvalidOperationException);
@@ -189,7 +188,7 @@ namespace SimuTrace
             LockExclusive(_storeLock); {
                 _closeStore();
 
-                // This will detach the current (i.e., the last) thread. 
+                // This will detach the current (i.e., the last) thread.
                 // After the call the worker thread object has been destroyed.
                 _detach(false);
 
@@ -222,8 +221,8 @@ namespace SimuTrace
                 return;
             }
 
-            // Close the session. We need to acquire the store lock to prevent 
-            // that someone opens a new store after we released the current 
+            // Close the session. We need to acquire the store lock to prevent
+            // that someone opens a new store after we released the current
             // one (if any) here.
             LockExclusive(_storeLock); {
                 _closeStore();
@@ -240,20 +239,26 @@ namespace SimuTrace
         _manager._releaseSession(getLocalId());
     }
 
-    void Session::openStore(const std::string& specifier)
-    {
-        createStore(specifier, false);
-    }
-
     void Session::createStore(const std::string& specifier, bool alwaysCreate)
     {
         LockScopeExclusive(_storeLock);
         ThrowOn((_store != nullptr) || !_isAlive, InvalidOperationException);
 
-        LogInfo("Opening store '%s'.%s", specifier.c_str(),
+        LogInfo("Creating store '%s'.%s", specifier.c_str(),
                 (alwaysCreate) ? " Overwriting if existing." : "");
 
         _store = _createStore(specifier, alwaysCreate);
+        assert(_store != nullptr);
+    }
+
+    void Session::openStore(const std::string& specifier)
+    {
+        LockScopeExclusive(_storeLock);
+        ThrowOn((_store != nullptr) || !_isAlive, InvalidOperationException);
+
+        LogInfo("Opening store '%s'.", specifier.c_str());
+
+        _store = _openStore(specifier);
         assert(_store != nullptr);
     }
 
@@ -265,7 +270,7 @@ namespace SimuTrace
         _closeStore();
     }
 
-    BufferId Session::registerStreamBuffer(size_t segmentSize, 
+    BufferId Session::registerStreamBuffer(size_t segmentSize,
                                            uint32_t numSegments)
     {
         LockScopeShared(_storeLock);
@@ -276,7 +281,7 @@ namespace SimuTrace
         return _store->registerStreamBuffer(segmentSize, numSegments);
     }
 
-    StreamId Session::registerStream(StreamDescriptor& desc, 
+    StreamId Session::registerStream(StreamDescriptor& desc,
                                      BufferId buffer)
     {
         LockScopeShared(_storeLock);
@@ -285,16 +290,6 @@ namespace SimuTrace
         assert(_isAlive);
 
         return _store->registerStream(desc, buffer);
-    }
-
-    PoolId Session::registerDataPool(StreamId stream)
-    {
-        LockScopeShared(_storeLock);
-        ThrowOnNull(_store, InvalidOperationException);
-
-        assert(_isAlive);
-
-        return _store->registerDataPool(stream);
     }
 
     void Session::enumerateStreamBuffers(std::vector<BufferId>& out) const
@@ -307,7 +302,7 @@ namespace SimuTrace
         _store->enumerateStreamBuffers(out);
     }
 
-    void Session::enumerateStreams(std::vector<StreamId>& out, 
+    void Session::enumerateStreams(std::vector<StreamId>& out,
                                    bool includeHidden) const
     {
         LockScopeShared(_storeLock);
@@ -318,16 +313,6 @@ namespace SimuTrace
         _store->enumerateStreams(out, includeHidden);
     }
 
-    void Session::enumerateDataPools(std::vector<PoolId>& out) const
-    {
-        LockScopeShared(_storeLock);
-        ThrowOnNull(_store, InvalidOperationException);
-
-        assert(_isAlive);
-
-        _store->enumerateDataPools(out);
-    }
-    
     void Session::enumerateStores(std::vector<std::string>& out) const
     {
         _enumerateStores(out);
@@ -341,16 +326,6 @@ namespace SimuTrace
         assert(_isAlive);
 
         return _store->getStreamBuffer(id);
-    }
-
-    DataPool& Session::getDataPool(PoolId id) const
-    {
-        LockScopeShared(_storeLock);
-        ThrowOnNull(_store, InvalidOperationException);
-
-        assert(_isAlive);
-
-        return _store->getDataPool(id);
     }
 
     Stream& Session::getStream(StreamId id) const

@@ -64,7 +64,7 @@ namespace SimuTrace
     void PrivateMemorySegment::_unmap(byte* buffer)
     {
     #ifdef WIN32
-        if (!::VirtualFree(buffer, 0, MEM_RELEASE)) { 
+        if (!::VirtualFree(buffer, 0, MEM_RELEASE)) {
     #else
         if (::munmap(buffer, getMappedSize()) != 0) {
     #endif

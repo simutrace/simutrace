@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -50,7 +50,7 @@ namespace Simtrace
 
     template<typename accessType> struct MemoryEntryLayout {};
 
-    template<> struct MemoryEntryLayout<MemoryAccess32> 
+    template<> struct MemoryEntryLayout<MemoryAccess32>
     {
         typedef uint32_t dataType;
         typedef Address32 addressType;
@@ -66,7 +66,7 @@ namespace Simtrace
         static const uint32_t lineCount = 4;
     };
 
-    template<> struct MemoryEntryLayout<DataMemoryAccess32> 
+    template<> struct MemoryEntryLayout<DataMemoryAccess32>
     {
         typedef uint32_t dataType;
         typedef Address32 addressType;
@@ -82,7 +82,7 @@ namespace Simtrace
         static const uint32_t lineCount = 4;
     };
 
-    template<> struct MemoryEntryLayout<MemoryAccess64> 
+    template<> struct MemoryEntryLayout<MemoryAccess64>
     {
         typedef uint64_t dataType;
         typedef Address64 addressType;
@@ -97,7 +97,7 @@ namespace Simtrace
         static const uint32_t lineCount = 3;
     };
 
-    template<> struct MemoryEntryLayout<DataMemoryAccess64> 
+    template<> struct MemoryEntryLayout<DataMemoryAccess64>
     {
         typedef uint64_t dataType;
         typedef Address64 addressType;
@@ -127,7 +127,7 @@ namespace Simtrace
             static const uint32_t dataStreamCount = 1 + MemoryEntryLayout<T>::dataFieldCount;
 
             // ids + data (incl. cycle) + meta
-            static const uint32_t totalStreamCount = 
+            static const uint32_t totalStreamCount =
                 idStreamCount + (dataStreamCount + 1) + 1;
         };
 
@@ -139,39 +139,39 @@ namespace Simtrace
             static const size_t segmentSize = SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB;
             static const size_t maxEntryCount = segmentSize / sizeof(T);
 
-            // For each entry in the source segment, we need to store at most 
+            // For each entry in the source segment, we need to store at most
             // only a single data field in each hidden stream. We thus have
             // space to map multiple source segments to one hidden stream
             // segment. For 64 bit, we get for example 4 sub segments.
-            static const size_t dataSubSegmentSize = 
+            static const size_t dataSubSegmentSize =
                 maxEntryCount * sizeof(DataType);
-            static const uint32_t dataSubSegmentCount = 
+            static const uint32_t dataSubSegmentCount =
                 static_cast<uint32_t>(segmentSize / dataSubSegmentSize);
 
             // We always use 64 bits for the cycle counts and 16 bits for the
             // meta data.
-            static const size_t cycleSubSegmentSize = 
+            static const size_t cycleSubSegmentSize =
                 maxEntryCount * sizeof(CycleCount);
             static const uint32_t cycleSubSegmentCount =
                 static_cast<uint32_t>(segmentSize / cycleSubSegmentSize);
 
-            static const size_t metaSubSegmentSize = 
+            static const size_t metaSubSegmentSize =
                 maxEntryCount * sizeof(uint16_t);
-            static const uint32_t metaSubSegmentCount = 
+            static const uint32_t metaSubSegmentCount =
                 static_cast<uint32_t>(segmentSize / metaSubSegmentSize);
 
             // The predictor ids take even less space than the data fields
             // (just one byte). We therefore can fit more source segments into
             // a single segment of a hidden stream.
         #ifdef VPC_HALF_BYTE_ENCODING
-            static const size_t idSubSegmentSize = 
+            static const size_t idSubSegmentSize =
                 (maxEntryCount * sizeof(byte)) / 2;
         #else
-            static const size_t idSubSegmentSize = 
+            static const size_t idSubSegmentSize =
                 maxEntryCount * sizeof(byte);
         #endif
 
-            static const uint32_t idSubSegmentCount = 
+            static const uint32_t idSubSegmentCount =
                 static_cast<uint32_t>(segmentSize / idSubSegmentSize);
 
             // This char is used to fill unused space in sub segments to
@@ -183,7 +183,7 @@ namespace Simtrace
             TypeInfo::totalStreamCount
         > AssociatedStreams;
 
-        class BufferContext 
+        class BufferContext
         {
         private:
             CriticalSection _lock;
@@ -217,20 +217,20 @@ namespace Simtrace
                     // Depending on the mode of operation, we open the
                     // segments or we add new segments to the buffer streams.
                     if (isLoad) {
-                        _streams[i]->open(SERVER_SESSION_ID, 
+                        _streams[i]->open(SERVER_SESSION_ID,
                                           QueryIndexType::QSequenceNumber,
-                                          _sequenceNumber, 
-                                          StreamAccessFlags::SafNone, 
-                                          &_segmentIds[i], wait);
+                                          _sequenceNumber,
+                                          StreamAccessFlags::SafNone,
+                                          &_segmentIds[i], nullptr, wait);
                     } else {
                         _streams[i]->addSegment(SERVER_SESSION_ID,
                                                 _sequenceNumber,
                                                 &_segmentIds[i]);
                     }
 
-                    ThrowOn(_segmentIds[i] == INVALID_SEGMENT_ID, Exception, 
+                    ThrowOn(_segmentIds[i] == INVALID_SEGMENT_ID, Exception,
                             stringFormat("Out of segment memory "
-                                "<stream: %d, sqn: %d>", _streams[i]->getId(), 
+                                "<stream: %d, sqn: %d>", _streams[i]->getId(),
                                 _sequenceNumber));
 
                     StreamBuffer& buffer = _streams[i]->getStreamBuffer();
@@ -257,15 +257,15 @@ namespace Simtrace
                     try {
                         if (!_isLoad) {
                             // This is a new segment. Before we write it
-                            // back, we need to set the number of raw 
-                            // entries so the generic encoding knows the 
+                            // back, we need to set the number of raw
+                            // entries so the generic encoding knows the
                             // amount of valid data.
-                            ServerStreamBuffer& buffer = 
+                            ServerStreamBuffer& buffer =
                                 static_cast<ServerStreamBuffer&>(
                                 _streams[i]->getStreamBuffer());
                             size_t entrySize = getEntrySize(&_streams[i]->getType());
 
-                            SegmentControlElement* ctrl = 
+                            SegmentControlElement* ctrl =
                                 buffer.getControlElement(_segmentIds[i]);
 
                             assert(_usedBuffers <= _subSegmentCount);
@@ -273,7 +273,7 @@ namespace Simtrace
                                 _subSegmentSize * _usedBuffers);
                         }
 
-                        _streams[i]->close(SERVER_SESSION_ID, _sequenceNumber, 
+                        _streams[i]->close(SERVER_SESSION_ID, _sequenceNumber,
                                            wait);
 
                         _buffers[i] = nullptr;
@@ -286,7 +286,7 @@ namespace Simtrace
                                  _streams[i]->getId(), _sequenceNumber, e.what());
 
                         // Do not rethrow the exception. This method guarantees
-                        // to not throw any exceptions. If the data could not 
+                        // to not throw any exceptions. If the data could not
                         // be saved, it will be lost.
                     }
                 }
@@ -459,16 +459,16 @@ namespace Simtrace
 
                 auto it = line.contexts.find(sqn);
                 if (it == line.contexts.end()) {
-                    // The context for the sequence number is not present. 
+                    // The context for the sequence number is not present.
                     // Create one.
 
-                    std::unique_ptr<BufferContext> ctx(new BufferContext(sqn, 
-                        line.streams, line.subSegmentCount, 
+                    std::unique_ptr<BufferContext> ctx(new BufferContext(sqn,
+                        line.streams, line.subSegmentCount,
                         &_encoder._globalWaitContext));
 
                     context = ctx.get();
 
-                    line.contexts.insert(std::pair<StreamSegmentId, 
+                    line.contexts.insert(std::pair<StreamSegmentId,
                         std::unique_ptr<BufferContext>>(sqn, std::move(ctx)));
 
                     created = true;
@@ -480,7 +480,7 @@ namespace Simtrace
                 return context;
             }
 
-            void _closeBufferContext(BufferContext** context, 
+            void _closeBufferContext(BufferContext** context,
                                      SegmentLine& line,
                                      bool force = false)
             {
@@ -500,18 +500,18 @@ namespace Simtrace
 
                 try {
 
-                    // Get the buffer contexts. If one fails to initialize, we 
+                    // Get the buffer contexts. If one fails to initialize, we
                     // throw them all away (if we created it).
                     Lock(_encoder._lock); {
                         for (int i = 0; i < TypeInfo::lineCount; ++i) {
-                            _contexts[i] = _getBufferContext(_encoder._lines[i], 
+                            _contexts[i] = _getBufferContext(_encoder._lines[i],
                                                              createdContext[i]);
                         }
                     } Unlock();
 
                     allCreated = true;
 
-                    // Open or append the hidden streams depending on the 
+                    // Open or append the hidden streams depending on the
                     // requested operation. On a load, wait for it to complete.
                     if (isLoad) {
 
@@ -530,7 +530,7 @@ namespace Simtrace
 
                                 StreamSegmentLink link;
                                 while (!wait.popError(link)) {
-                                    str << "<stream: " << link.stream << ", sqn: " 
+                                    str << "<stream: " << link.stream << ", sqn: "
                                         << link.sequenceNumber << "> ";
                                 }
 
@@ -557,28 +557,32 @@ namespace Simtrace
 
             void _mapSubSegments()
             {
-                metaDataBuffer = 
-                    _contexts[0]->template getSubSegment<uint16_t>(0, 
+                assert(sizeof(_contexts) / sizeof(BufferContext*) >= 3);
+
+                metaDataBuffer =
+                    _contexts[0]->template getSubSegment<uint16_t>(0,
                         _sequenceNumber);
 
                 for (int i = 0; i < TypeInfo::idStreamCount; ++i) {
-                    idBuffers[i] = 
+                    idBuffers[i] =
                         _contexts[1]->template getSubSegment<PredictorId>(i,
                             _sequenceNumber);
                 }
 
                 for (int i = 0; i < TypeInfo::dataStreamCount; ++i) {
-                    dataBuffers[i] = 
+                    dataBuffers[i] =
                         _contexts[2]->template getSubSegment<DataType>(i,
                             _sequenceNumber);
                 }
 
                 if (TypeInfo::arch32Bit) {
-                    cycleDataBuffer = 
+                    assert(sizeof(_contexts) / sizeof(BufferContext*) >= 4);
+
+                    cycleDataBuffer =
                         _contexts[3]->template getSubSegment<CycleCount>(
                             0, _sequenceNumber);
                 } else {
-                    cycleDataBuffer = 
+                    cycleDataBuffer =
                         _contexts[2]->template getSubSegment<CycleCount>(
                             TypeInfo::dataStreamCount, _sequenceNumber);
                 }
@@ -607,7 +611,7 @@ namespace Simtrace
                 _sequenceNumber(sequenceNumber),
                 _isLoad(isLoad),
                 entryBuffer(nullptr),
-                metaDataBuffer(nullptr) 
+                metaDataBuffer(nullptr)
             {
                 assert(memoryStream != nullptr);
                 assert(id != INVALID_SEGMENT_ID);
@@ -628,13 +632,13 @@ namespace Simtrace
                 _entryCount = ctrl->rawEntryCount;
                 _startCycle = ctrl->startCycle;
 
-                // Step 2) We first have to create the buffer contexts. These 
+                // Step 2) We first have to create the buffer contexts. These
                 // will give access to allocated segments in the server stream
-                // buffer for the current sequence number in the respective 
+                // buffer for the current sequence number in the respective
                 // hidden streams
                 _setupBufferContexts(isLoad);
 
-                // Step 3) Now, we need to point our buffers to the requested 
+                // Step 3) Now, we need to point our buffers to the requested
                 // sub segments in the prepared buffer contexts.
                 _mapSubSegments();
             }
@@ -643,9 +647,9 @@ namespace Simtrace
             {
                 // As soon as the sub segment context goes out of scope, we
                 // treat this as a completion of the segment (regardless if an
-                // error is responsible for that). The buffer contexts will 
-                // stay alive until all sub segments have been completed. As 
-                // data is generated only sequentially, this is not a problem 
+                // error is responsible for that). The buffer contexts will
+                // stay alive until all sub segments have been completed. As
+                // data is generated only sequentially, this is not a problem
                 // regarding leaked contexts.
                 for (int i = 0; i < TypeInfo::lineCount; ++i) {
                     _closeBufferContext(&_contexts[i], _encoder._lines[i]);
@@ -728,7 +732,7 @@ namespace Simtrace
             return streams[index];
         }
 
-        void _initializeLine(SegmentLine& line, const char* prefix, 
+        void _initializeLine(SegmentLine& line, const char* prefix,
                              uint32_t streamCount, uint32_t subSegmentCount,
                              AssociatedStreams& assocStreams)
         {
@@ -737,8 +741,9 @@ namespace Simtrace
             // Register the hidden streams. This will also write a zero frame
             // per stream to the store, saving the stream's description.
             for (uint32_t i = 0; i < streamCount; ++i) {
+                assert(assocStreams.streamCount < TypeInfo::totalStreamCount);
                 StreamId id = assocStreams.streams[assocStreams.streamCount];
-                
+
                 if (id != INVALID_STREAM_ID) {
                     Stream* stream = _getStore().findStream(id);
 
@@ -746,18 +751,18 @@ namespace Simtrace
                                     "Failed to initialize memory encoder for "
                                     "stream %d. Could not find associated "
                                     "stream 'stream%d:%s%d' (%d).",
-                                    _getStream()->getId(), 
+                                    _getStream()->getId(),
                                     _getStream()->getId(),
                                     prefix, i, i));
 
                     line.streams.push_back(static_cast<ServerStream*>(stream));
                 } else {
                     _registerHiddenStream(line.streams, i, stringFormat(
-                                            "stream%d:%s%d", _getStream()->getId(), 
+                                            "stream%d:%s%d", _getStream()->getId(),
                                             prefix, i));
 
                     assert(assocStreams.streamCount < TypeInfo::totalStreamCount);
-                    assocStreams.streams[assocStreams.streamCount] = 
+                    assocStreams.streams[assocStreams.streamCount] =
                         line.streams[i]->getId();
                 }
 
@@ -767,6 +772,7 @@ namespace Simtrace
 
         void _initializeLines(AssociatedStreams* assoc)
         {
+            assert(sizeof(_lines) / sizeof(SegmentLine) >= 3);
             AssociatedStreams assocStreams;
 
             if (assoc != nullptr) {
@@ -785,7 +791,7 @@ namespace Simtrace
             }
 
             // Meta data
-            _initializeLine(_lines[0], "meta", 1, 
+            _initializeLine(_lines[0], "meta", 1,
                             MemoryLayout::metaSubSegmentCount,
                             assocStreams);
 
@@ -795,9 +801,10 @@ namespace Simtrace
                             assocStreams);
 
             if (TypeInfo::arch32Bit) {
+                assert(sizeof(_lines) / sizeof(SegmentLine) >= 4);
 
                 // Not predicted data (Ip, Addr, (Data))
-                _initializeLine(_lines[2], "data", 
+                _initializeLine(_lines[2], "data",
                                 TypeInfo::dataStreamCount,
                                 MemoryLayout::dataSubSegmentCount,
                                 assocStreams);
@@ -809,26 +816,26 @@ namespace Simtrace
 
             } else {
                 // Not predicted data (Ip, Addr, (Data), Cycle)
-                _initializeLine(_lines[2], "data", 
+                _initializeLine(_lines[2], "data",
                                 TypeInfo::dataStreamCount + 1,
                                 MemoryLayout::dataSubSegmentCount,
                                 assocStreams);
             }
 
             if (assoc == nullptr) {
-                // We need to associate the hidden streams with the memory 
+                // We need to associate the hidden streams with the memory
                 // stream so we know from which hidden streams to read later
                 Simtrace3Frame frame(_getStream());
 
-                frame.addAttribute(Simtrace3AttributeType::SatAssociatedStreams, 
+                frame.addAttribute(Simtrace3AttributeType::SatAssociatedStreams,
                                    sizeof(AssociatedStreams), &assocStreams);
 
                 Simtrace3Store& store = static_cast<Simtrace3Store&>(_getStore());
                 store.commitFrame(frame);
             }
         }
-        
-        virtual void _encode(Simtrace3Frame& frame, SegmentId id, 
+
+        virtual void _encode(Simtrace3Frame& frame, SegmentId id,
                              StreamSegmentId sequenceNumber) override
         {
             SubSegmentContext ctx(*this, _getStream(), id, sequenceNumber, false);
@@ -841,7 +848,7 @@ namespace Simtrace
 
             // Create and initialize the predictors.
             // N.B. We create the cycle predictor with the data type and NOT
-            // with the cyclecount type. This may 
+            // with the cyclecount type. This may
             std::unique_ptr<IpPredictor<AddressType>> ipPredictor(
                 new IpPredictor<AddressType>());
             std::unique_ptr<CyclePredictor<CycleCount, AddressType>> cyclePredictor(
@@ -853,7 +860,7 @@ namespace Simtrace
             cyclePredictor.addToProfileContext(ctx.profileContext, "cc");
             ipPredictor.addToProfileContext(ctx.profileContext, "ip");
             for (int i = 0; i < TypeInfo::dataFieldCount; ++i) {
-                valuePredictor[i].addToProfileContext(ctx.profileContext, 
+                valuePredictor[i].addToProfileContext(ctx.profileContext,
                     stringFormat("v[%d]",i).c_str());
             }
         #endif
@@ -863,14 +870,14 @@ namespace Simtrace
                 const T* entry = ctx.entryBuffer;
 
                 // Encode instruction pointer
-                ipPredictor->encodeIp(&ctx.idBuffers[0], 
-                                      &ctx.dataBuffers[0], 
+                ipPredictor->encodeIp(&ctx.idBuffers[0],
+                                      &ctx.dataBuffers[0],
                                       entry->ip);
 
                 // Encode value fields (address and potentially data)
                 for (uint32_t i = 0; i < TypeInfo::dataFieldCount; ++i) {
                     valuePredictor[i].encodeValue(&ctx.idBuffers[i + 1],
-                                                  &ctx.dataBuffers[i + 1], 
+                                                  &ctx.dataBuffers[i + 1],
                                                   entry->dataFields[i],
                                                   entry->ip);
                 }
@@ -879,7 +886,7 @@ namespace Simtrace
                 static const uint32_t ccidx = 1 + TypeInfo::dataFieldCount;
                 cyclePredictor->encodeCycle(&ctx.idBuffers[ccidx],
                                             &ctx.cycleDataBuffer,
-                                            entry->metadata.cycleCount, 
+                                            entry->metadata.cycleCount,
                                             entry->ip);
 
                 *ctx.metaDataBuffer = static_cast<uint16_t>(
@@ -889,14 +896,14 @@ namespace Simtrace
             }
 
             // For every successful prediction, the data space is not used and
-            // there is still the data present from the last use of the 
-            // hidden stream segment in the stream buffer. To improve 
+            // there is still the data present from the last use of the
+            // hidden stream segment in the stream buffer. To improve
             // compression, we fill up the remaining space in the sub segments
             // with a special char.
             // N.B. We do not fill remaining space for id buffers and the meta
-            // buffer. For these only the last segment will not be entirely 
-            // filled. Doing checks here all the time is thus in 99% useless 
-            // and we are better off with less compression of the single last 
+            // buffer. For these only the last segment will not be entirely
+            // filled. Doing checks here all the time is thus in 99% useless
+            // and we are better off with less compression of the single last
             // segment.
 
             for (uint32_t i = 0; i < TypeInfo::dataStreamCount; ++i) {
@@ -912,7 +919,7 @@ namespace Simtrace
             memset(ctx.cycleDataBuffer, MemoryLayout::fillChar, remainingCycleSpace);
         }
 
-        virtual void _decode(Simtrace3StorageLocation& location, SegmentId id, 
+        virtual void _decode(Simtrace3StorageLocation& location, SegmentId id,
                              StreamSegmentId sequenceNumber) override
         {
             SubSegmentContext ctx(*this, _getStream(), id, sequenceNumber, true);
@@ -930,29 +937,29 @@ namespace Simtrace
             for (uint32_t j = 0; j < entryCount; ++j, ++ctx.entryBuffer) {
                 T* entry = ctx.entryBuffer;
 
-                // Decode the instruction pointer. We use this as key for 
+                // Decode the instruction pointer. We use this as key for
                 // most of the other members.
-                ipPredictor->decodeIp(&ctx.idBuffers[0], 
-                                      &ctx.dataBuffers[0], 
+                ipPredictor->decodeIp(&ctx.idBuffers[0],
+                                      &ctx.dataBuffers[0],
                                       entry->ip);
 
                 // Decode the value fields (address and potentially data)
                 for (uint32_t i = 0; i < TypeInfo::dataFieldCount; ++i) {
-                    valuePredictor[i].decodeValue(&ctx.idBuffers[i + 1], 
-                                                  &ctx.dataBuffers[i + 1], 
+                    valuePredictor[i].decodeValue(&ctx.idBuffers[i + 1],
+                                                  &ctx.dataBuffers[i + 1],
                                                   entry->ip,
                                                   entry->dataFields[i]);
                 }
 
                 // Decode metadata (incl. cycle count).
-                entry->metadata.value = 
-                    (static_cast<uint64_t>(*ctx.metaDataBuffer) 
+                entry->metadata.value =
+                    (static_cast<uint64_t>(*ctx.metaDataBuffer)
                     << TEMPORAL_ORDER_CYCLE_COUNT_BITS);
                 ctx.metaDataBuffer++;
 
                 static const uint32_t ccidx = 1 + TypeInfo::dataFieldCount;
-                cyclePredictor->decodeCycle(&ctx.idBuffers[ccidx], 
-                                            &ctx.cycleDataBuffer, 
+                cyclePredictor->decodeCycle(&ctx.idBuffers[ccidx],
+                                            &ctx.cycleDataBuffer,
                                             entry->ip, cycleCount);
 
                 entry->metadata.cycleCount = cycleCount;
@@ -979,7 +986,7 @@ namespace Simtrace
             ThrowOn(desc.bigEndian, NotSupportedException);
             ThrowOn(!desc.temporalOrder, NotSupportedException);
 
-            // Initialize profiling code, if necessary. The profiler gives us 
+            // Initialize profiling code, if necessary. The profiler gives us
             // stats on predictor usage when writing.
         #ifdef SIMUTRACE_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE
             std::string file = stringFormat("profile_vpc4_stream%d.csv",
@@ -1009,7 +1016,7 @@ namespace Simtrace
                     return;
                 }
 
-                AssociatedStreams* assocStreams = 
+                AssociatedStreams* assocStreams =
                     reinterpret_cast<AssociatedStreams*>(attrDesc->buffer);
 
                 _initializeLines(assocStreams);
@@ -1068,7 +1075,7 @@ namespace Simtrace
                     StreamQueryInformation info;
                     stream->queryInformation(info);
 
-                    informationOut.stats.compressedSize += 
+                    informationOut.stats.compressedSize +=
                         info.stats.compressedSize;
                 }
             }

@@ -27,17 +27,17 @@
 namespace SimuTrace
 {
 
-    SharedMemorySegment::SharedMemorySegment(const std::string& name, 
+    SharedMemorySegment::SharedMemorySegment(const std::string& name,
                                              bool writeable, size_t size) :
-        FileBackedMemorySegment(_getSharedMemoryHandle(name, writeable, size), 
+        FileBackedMemorySegment(_getSharedMemoryHandle(name, writeable, size),
                                 writeable, size, &name)
     {
 
     }
 
-    SharedMemorySegment::SharedMemorySegment(Handle shmHandle, bool writeable, 
+    SharedMemorySegment::SharedMemorySegment(Handle shmHandle, bool writeable,
                                              size_t size) :
-        FileBackedMemorySegment(shmHandle, writeable, size, nullptr)  
+        FileBackedMemorySegment(shmHandle, writeable, size, nullptr)
     {
 
     }
@@ -54,8 +54,8 @@ namespace SimuTrace
 
     }
 
-    Handle SharedMemorySegment::_getSharedMemoryHandle(const std::string& name, 
-                                                       bool writeable, 
+    Handle SharedMemorySegment::_getSharedMemoryHandle(const std::string& name,
+                                                       bool writeable,
                                                        size_t size)
     {
     #ifdef WIN32

@@ -3,10 +3,10 @@
  * Marc Rittinghaus, Thorsten Groeninger
  *
  *             _____ _                 __
- *            / ___/(_)___ ___  __  __/ /__________ _________ 
+ *            / ___/(_)___ ___  __  __/ /__________ _________
  *            \__ \/ / __ `__ \/ / / / __/ ___/ __ `/ ___/ _ \
  *           ___/ / / / / / / / /_/ / /_/ /  / /_/ / /__/  __/
- *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/ 
+ *          /____/_/_/ /_/ /_/\__,_/\__/_/   \__,_/\___/\___/
  *                         http://simutrace.org
  *
  * Simutrace Base Library (libsimubase) is part of Simutrace.
@@ -31,10 +31,10 @@
 
 /* --------------------------- Software  Version --------------------------- */
 
-/* This version is used throughout Simutrace to denote the current major and 
+/* This version is used throughout Simutrace to denote the current major and
    minor versions of the whole software package.
 
-   Major Version: Increment the major version if dramatic changes have been 
+   Major Version: Increment the major version if dramatic changes have been
     made or a big new feature has been incorporated. Reset the minor version
     to 0 for each new major version.
 
@@ -43,7 +43,7 @@
     fix would require. */
 
 #define SIMUTRACE_VERSION_MAJOR 3
-#define SIMUTRACE_VERSION_MINOR 0
+#define SIMUTRACE_VERSION_MINOR 1
 
 /* Increment the revision number for bug fixes in a minor version. It does not
    matter in which component (even 3rd party lib) the bug was, as long as this
@@ -84,8 +84,7 @@
    to allocate more objects. However, remind that you cannot open more streams
    simultaneously than the stream buffer provides segments. */
 #define SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS 1
-#define SIMUTRACE_STORE_MAX_NUM_STREAMS       1024
-#define SIMUTRACE_STORE_MAX_NUM_DATAPOOLS     1024
+#define SIMUTRACE_STORE_MAX_NUM_STREAMS       0xFFFF
 
 /* Profiling Support --------------- */
 

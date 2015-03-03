@@ -55,6 +55,7 @@ namespace SimuTrace
         const std::string& getPattern() const;
 
         static bool exists(const std::string& path);
+        static void create(const std::string& path);
 
         static std::string getWorkingDirectory();
 

@@ -50,7 +50,7 @@ namespace SimuTrace
 
         try {
             _sessionManager->close();
-            
+
             delete _sessionManager;
             _sessionManager = nullptr;
         } catch (const std::exception& e) {
@@ -64,7 +64,7 @@ namespace SimuTrace
         if (_sessionManager == nullptr) {
             _sessionManager = new ClientSessionManager();
 
-            // On Windows the exit handler will always fail, because we are 
+            // On Windows the exit handler will always fail, because we are
             // called after all handles have been destroyed. We therefore
             // do not provide the cleanup feature on Windows.
             // An alternative would be to build a static library. The exit
@@ -86,7 +86,7 @@ namespace SimuTrace
         return static_cast<ClientSession&>(manager.getSession(id));
     }
 
-    void _setLastError(ExceptionSite errorSite, ExceptionClass errorClass, 
+    void _setLastError(ExceptionSite errorSite, ExceptionClass errorClass,
                        int errorCode)
     {
         _lastErrorSite  = errorSite;
@@ -134,10 +134,10 @@ namespace SimuTrace
 
     void _setLastErrorSuccess()
     {
-        if ((_lastErrorSite != EsUnknown) || 
+        if ((_lastErrorSite != EsUnknown) ||
             (_lastErrorClass != EcUnknown) ||
             (_lastError != 0)) {
-            
+
             _setLastError(EsUnknown, EcUnknown, 0);
             _setLastErrorMessage(nullptr);
         }
@@ -161,6 +161,12 @@ namespace SimuTrace
     /* Base API */
 
     const uint32_t StClientVersion = SIMUTRACE_VERSION;
+
+    SIMUTRACE_API
+    uint32_t StGetClientVersion()
+    {
+        return StClientVersion;
+    }
 
     SIMUTRACE_API
     int StGetLastError(ExceptionInformation* informationOut)
@@ -189,7 +195,7 @@ namespace SimuTrace
     SessionId StSessionCreate(const char* server)
     {
         SessionId id = INVALID_SESSION_ID;
-        
+
         API_TRY {
             ClientSessionManager& manager = _getSessionManager();
 
@@ -200,23 +206,23 @@ namespace SimuTrace
     }
 
     SIMUTRACE_API
-    BOOL StSessionOpen(SessionId session)
+    _bool StSessionOpen(SessionId session)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ClientSessionManager& manager = _getSessionManager();
 
             manager.openLocalSession(session);
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
     }
 
     SIMUTRACE_API
-    BOOL StSessionClose(SessionId id)
+    _bool StSessionClose(SessionId id)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ClientSessionManager& manager = _getSessionManager();
@@ -228,50 +234,64 @@ namespace SimuTrace
             // and we might end up with a stale session that we have to clean
             // up on exit.
             session.detach();
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
     }
 
     SIMUTRACE_API
-    BOOL StSessionCreateStore(SessionId session, const char* specifier, 
-                              BOOL alwaysCreate)
+    _bool StSessionCreateStore(SessionId session, const char* specifier,
+                               _bool alwaysCreate)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ClientSession& cs = _getSession(session);
 
-            cs.createStore(std::string(specifier), (alwaysCreate == TRUE));
-        } API_CATCH(result, FALSE);
+            cs.createStore(std::string(specifier), (alwaysCreate == _true));
+        } API_CATCH(result, _false);
 
         return result;
     }
 
     SIMUTRACE_API
-    BOOL StSessionCloseStore(SessionId session)
+    _bool StSessionOpenStore(SessionId session, const char* specifier)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
+
+        API_TRY {
+            ClientSession& cs = _getSession(session);
+
+            cs.openStore(std::string(specifier));
+        } API_CATCH(result, _false);
+
+        return result;
+    }
+
+    SIMUTRACE_API
+    _bool StSessionCloseStore(SessionId session)
+    {
+        _bool result = _true;
 
         API_TRY {
             ClientSession& cs = _getSession(session);
 
             cs.closeStore();
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
     }
 
     SIMUTRACE_API
-    BOOL StSessionSetConfiguration(SessionId session, const char* configuration)
+    _bool StSessionSetConfiguration(SessionId session, const char* configuration)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ClientSession& cs = _getSession(session);
 
             cs.applySetting(std::string(configuration));
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
     }
@@ -279,7 +299,7 @@ namespace SimuTrace
 
     /* Stream API */
 
-    void _makeStreamDescriptorFromType(const char* name, 
+    void _makeStreamDescriptorFromType(const char* name,
                                        const StreamTypeDescriptor* type,
                                        StreamDescriptor* descOut)
     {
@@ -297,17 +317,17 @@ namespace SimuTrace
         //Prior to setting any field, we completely reset the descriptor.
         memset(descOut, 0, sizeof(StreamDescriptor));
 
-        descOut->hidden = FALSE;
+        descOut->hidden = _false;
         memcpy(descOut->name, name, len);
 
         descOut->type = *type;
     }
 
     SIMUTRACE_API
-    BOOL StMakeStreamDescriptor(const char* name, size_t entrySize,
-                                BOOL temporalOrder, StreamDescriptor* descOut)
+    _bool StMakeStreamDescriptor(const char* name, uint32_t entrySize,
+                                 _bool temporalOrder, StreamDescriptor* descOut)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ThrowOnNull(name, ArgumentNullException);
@@ -319,8 +339,8 @@ namespace SimuTrace
 
             // Initialize type descriptor
             type.temporalOrder = temporalOrder;
-            type.arch32Bit     = FALSE;
-            type.bigEndian     = FALSE;
+            type.arch32Bit     = _false;
+            type.bigEndian     = _false;
 
             type.entrySize     = entrySize;
             type.id            = id;
@@ -333,17 +353,17 @@ namespace SimuTrace
             memcpy(type.name, sid.c_str(), sid.length());
 
             _makeStreamDescriptorFromType(name, &type, descOut);
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
     }
 
     SIMUTRACE_API
-    BOOL StMakeStreamDescriptorFromType(const char* name, 
-                                        const StreamTypeDescriptor* type,
-                                        StreamDescriptor* descOut)
+    _bool StMakeStreamDescriptorFromType(const char* name,
+                                         const StreamTypeDescriptor* type,
+                                         StreamDescriptor* descOut)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ThrowOnNull(name, ArgumentNullException);
@@ -351,9 +371,16 @@ namespace SimuTrace
             ThrowOnNull(descOut, ArgumentNullException);
 
             _makeStreamDescriptorFromType(name, type, descOut);
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
+    }
+
+    const StreamTypeDescriptor* StStreamFindMemoryType(ArchitectureSize size,
+        MemoryAccessType accessType, MemoryAddressType addressType,
+        _bool hasData)
+    {
+        return streamFindMemoryType(size, accessType, addressType, hasData);
     }
 
     SIMUTRACE_API
@@ -371,7 +398,7 @@ namespace SimuTrace
     }
 
     SIMUTRACE_API
-    int StStreamEnumerate(SessionId session, size_t bufferSize, 
+    int StStreamEnumerate(SessionId session, size_t bufferSize,
                           StreamId* streamIdsOut)
     {
         int result = 0;
@@ -396,10 +423,10 @@ namespace SimuTrace
     }
 
     SIMUTRACE_API
-    BOOL StStreamQuery(SessionId session, StreamId stream,
-                       StreamQueryInformation* informationOut)
+    _bool StStreamQuery(SessionId session, StreamId stream,
+                        StreamQueryInformation* informationOut)
     {
-        BOOL result = TRUE;
+        _bool result = _true;
 
         API_TRY {
             ThrowOnNull(informationOut, ArgumentNullException);
@@ -407,13 +434,13 @@ namespace SimuTrace
 
             Stream& cstr = cs.getStream(stream);
             cstr.queryInformation(*informationOut);
-        } API_CATCH(result, FALSE);
+        } API_CATCH(result, _false);
 
         return result;
     }
 
     SIMUTRACE_API
-    StreamHandle StStreamAppend(SessionId session, StreamId stream, 
+    StreamHandle StStreamAppend(SessionId session, StreamId stream,
                                 StreamHandle handle)
     {
         StreamHandle result = nullptr;
@@ -456,7 +483,7 @@ namespace SimuTrace
 
                 cstream = reinterpret_cast<ClientStream*>(handle->stream);
 
-                assert((session == INVALID_SESSION_ID) || 
+                assert((session == INVALID_SESSION_ID) ||
                        (session == cstream->getSession().getLocalId()));
                 assert((stream == INVALID_STREAM_ID) ||
                        (stream == cstream->getId()));
@@ -469,9 +496,9 @@ namespace SimuTrace
     }
 
     SIMUTRACE_API
-    BOOL StStreamClose(StreamHandle handle)
+    _bool StStreamClose(StreamHandle handle)
     {
-        BOOL result = FALSE;
+        _bool result = _false;
 
         API_TRY {
             ThrowOnNull(handle, ArgumentNullException);
@@ -481,33 +508,35 @@ namespace SimuTrace
             cstream = reinterpret_cast<ClientStream*>(handle->stream);
             cstream->close(handle);
 
-            result = TRUE;
-        } API_CATCH(result, FALSE);
+            result = _true;
+        } API_CATCH(result, _false);
 
         return result;
     }
 
 
-    /* Data Pool API */
-
-    /*SIMUTRACE_API
-    PoolId StDataPoolRegister(SessionId session, StreamId stream)
-    {
-        PoolId id = INVALID_POOL_ID;
-
-        API_TRY {
-            ClientSession& cs = _getSession(session);
-
-            id = cs.registerDataPool(stream);
-        } API_CATCH(id, INVALID_POOL_ID);
-
-        return id;
-    }*/
-    
-
     /* Tracing API */
+
     SIMUTRACE_API
-    size_t StWriteVariableData(StreamHandle* handlePtr, byte* sourceBuffer, 
+    void* StGetNextEntry(StreamHandle* handlePtr)
+    {
+        return StGetNextEntryFast(handlePtr);
+    }
+
+    SIMUTRACE_API
+    void* StGetPreviousEntry(StreamHandle* handlePtr)
+    {
+        return StGetPreviousEntryFast(handlePtr);
+    }
+
+    SIMUTRACE_API
+    void StSubmitEntry(StreamHandle handle)
+    {
+        StSubmitEntryFast(handle);
+    }
+
+    SIMUTRACE_API
+    size_t StWriteVariableData(StreamHandle* handlePtr, byte* sourceBuffer,
                                size_t sourceLength, uint64_t* referenceOut)
     {
         assert(handlePtr != nullptr);
@@ -516,12 +545,14 @@ namespace SimuTrace
         assert(handle->control != nullptr);
         assert(!handle->isReadOnly);
         assert(isVariableEntrySize(handle->entrySize));
-        assert(referenceOut != nullptr);
 
         // If the source buffer is empty, we do not need to store anything
         //   and indicate that through the special raw entry index
         if (sourceLength == 0) {
-            *referenceOut = VARIABLE_ENTRY_EMPTY_INDEX;
+            if (referenceOut != nullptr) {
+                *referenceOut = VARIABLE_ENTRY_EMPTY_INDEX;
+            }
+
             return 0;
         }
 
@@ -529,7 +560,7 @@ namespace SimuTrace
         ClientStream* strm = reinterpret_cast<ClientStream*>(handle->stream);
 
         assert(sourceBuffer != nullptr);
-        const size_t sizeHint = getSizeHint(handle->entrySize);
+        const uint32_t sizeHint = getSizeHint(handle->entrySize);
         const size_t savedSourceLength = sourceLength;
 
         assert(sizeHint > 0);
@@ -537,7 +568,7 @@ namespace SimuTrace
         const StreamSegmentId sqn = handle->control->link.sequenceNumber;
         assert(sqn != INVALID_STREAM_SEGMENT_ID);
 
-        const uint64_t index = (sqn * strm->getStreamBuffer().getSegmentSize()) / 
+        const uint64_t index = (sqn * strm->getStreamBuffer().getSegmentSize()) /
                                sizeHint + handle->control->rawEntryCount;
 
         do {
@@ -546,14 +577,14 @@ namespace SimuTrace
 
             size_t length = ((size_t)handle->segmentEnd - (size_t)handle->entry);
 
-            bytesWritten = writeVariableData(handle->entry, length, 
+            bytesWritten = writeVariableData(handle->entry, length,
                                              sourceBuffer, sourceLength,
                                              sizeHint, &count);
 
             assert(bytesWritten <= sourceLength);
 
             // If the segment was already full, we did not write any data and
-            // must not count the entry to this segment. In addition, we want 
+            // must not count the entry to this segment. In addition, we want
             // to account the entry only to the first segment we use.
             if (count > 0) {
 
@@ -576,32 +607,35 @@ namespace SimuTrace
             }
 
             // The stream segment is full. We need to get a new one
-            assert(handle->segmentEnd - 
-                   (handle->entry + count * sizeHint) < (uint32_t)sizeHint);
+            assert(handle->segmentEnd -
+                   (handle->entry + count * sizeHint) < sizeHint);
 
             handle = StStreamAppend(INVALID_SESSION_ID, INVALID_STREAM_ID,
                                     handle);
 
             *handlePtr = handle;
             if (handle == nullptr) {
-                // This is a bad situation. We could only write the data 
+                // This is a bad situation. We could only write the data
                 // partially. As we do not have any means to revert that
                 // operation, we return the reference. The caller can check if
                 // the operation finished successfully by checking the returned
                 // bytes written. It is ok to call this function with the
-                // remaining buffer (and a new valid handle). However, this 
+                // remaining buffer (and a new valid handle). However, this
                 // will distort the entry count statistics.
                 break;
             }
 
         } while (true);
 
-        *referenceOut = index;
+        if (referenceOut != nullptr) {
+            *referenceOut = index;
+        }
+
         return savedSourceLength - sourceLength;
     }
 
     SIMUTRACE_API
-    size_t StReadVariableData(StreamHandle* handlePtr, uint64_t reference, 
+    size_t StReadVariableData(StreamHandle* handlePtr, uint64_t reference,
                               byte* destinationBuffer)
     {
         assert(handlePtr != nullptr);
@@ -617,8 +651,8 @@ namespace SimuTrace
         // Ensure that the handle points to the segment that we need
         assert(handle->stream != nullptr);
         ClientStream* strm = reinterpret_cast<ClientStream*>(handle->stream);
-        
-        const size_t sizeHint = getSizeHint(handle->entrySize);
+
+        const uint32_t sizeHint = getSizeHint(handle->entrySize);
         assert(sizeHint > 0);
 
         const size_t segmentMaxSize = strm->getStreamBuffer().getSegmentSize();
@@ -629,14 +663,14 @@ namespace SimuTrace
 
         do {
 
-            if ((rsqn != handle->sequenceNumber) || 
+            if ((rsqn != handle->sequenceNumber) ||
                 (handle->control == nullptr)) {
 
                 // We are not in the required segment. Try to get it from the
                 // server, if it exists
                 handle = StStreamOpen(INVALID_SESSION_ID, INVALID_STREAM_ID,
-                                      QSequenceNumber, rsqn, handle->accessFlags,
-                                      handle);
+                                      QueryIndexType::QSequenceNumber, rsqn,
+                                      handle->accessFlags, handle);
 
                 *handlePtr = handle;
                 if ((handle == nullptr) || (handle->control == nullptr)) {
@@ -648,8 +682,8 @@ namespace SimuTrace
             size_t srcSize = handle->segmentEnd - src;
 
             size_t localLen;
-            BOOL finished = readVariableData(src, srcSize, destinationBuffer, 
-                                             &localLen);
+            _bool finished = readVariableData(src, srcSize, destinationBuffer,
+                                              &localLen);
 
             len += localLen;
 
@@ -657,7 +691,7 @@ namespace SimuTrace
                 break;
             }
 
-            // The variable data reaches over into the next segment. We 
+            // The variable data reaches over into the next segment. We
             // will continue reading.
             localRef = 0;
             rsqn++;

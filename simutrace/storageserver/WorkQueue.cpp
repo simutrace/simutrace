@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@ namespace SimuTrace
         assert(_queue[Priority::High].empty());
     }
 
-    void WorkQueue::enqueueWork(std::unique_ptr<WorkItemBase>& item, 
+    void WorkQueue::enqueueWork(std::unique_ptr<WorkItemBase>& item,
                                 Priority priority)
     {
         LockScope(_lock);

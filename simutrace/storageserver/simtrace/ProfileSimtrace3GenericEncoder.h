@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@
 
 #include "../StorageServer.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     namespace _profile {
@@ -82,8 +82,8 @@ namespace SimuTrace
 
         zlib1CompressWatch.start();
 
-        zlib1CompressSize = Compression::zlibCompress(sourceBuffer, 
-                                                      sourceSize, 
+        zlib1CompressSize = Compression::zlibCompress(sourceBuffer,
+                                                      sourceSize,
                                                       compressionBuffer,
                                                       compressionBufferSize,
                                                       1);
@@ -91,9 +91,9 @@ namespace SimuTrace
         zlib1CompressWatch.stop();
         zlib1DecompressWatch.start();
 
-        Compression::zlibDecompress(compressionBuffer, 
+        Compression::zlibDecompress(compressionBuffer,
                                     zlib1CompressSize,
-                                    decompressionBuffer, 
+                                    decompressionBuffer,
                                     decompressionBufferSize);
 
         zlib1DecompressWatch.stop();
@@ -107,8 +107,8 @@ namespace SimuTrace
 
         zlib6CompressWatch.start();
 
-        zlib6CompressSize = Compression::zlibCompress(sourceBuffer, 
-                                                      sourceSize, 
+        zlib6CompressSize = Compression::zlibCompress(sourceBuffer,
+                                                      sourceSize,
                                                       compressionBuffer,
                                                       compressionBufferSize,
                                                       6);
@@ -116,13 +116,13 @@ namespace SimuTrace
         zlib6CompressWatch.stop();
         zlib6DecompressWatch.start();
 
-        Compression::zlibDecompress(compressionBuffer, 
+        Compression::zlibDecompress(compressionBuffer,
                                     zlib6CompressSize,
-                                    decompressionBuffer, 
+                                    decompressionBuffer,
                                     decompressionBufferSize);
 
         zlib6DecompressWatch.stop();
-        
+
 
         // +++++++++++ LZ4 +++++++++++
 
@@ -134,7 +134,7 @@ namespace SimuTrace
 
         lz4CompressWatch.start();
 
-        lz4CompressSize = Compression::lz4Compress(sourceBuffer, 
+        lz4CompressSize = Compression::lz4Compress(sourceBuffer,
                                                    sourceSize,
                                                    compressionBuffer,
                                                    compressionBufferSize);
@@ -142,13 +142,13 @@ namespace SimuTrace
         lz4CompressWatch.stop();
         lz4DecompressWatch.start();
 
-        Compression::lz4Decompress(compressionBuffer, 
+        Compression::lz4Decompress(compressionBuffer,
                                    lz4CompressSize,
                                    decompressionBuffer,
                                    decompressionBufferSize);
 
         lz4DecompressWatch.stop();
-        
+
 
         // +++++++++++ LZMA +++++++++++
         /*
@@ -176,7 +176,7 @@ namespace SimuTrace
                                     decompressionBufferSize);
 
         lzma0DecompressWatch.stop();
-        
+
         // LZMA 4
         size_t lzma4CompressSize;
         StopWatch lzma4CompressWatch, lzma4DecompressWatch;
@@ -210,7 +210,7 @@ namespace SimuTrace
         context.add("dt [lzma(5)]", lzma5DecompressWatch, &StopWatch::getTicks);
 
         lzma5CompressWatch.start();
-        
+
         lzma5CompressSize = Compression::lzmaCompress(sourceBuffer,
                                                       sourceSize,
                                                       compressionBuffer,
@@ -328,7 +328,7 @@ namespace SimuTrace
                                      decompressionBufferSize);
 
         bzip29DecompressWatch.stop();
-        
+
         // Collect the measurements
         _profile::profiler->collect(context);
     }

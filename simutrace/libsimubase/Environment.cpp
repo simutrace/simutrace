@@ -26,7 +26,7 @@
 namespace SimuTrace
 {
 
-    // Thread-local environment. 
+    // Thread-local environment.
     __thread Environment _environment = {0};
     __thread int EnvironmentSwapper::_swapLevel = 0;
 

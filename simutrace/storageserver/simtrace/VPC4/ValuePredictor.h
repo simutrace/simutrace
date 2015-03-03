@@ -2,9 +2,9 @@
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
  *
- * Original VPC4 algorithm by Cornell Research Foundation, Inc 
+ * Original VPC4 algorithm by Cornell Research Foundation, Inc
  * Prof. Martin Burtscher
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -30,15 +30,15 @@
 #include "FiniteContextMethodPredictor.h"
 #include "KeyedLastNValuePredictor.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
-    template <typename T, typename K> 
+    template <typename T, typename K>
     class ValuePredictor :
         public CompoundPredictor<T, 10>
     {
     private:
-        // According to [5.5 VPC3 and VPC4 Predictor Configurations], we use
+        // According to [5.5 VPC3 and VPC4 Predictor Configurations], we
         // have the following setup of predictors:
 
         // Differential Finite Context Method Predictors (DFCM)
@@ -77,10 +77,10 @@ namespace SimuTrace
             PredictorId id = this->_readPredictorId(codeBuffer);
 
             if (id < 2) {
-                out = _firstOrderDfcmPredictor.getValue(id) + 
+                out = _firstOrderDfcmPredictor.getValue(id) +
                       _last4ValuePredictor.getMostRecentValue();
             } else if (id < 4) {
-                out = _thirdOrderDfcmPredictor.getValue(id) + 
+                out = _thirdOrderDfcmPredictor.getValue(id) +
                       _last4ValuePredictor.getMostRecentValue();
             } else if (id < 8) {
                 out = _last4ValuePredictor.getValue(id);
@@ -101,7 +101,7 @@ namespace SimuTrace
             _privateFcmHistory(),
             _firstOrderFcmPredictor(8, _privateFcmHistory) { }
 
-        PredictorId encodeValue(PredictorId** codeBuffer, T** dataBuffer, 
+        PredictorId encodeValue(PredictorId** codeBuffer, T** dataBuffer,
                                 const T value, const K key)
         {
             PredictionContext<T> context;
@@ -121,7 +121,7 @@ namespace SimuTrace
 
             _firstOrderFcmPredictor.predictValue(context, value);
 
-            // Now, that we gave all predictors a chance, we update the 
+            // Now, that we gave all predictors a chance, we update the
             // history of the DFCMs and the FCM.
             _sharedDfcmHistory.update(stride);
             _privateFcmHistory.update(value);
@@ -129,7 +129,7 @@ namespace SimuTrace
             return this->_evaluateContext(codeBuffer, dataBuffer, context, value);
         }
 
-        void decodeValue(PredictorId** codeBuffer, T** dataBuffer, const K key, 
+        void decodeValue(PredictorId** codeBuffer, T** dataBuffer, const K key,
                          T& out)
         {
             T result;
@@ -149,7 +149,7 @@ namespace SimuTrace
 
             _firstOrderFcmPredictor.update(result);
 
-            // Now, that we updated all predictors, we can update the DFCM 
+            // Now, that we updated all predictors, we can update the DFCM
             // and FCM history
             _sharedDfcmHistory.update(stride);
             _privateFcmHistory.update(result);

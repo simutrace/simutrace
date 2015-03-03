@@ -65,7 +65,7 @@ namespace SimuTrace
 
     const double StopWatch::getSeconds() const
     {
-        return Clock::ticksToSeconds(this->getTicks());        
+        return Clock::ticksToSeconds(this->getTicks());
     }
 
 }

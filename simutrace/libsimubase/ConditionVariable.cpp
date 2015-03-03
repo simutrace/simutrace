@@ -24,7 +24,7 @@
 
 #include "Exceptions.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     ConditionVariable::ConditionVariable() :

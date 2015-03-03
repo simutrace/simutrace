@@ -52,7 +52,7 @@ namespace System
 
         if (Interlocked::interlockedSub(&_winsockReferences, 1) == 1) {
             WSACleanup();
-        } 
+        }
     }
 
 }
@@ -64,7 +64,7 @@ namespace System
         _endpoint(INVALID_SOCKET),
         _info(nullptr)
     {
-        _initChannel(isServer, address, INVALID_SOCKET);    
+        _initChannel(isServer, address, INVALID_SOCKET);
     }
 
     SocketChannel::SocketChannel(SOCKET endpoint, const std::string& address) :
@@ -85,7 +85,7 @@ namespace System
                     "The exception is '%s'.", this->getAddress().c_str(),
                     e.what());
         }
- 
+
         if (_info != nullptr) {
             ::freeaddrinfo(_info);
             _info = nullptr;
@@ -136,7 +136,7 @@ namespace System
 
     }
 
-    void SocketChannel::_getAddressInfo(struct addrinfo** info, 
+    void SocketChannel::_getAddressInfo(struct addrinfo** info,
                                         const char* host, const char* port)
     {
         struct addrinfo hints = {0};
@@ -146,7 +146,7 @@ namespace System
     #else
         hints.ai_family = AF_INET;       // Allow IPv4 only
     #endif
-        hints.ai_socktype = SOCK_STREAM; // Reliable socket    
+        hints.ai_socktype = SOCK_STREAM; // Reliable socket
         hints.ai_protocol = IPPROTO_TCP;
 
         int result = ::getaddrinfo(host, port, &hints, info);
@@ -185,7 +185,7 @@ namespace System
             port = address.substr(pos + 1, std::string::npos);
             host = address.substr(0, pos);
 
-            // Cut off the [] braces if we have an host address in the form 
+            // Cut off the [] braces if we have an host address in the form
             // [host]:port, e.g. ipv6.
         #ifdef SIMUTRACE_SOCKET_ENABLE_IPV6
             std::string::size_type len = host.length();
@@ -196,14 +196,14 @@ namespace System
         #endif
         }
 
-        ThrowOn(host.empty() || port.empty(), Exception, 
+        ThrowOn(host.empty() || port.empty(), Exception,
                 "Missing host or port in address. Expected format "
                 "is: host:port");
 
         bool anyHost = (host.compare("*") == 0);
         bool anyPort = (port.compare("*") == 0);
 
-        ThrowOn(!_isServerChannel() && (anyHost || anyPort), Exception, 
+        ThrowOn(!_isServerChannel() && (anyHost || anyPort), Exception,
                 "Using wildcard addressing is not allowed for client "
                 "connections. Expected format is: host:port.");
 
@@ -267,9 +267,9 @@ namespace System
                 endpoint = ::socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
                 if (endpoint != INVALID_SOCKET) {
 
-                    int result = ::setsockopt(endpoint, 
-                                              IPPROTO_IPV6, IPV6_V6ONLY, 
-                                              (const char*)&ipv6only, 
+                    int result = ::setsockopt(endpoint,
+                                              IPPROTO_IPV6, IPV6_V6ONLY,
+                                              (const char*)&ipv6only,
                                               sizeof(ipv6only));
 
                     if (result != SOCKET_ERROR) {
@@ -304,7 +304,7 @@ namespace System
                 break;
             }
         }
-        
+
         _endpoint = endpoint;
     }
 
@@ -328,14 +328,14 @@ namespace System
         if (_port.compare("0") == 0) {
             uint32_t portNumber;
 
-            switch (_info->ai_family) 
+            switch (_info->ai_family)
             {
                 case AF_INET6: {
                 #ifdef SIMUTRACE_SOCKET_ENABLE_IPV6
                     struct sockaddr_in6 sin6;
                     socklen_t len6 = sizeof(sin6);
 
-                    result = ::getsockname(_endpoint, (struct sockaddr*)&sin6, 
+                    result = ::getsockname(_endpoint, (struct sockaddr*)&sin6,
                                            &len6);
                     ThrowOn(result == SOCKET_ERROR, SocketException);
 
@@ -349,8 +349,8 @@ namespace System
                 case AF_INET: {
                     struct sockaddr_in sin;
                     socklen_t len = sizeof(sin);
-                    
-                    result = ::getsockname(_endpoint, (struct sockaddr*)&sin, 
+
+                    result = ::getsockname(_endpoint, (struct sockaddr*)&sin,
                                            &len);
                     ThrowOn(result == SOCKET_ERROR, SocketException);
 
@@ -409,7 +409,7 @@ namespace System
     {
         assert(!_isServerChannel() && isConnected() && _info != nullptr);
 
-        int result = ::connect(_endpoint, _info->ai_addr, 
+        int result = ::connect(_endpoint, _info->ai_addr,
                                static_cast<int>(_info->ai_addrlen));
 
         ThrowOn(result == SOCKET_ERROR, SocketException);
@@ -468,7 +468,7 @@ namespace System
 
         assert(_isServerChannel());
 
-        switch (_info->ai_family) 
+        switch (_info->ai_family)
         {
             case AF_INET6: {
             #ifdef SIMUTRACE_SOCKET_ENABLE_IPV6
@@ -543,7 +543,7 @@ namespace System
                     reinterpret_cast<size_t>(data) + bytesWritten);
 
             #ifdef WIN32
-                result = ::send(_endpoint, (const char*)buf, 
+                result = ::send(_endpoint, (const char*)buf,
                                 (int)(size - bytesWritten), 0);
                 if (result == SOCKET_ERROR) {
                     Throw(SocketException);
@@ -572,7 +572,7 @@ namespace System
                 #endif
                 }
 
-            } while((result < 0) || (bytesWritten < size)); 
+            } while((result < 0) || (bytesWritten < size));
 
     #ifdef WIN32
     #else
@@ -611,7 +611,7 @@ namespace System
                     reinterpret_cast<size_t>(data) + bytesRead);
 
             #ifdef WIN32
-                result = ::recv(_endpoint, (char*)buf, 
+                result = ::recv(_endpoint, (char*)buf,
                                 (int)(size - bytesRead), 0);
                 if (result == SOCKET_ERROR) {
                     Throw(SocketException);
@@ -655,13 +655,13 @@ namespace System
         return bytesRead;
     }
 
-    size_t SocketChannel::_receive(std::vector<Handle>& handles, 
+    size_t SocketChannel::_receive(std::vector<Handle>& handles,
                                    uint32_t handleCount)
     {
         Throw(NotSupportedException);
     }
 
-    std::unique_ptr<Channel> SocketChannel::factoryMethod(bool isServer, 
+    std::unique_ptr<Channel> SocketChannel::factoryMethod(bool isServer,
         const std::string& address)
     {
         return std::unique_ptr<Channel>(new SocketChannel(isServer, address));

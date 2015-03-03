@@ -1,3 +1,3 @@
 mkdir build\documentation\
-doxygen simutrace\include\PublicApi.doxyfile
+doxygen simutrace\documentation\PublicApi.doxyfile
 xcopy simutrace\documentation\theme build\documentation\html /E /Y

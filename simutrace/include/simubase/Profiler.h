@@ -30,13 +30,13 @@
 
 #include "ProfileEntry.h"
 
-namespace SimuTrace 
+namespace SimuTrace
 {
 
     template<typename T> class ProfileVariableReference;
     template<typename T, typename C> class ProfileMemberDelegate0;
 
-    class ProfileContext 
+    class ProfileContext
     {
     private:
 
@@ -49,7 +49,7 @@ namespace SimuTrace
     public:
         ~ProfileContext()
         {
-            for (int i = 0; i < _entries.size(); ++i) {
+            for (auto i = 0; i < _entries.size(); ++i) {
                 if (_entries[i].isOwner) {
                     assert(_entries[i].entry != nullptr);
                     delete _entries[i].entry;
@@ -81,7 +81,7 @@ namespace SimuTrace
         }
 
         template<typename T, typename C>
-        void add(const char* name, C& instance, T (C::*func)() const) 
+        void add(const char* name, C& instance, T (C::*func)() const)
         {
             PEntry entry;
 
@@ -92,7 +92,7 @@ namespace SimuTrace
         }
 
         template<typename T, typename C>
-        void add(const char* name, C& instance, T (C::*func)()) 
+        void add(const char* name, C& instance, T (C::*func)())
         {
             PEntry entry;
 
@@ -112,7 +112,7 @@ namespace SimuTrace
         {
             return _entries.size();
         }
-    
+
     };
 
     class Profiler
@@ -129,7 +129,7 @@ namespace SimuTrace
         CriticalSection _lock;
 
         File _file;
-        
+
         Thread<Profiler&> _writeThread;
         uint32_t _writeInterval;
         volatile ProfileState _state;
@@ -143,7 +143,7 @@ namespace SimuTrace
         static int _writeThreadMain(Thread<Profiler&>& thread);
     public:
         Profiler(const std::string& csvFileName);
-        Profiler(const std::string& csvFileName, ProfileContext& context, 
+        Profiler(const std::string& csvFileName, ProfileContext& context,
                  uint32_t writeInterval);
         ~Profiler();
 

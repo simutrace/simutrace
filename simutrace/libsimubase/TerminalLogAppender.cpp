@@ -33,8 +33,8 @@
 namespace SimuTrace
 {
 
-    TerminalLogAppender::TerminalLogAppender(const std::string& name, 
-                                             std::unique_ptr<LogLayout>& layout, 
+    TerminalLogAppender::TerminalLogAppender(const std::string& name,
+                                             std::unique_ptr<LogLayout>& layout,
                                              bool inherit) :
         LogAppender(name, layout, inherit),
     #ifdef WIN32
@@ -72,10 +72,10 @@ namespace SimuTrace
     void TerminalLogAppender::_append(const LogEvent& event)
     {
         if ((_enableColor) && (_colorMap.size() > 0)) {
-            // Get the color for the event priority from the color map and 
+            // Get the color for the event priority from the color map and
             // set it.
             auto it = _colorMap.find(event.getPriority());
-            if (it != cend(_colorMap)) {
+            if (it != _colorMap.end()) {
                 _setTerminalColor(it->second);
             }
 
@@ -101,7 +101,7 @@ namespace SimuTrace
         uint32_t cvalue = (color & mask) + 30;
 
         std::cout << stringFormat("\x1b[%d%sm", cvalue,
-                                  ((color & Color::Intensity) != 0) ? 
+                                  ((color & Color::Intensity) != 0) ?
                                   ";1" : "");
     #endif
     }

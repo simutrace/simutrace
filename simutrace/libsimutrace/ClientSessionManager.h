@@ -47,7 +47,7 @@ namespace SimuTrace
         ClientSessionManager();
         virtual ~ClientSessionManager() override;
 
-        SessionId createSession(const std::string& specifier); 
+        SessionId createSession(const std::string& specifier);
         void openLocalSession(SessionId session);
     };
 

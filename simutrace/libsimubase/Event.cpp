@@ -40,7 +40,7 @@ namespace SimuTrace
     #else
         if (name == nullptr) {
 
-            // This semaphore is shareable between processes, but only after 
+            // This semaphore is shareable between processes, but only after
             // fork or in a shared memory segment. It is initialized with 0.
             if (::sem_init(&_sem, 1, 0) == -1) {
                 Throw(PlatformException);

@@ -41,10 +41,10 @@ namespace SimuTrace
         _context(nullptr),
         _contextOwner(true)
     {
-    
+
     }
 
-    Profiler::Profiler(const std::string& csvFileName, ProfileContext& context, 
+    Profiler::Profiler(const std::string& csvFileName, ProfileContext& context,
                        uint32_t writeInterval) :
         _file(csvFileName, File::CreateMode::CreateAlways),
         _writeThread(Profiler::_writeThreadMain, *this),
@@ -66,7 +66,7 @@ namespace SimuTrace
     {
         Profiler& profiler = thread.getArgument();
 
-        while (profiler._state != ProfileState::PsStop) 
+        while (profiler._state != ProfileState::PsStop)
         {
             thread.sleep(profiler._writeInterval);
 
@@ -135,7 +135,7 @@ namespace SimuTrace
 
             stream << "Time";
 
-            for (int i = 0; i < context.getCount(); ++i) {
+            for (auto i = 0; i < context.getCount(); ++i) {
                 stream << "," << context.get(i).getName();
             }
 
@@ -151,7 +151,7 @@ namespace SimuTrace
 
         stream << Clock::getTimestamp();
 
-        for (int i = 0; i < context.getCount(); ++i) {
+        for (auto i = 0; i < context.getCount(); ++i) {
             stream << "," << context.get(i).collect();
         }
 

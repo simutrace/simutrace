@@ -30,7 +30,7 @@
 namespace SimuTrace
 {
 
-    LogAppender::LogAppender(const std::string& name, 
+    LogAppender::LogAppender(const std::string& name,
                              std::unique_ptr<LogLayout>& layout, bool inherit) :
         _lock(),
         _name(name),

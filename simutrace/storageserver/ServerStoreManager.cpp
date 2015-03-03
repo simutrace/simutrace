@@ -1,7 +1,7 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
- * 
+ *
  * Simutrace Storage Server (storageserver) is part of Simutrace.
  *
  * storageserver is free software: you can redistribute it and/or modify
@@ -31,22 +31,129 @@ namespace SimuTrace
     struct ServerStoreManager::StorePrefixDescriptor {
         std::string prefix;
 
-        std::unique_ptr<ServerStore> (*factoryMethod)(StoreId, 
-                                                      const std::string&, 
-                                                      bool);
+        std::unique_ptr<ServerStore> (*createMethod)(StoreId,
+                                                     const std::string&,
+                                                     bool);
+        std::unique_ptr<ServerStore> (*openMethod)(StoreId, const std::string&);
         std::string (*makePath)(const std::string&);
-        void (*enumerationMethod)(const std::string&, 
+        void (*enumerationMethod)(const std::string&,
                                   std::vector<std::string>&);
     };
 
     ServerStoreManager::ServerStoreManager()
     {
-    
+
     }
 
     ServerStoreManager::~ServerStoreManager()
     {
         assert(_stores.empty());
+    }
+
+    Store::Reference ServerStoreManager::_createOrOpenStore(
+        ServerSession& session, const std::string& specifier,
+        bool alwaysCreate, bool open)
+    {
+        Environment env = {0};
+        env.config = session.getEnvironment().config;
+        env.log = StorageServer::getInstance().getEnvironment().log;
+        SwapEnvironment(&env);
+
+        const StorePrefixDescriptor* desc = nullptr;
+
+        if (!_findPrefixDescriptor(specifier, &desc, false)) {
+            // We do not support the prefix that the caller supplied. Throw
+            // an exception with a list of supported specifiers.
+            uint32_t numPrefixes;
+            _getPrefixDescriptors(&desc, &numPrefixes);
+            assert(numPrefixes > 0);
+            assert(desc != nullptr);
+
+            std::stringstream str;
+            for (uint32_t i = 0; i < numPrefixes; ++i, ++desc) {
+                str << "'" << desc->prefix << ":'";
+
+                if (i < numPrefixes - 1) {
+                    str << ",";
+                }
+            }
+
+            Throw(Exception, stringFormat("The supplied storage specifier "
+                  "is not supported ('%s'). Supported formats are: %s. "
+                  "Please see the documentation for more information.",
+                  specifier.c_str(), str.str().c_str()));
+        }
+
+        assert(desc->makePath != nullptr);
+        std::string path = desc->makePath(_getPath(*desc, specifier));
+        Store::Reference* store = nullptr;
+
+        LockExclusive(_lock); {
+
+            // Look for the path in the open list. If the store is already open
+            // we just attach the session to the store.
+            for (auto& ostore : _stores) {
+                if (path.compare(ostore.second->getName()) == 0) {
+                    store = &ostore.second;
+                    break;
+                }
+            }
+
+            if (store == nullptr) {
+                // The requested store is not open. Try to open it.
+                StoreId id = _storeIdAllocator.getNextId();
+                assert(_stores.find(id) == _stores.end());
+
+                try {
+                     // Let the store's factory method create a new instance
+                     // that we accept through a unique_ptr.
+                     std::unique_ptr<ServerStore> ustore;
+
+                     if (open) {
+                        assert(desc->openMethod != nullptr);
+
+                        ustore = desc->openMethod(id, path);
+                     } else {
+                        ustore = desc->createMethod(id, path, alwaysCreate);
+                     }
+
+                     assert(ustore != nullptr);
+                     assert(ustore->getId() == id);
+
+                     // Since we want to output a log message on destruction,
+                     // we move the Store into a new owner reference with our
+                     // custom deleter. ustore should be empty afterwards.
+                     _stores.insert(std::pair<StoreId, Store::Reference>(
+                         id, Store::makeOwnerReference(ustore.release())));
+
+                     auto it = _stores.find(id);
+                     assert(it != _stores.end());
+                     store = &it->second;
+                } catch (...) {
+                    _storeIdAllocator.retireId(id);
+
+                    throw;
+                }
+
+            } else {
+                ThrowOn(!open, Exception, stringFormat(
+                        "Cannot create store '%s'. The store is already open.",
+                        path.c_str()));
+            }
+
+            // Attach the session to the store. This will increase the stores
+            // reference count.
+            ServerStore* sstore = dynamic_cast<ServerStore*>(store->get());
+
+            assert(sstore != nullptr);
+            sstore->attach(session.getLocalId());
+
+        } Unlock();
+
+        // To return the store, we create an extra reference with a null
+        // deleter, as we keep the unique ownership of the store.
+        assert((store != nullptr) && (store->get() != nullptr));
+        return Store::makeUserReference(*store);
     }
 
     void ServerStoreManager::_releaseStore(StoreId store)
@@ -74,8 +181,9 @@ namespace SimuTrace
 
         static const uint32_t numPrefixes = 1;
         static const StorePrefixDescriptor prefix[numPrefixes] = {
-            { "simtrace:", 
-            Simtrace::SimtraceStoreProvider::factoryMethod,
+            { "simtrace:",
+            Simtrace::SimtraceStoreProvider::createMethod,
+            Simtrace::SimtraceStoreProvider::openMethod,
             Simtrace::SimtraceStoreProvider::makePath,
             Simtrace::SimtraceStoreProvider::enumerationMethod }
         };
@@ -87,7 +195,7 @@ namespace SimuTrace
         *outNumPrefixes = numPrefixes;
     }
 
-    bool ServerStoreManager::_findPrefixDescriptor(const std::string& specifier, 
+    bool ServerStoreManager::_findPrefixDescriptor(const std::string& specifier,
         const StorePrefixDescriptor** out, bool perfectMatch)
     {
         const StorePrefixDescriptor* prefix = nullptr;
@@ -101,8 +209,8 @@ namespace SimuTrace
 
         for (uint32_t i = 0; i < numPrefixes; i++) {
 
-            if ((perfectMatch && (specifier.compare(prefix[i].prefix) == 0)) || 
-                (!perfectMatch && (specifier.compare(0, prefix[i].prefix.length(), 
+            if ((perfectMatch && (specifier.compare(prefix[i].prefix) == 0)) ||
+                (!perfectMatch && (specifier.compare(0, prefix[i].prefix.length(),
                 prefix[i].prefix) == 0))) {
 
                 if (out != nullptr) {
@@ -117,7 +225,7 @@ namespace SimuTrace
         return false;
     }
 
-    std::string ServerStoreManager::_getPath(const StorePrefixDescriptor& desc, 
+    std::string ServerStoreManager::_getPath(const StorePrefixDescriptor& desc,
                                              const std::string& specifier)
     {
         return specifier.substr(desc.prefix.length(), std::string::npos);
@@ -128,8 +236,8 @@ namespace SimuTrace
         return _findPrefixDescriptor(prefix, nullptr, true);
     }
 
-    void ServerStoreManager::_splitSpecifier(const std::string& specifier, 
-                                             std::string* prefix, 
+    void ServerStoreManager::_splitSpecifier(const std::string& specifier,
+                                             std::string* prefix,
                                              std::string* path)
     {
         const StorePrefixDescriptor* desc = nullptr;
@@ -147,87 +255,20 @@ namespace SimuTrace
         }
     }
 
-    Store::Reference ServerStoreManager::createStore(ServerSession& session, 
-                                                     const std::string& specifier, 
+    Store::Reference ServerStoreManager::createStore(ServerSession& session,
+                                                     const std::string& specifier,
                                                      bool alwaysCreate)
     {
-        Environment env = {0};
-        env.config = session.getEnvironment().config;
-        env.log = StorageServer::getInstance().getEnvironment().log;
-        SwapEnvironment(&env);
-
-        const StorePrefixDescriptor* desc = nullptr;
-
-        if (!_findPrefixDescriptor(specifier, &desc, false)) {
-            Throw(NotSupportedException);
-        }
-
-        assert(desc->makePath != nullptr);
-        std::string path = desc->makePath(_getPath(*desc, specifier));
-        Store::Reference* store = nullptr;
-
-        LockExclusive(_lock); {
-
-            // Look for the path in the open list. If the store is already open
-            // we just attach the session to the store.
-            for (auto& ostore : _stores) {
-                if (path.compare(ostore.second->getName()) == 0) {
-                    store = &ostore.second;
-                    break;
-                }
-            }
-
-            if (store == nullptr) {
-                // The requested store is not open. Try to open it.
-                StoreId id = _storeIdAllocator.getNextId();
-                assert(_stores.find(id) == _stores.end());
-
-                try {
-                     assert(desc->factoryMethod != nullptr);
-
-                     // Let the store's factory method create a new instance
-                     // that we accept through a unique_ptr.
-                     auto ustore = desc->factoryMethod(id, path, alwaysCreate);
-                     assert(ustore != nullptr);
-                     assert(ustore->getId() == id);
-
-                     // Since we want to output a log message on destruction,
-                     // we move the Store into a new owner reference with our
-                     // custom deleter. ustore should be empty afterwards.
-                     _stores.insert(std::pair<StoreId, Store::Reference>(
-                         id, Store::makeOwnerReference(ustore.release())));
-
-                     auto it = _stores.find(id);
-                     assert(it != _stores.end());
-                     store = &it->second;
-                } catch (...) {
-                    _storeIdAllocator.retireId(id);
-
-                    throw;
-                }
-
-            } else {
-                ThrowOn(alwaysCreate, Exception, stringFormat(
-                        "Cannot create store '%s'. The store is already open.",
-                        path.c_str()));
-            }
-
-            // Attach the session to the store. This will increase the stores
-            // reference count.
-            ServerStore* sstore = dynamic_cast<ServerStore*>(store->get());
-
-            assert(sstore != nullptr);
-            sstore->attach(session.getLocalId());
-
-        } Unlock();
-
-        // To return the store, we create an extra reference with a null
-        // deleter, as we keep the unique ownership of the store.
-        assert((store != nullptr) && (store->get() != nullptr));
-        return Store::makeUserReference(*store);
+        return _createOrOpenStore(session, specifier, alwaysCreate, false);
     }
 
-    void ServerStoreManager::enumerateStores(const ServerSession& session, 
+    Store::Reference ServerStoreManager::openStore(ServerSession& session,
+                                                   const std::string& specifier)
+    {
+        return _createOrOpenStore(session, specifier, false, true);
+    }
+
+    void ServerStoreManager::enumerateStores(const ServerSession& session,
                                              std::vector<std::string>& out)
     {
         SwapEnvironment(&session.getEnvironment());
