@@ -52,7 +52,7 @@
 
    Reset the revision number to 0 for each new minor version. */
 
-#define SIMUTRACE_REVISION 0
+#define SIMUTRACE_REVISION 1
 
 
 #define SIMUTRACE_VER_MAJOR(ver) (((ver) >> 8) & 0xFF)

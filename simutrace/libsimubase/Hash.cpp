@@ -1,6 +1,6 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
- * Marc Rittinghaus, Thorsten Groeninger
+ * Marc Rittinghaus, Thorsten Groeninger, Bastian Eicher
  *
  * Simutrace Base Library (libsimubase) is part of Simutrace.
  *
@@ -24,6 +24,7 @@
 #include "Exceptions.h"
 
 #include "murmurhash3/MurmurHash3.h"
+#include "farmhash/FarmHash.h"
 
 namespace SimuTrace {
 namespace Hash
@@ -49,6 +50,20 @@ namespace Hash
         MurmurHash3_x64_128(buffer, static_cast<int>(length), seed, hashBuffer);
     }
 
+    uint32_t farmhash_32(const void* buffer, size_t length)
+    {
+        return util::Hash32((const char*)buffer, length);
+    }
+
+    uint64_t farmhash_64(const void* buffer, size_t length)
+    {
+        return util::Hash64((const char*)buffer, length);
+    }
+
+    uint64_t farmhash_64(const void* buffer, size_t length, uint64_t seed)
+    {
+        return util::Hash64WithSeed((const char*)buffer, length, seed);
+    }
 
 }
 }

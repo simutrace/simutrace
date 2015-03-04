@@ -1,3 +1,14 @@
+Version 3.1.1
+
+    - Added FarmHash to libsimubase
+
+  Bug Fixes:
+    - StGetNextEntry() may corrupt segment control for certain entry sizes
+    - False assert in debug build for segments with only 1 entry
+    - Fixed "function declaration isn’t a prototype" in C compilers for
+        StGetClientVersion()
+
+
 Version 3.1.0
 
     - Changed build system to cmake
@@ -17,7 +28,7 @@ Version 3.1.0
     - Added exported version of tracing API
 
   Incompatible Changes:
-    - Added explicit store open and removed functionality from store creation 
+    - Added explicit store open and removed functionality from store creation
 
   Bug Fixes:
     - Fixed overflow in log level to string method

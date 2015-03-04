@@ -77,7 +77,7 @@ extern "C"
      *  \see #StClientVersion
      */
     SIMUTRACE_API
-    uint32_t StGetClientVersion();
+    uint32_t StGetClientVersion(void);
 
 
     /*! \brief Returns the last exception.
@@ -916,7 +916,7 @@ extern "C"
         /* If the next entry points behind the segment's buffer end, we do not
            have enough space left for another entry. In that case, request
            a new segment from the server                                     */
-        if (entry >= handle->segmentEnd) {
+        if (entry + handle->entrySize > handle->segmentEnd) {
             if (handle->isReadOnly) {
                 handle->accessFlags = handle->accessFlags &
                     (StreamAccessFlags)(~SafReverseRead);

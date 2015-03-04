@@ -122,9 +122,9 @@ namespace SimuTrace
         void flush();
 
         ///
-        /// Sets the file size to 0
+        /// Sets the file size to a specific length (usually 0)
         ///
-        void truncate();
+        void truncate(size_t size = 0);
 
         ///
         /// Returns the current file size

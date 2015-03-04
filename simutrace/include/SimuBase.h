@@ -119,6 +119,7 @@
 #ifdef SIMUTRACE_PROFILING_ENABLE
 #include "Profiler.h"
 #include "ProfileEntry.h"
+#include "ScopedTimer.h"
 #endif
 
 #endif // SIMUBASE_H

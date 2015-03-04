@@ -865,7 +865,7 @@ namespace SimuTrace
 
                 control->startIndex    = location->ranges.startIndex;
                 if (location->ranges.startIndex != INVALID_ENTRY_INDEX) {
-                    assert(location->ranges.endIndex > location->ranges.startIndex);
+                    assert(location->ranges.endIndex >= location->ranges.startIndex);
                     control->entryCount = location->getEntryCount();
                 }
 

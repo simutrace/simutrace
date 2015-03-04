@@ -102,6 +102,19 @@ namespace SimuTrace
             _entries.push_back(entry);
         }
 
+        template<typename T>
+        void add(const char* name, T value)
+        {
+            PEntry entry;
+
+            auto var = new ProfileVariable<T>(name);
+            var->set(value);
+            entry.entry = var;
+            entry.isOwner = true;
+
+            _entries.push_back(entry);
+        }
+
         ProfileEntry& get(uint32_t index) const
         {
             assert(index < _entries.size());

@@ -114,6 +114,12 @@ set(SOURCE_FILES_HASHING_MURMUR
 set(HEADER_FILES_HASHING_MURMUR_PRIVATE
     "murmurhash3/MurmurHash3.h")
 
+set(SOURCE_FILES_HASHING_FARM
+    "farmhash/FarmHash.cpp")
+
+set(HEADER_FILES_HASHING_FARM_PRIVATE
+    "farmhash/FarmHash.h")
+
 set(HEADER_FILES_HASHING_BASE
     "${SIMUBASE_INCLUDE}/Hash.h")
 
@@ -226,6 +232,7 @@ set(HEADER_FILES_OTHERS
     "${SIMUBASE_INCLUDE}/Utils.h"
     "${SIMUBASE_INCLUDE}/ProfileEntry.h"
     "${SIMUBASE_INCLUDE}/Profiler.h"
+    "${SIMUBASE_INCLUDE}/ScopedTimer.h"
     "${SIMUBASE_INCLUDE}/FastDelegate.h")
 
 set(OTHER_FILES_OTHERS
@@ -236,7 +243,8 @@ set(OTHER_FILES_OTHERS
 
 set(SOURCE_FILES_NOTPRECOMPILED
     ${SOURCE_FILES_COMPRESSION_LZMA}
-    ${SOURCE_FILES_HASHING_MURMUR})
+    ${SOURCE_FILES_HASHING_MURMUR}
+    ${SOURCE_FILES_HASHING_FARM})
 
 set(SOURCE_FILES_PRECOMPILED
     ${SOURCE_FILES_OTHERS}
@@ -275,6 +283,7 @@ source_group("Source files\\Compression" FILES ${SOURCE_FILES_COMPRESSION_BASE})
 source_group("Source files\\Compression\\lzma" FILES ${SOURCE_FILES_COMPRESSION_LZMA})
 source_group("Source files\\Hashing" FILES ${SOURCE_FILES_HASHING_BASE})
 source_group("Source files\\Hashing\\murmur3" FILES ${SOURCE_FILES_HASHING_MURMUR})
+source_group("Source files\\Hashing\\farmhash" FILES ${SOURCE_FILES_HASHING_FARM})
 source_group("Source files\\IO" FILES ${SOURCE_FILES_IO})
 source_group("Source files\\Logging" FILES ${SOURCE_FILES_LOGGING})
 source_group("Source files\\Memory" FILES ${SOURCE_FILES_MEMORY})
@@ -286,6 +295,8 @@ source_group("Header files\\Network" FILES ${HEADER_FILES_NETWORK_PRIVATE})
 source_group("Header files\\Network\\Channels" FILES ${HEADER_FILES_NETWORK_CHANNELS_PRIVATE})
 source_group("Header files\\Compression\\lzma" FILES ${HEADER_FILES_COMPRESSION_LZMA_PRIVATE})
 source_group("Header files\\Hashing\\murmur3" FILES ${HEADER_FILES_HASHING_MURMUR_PRIVATE})
+source_group("Header files\\Hashing\\farmhash" FILES ${HEADER_FILES_HASHING_FARM_PRIVATE})
+source_group("Header files\\Public" FILES ${HEADER_FILES_API} ${HEADER_FILES_BASE_INTERNAL} ${HEADER_FILES_OTHERS})
 source_group("Header files\\Public" FILES ${HEADER_FILES_BASE_API} ${HEADER_FILES_BASE_INTERNAL} ${HEADER_FILES_OTHERS})
 source_group("Header files\\Public\\Network" FILES ${HEADER_FILES_NETWORK})
 source_group("Header files\\Public\\Compression" FILES ${HEADER_FILES_COMPRESSION_BASE})

@@ -168,17 +168,17 @@ namespace SimuTrace
     #endif
     }
 
-    void File::truncate()
+    void File::truncate(size_t size)
     {
         ThrowOn(!_file.isValid(), InvalidOperationException);
 
     #ifdef WIN32
-        ::SetFilePointer(_file, 0, nullptr, FILE_BEGIN);
+        ::SetFilePointer(_file, (long)size, nullptr, FILE_BEGIN);
         if (!::SetEndOfFile(_file)) {
             Throw(PlatformException);
         }
     #else
-        if (::ftruncate(_file, 0) != 0) {
+        if (::ftruncate(_file, (off_t)size) != 0) {
             Throw(PlatformException);
         }
     #endif

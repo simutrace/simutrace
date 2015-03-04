@@ -1,6 +1,6 @@
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
- * Marc Rittinghaus, Thorsten Groeninger, Bastian Eicher
+ * Bastian Eicher
  *
  * Simutrace Base Library (libsimubase) is part of Simutrace.
  *
@@ -18,29 +18,41 @@
  * along with libsimubase. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef HASH_H
-#define HASH_H
+#ifndef SCOPED_TIMER_H
+#define SCOPED_TIMER_H
 
 #include "SimuPlatform.h"
+
+#include "Profiler.h"
 
 namespace SimuTrace
 {
 
-    namespace Hash {
+    class ScopedTimer
+    {
+    private:
+        DISABLE_COPY(ScopedTimer);
 
-        void murmur3_32(const void* buffer, size_t length, void* hashBuffer,
-                        size_t hashBufferLength, uint32_t seed);
+        ProfileContext& _profileContext;
+        const char* _name;
+        uint64_t _start;
 
-        void murmur3_128(const void* buffer, size_t length, void* hashBuffer,
-                         size_t hashBufferLength, uint32_t seed);
+    public:
+        ScopedTimer(ProfileContext& profileContext, const char* name) :
+            _profileContext(profileContext),
+            _name(name)
+        {
+            _start = Clock::getTicks();
+        }
 
-        uint32_t farmhash_32(const void* buffer, size_t length);
+        ~ScopedTimer()
+        {
+            uint64_t ticks = Clock::getTicks() - _start;
+            uint64_t milliseconds = ticks / (Clock::getTimerFrequency() / 1000);
 
-        uint64_t farmhash_64(const void* buffer, size_t length);
-
-        uint64_t farmhash_64(const void* buffer, size_t length, uint64_t seed);
-
-    }
+            _profileContext.add(_name, milliseconds);
+        }
+    };
 
 }
 #endif
