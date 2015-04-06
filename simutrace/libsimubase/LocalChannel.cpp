@@ -26,7 +26,7 @@
 #include "Exceptions.h"
 #include "Utils.h"
 
-#ifdef WIN32
+#if defined(_WIN32)
 #define PIPE_OUT_BUFFER_SIZE 0x100000
 #define PIPE_IN_BUFFER_SIZE 0x100000
 #define PIPE_DEFAULT_TIMEOUT 1000
@@ -63,7 +63,7 @@ namespace SimuTrace
         assert(!isConnected());
     }
 
-#ifdef WIN32
+#if defined(_WIN32)
     void LocalChannel::_createServerNamedPipe()
     {
         SECURITY_ATTRIBUTES security;
@@ -298,7 +298,7 @@ namespace SimuTrace
 
     void LocalChannel::_createServerEndpoint()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         _createServerNamedPipe();
     #else
         _createServerDomainSocket();
@@ -307,7 +307,7 @@ namespace SimuTrace
 
     void LocalChannel::_connectServerEndpoint()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         _connectServerNamedPipe();
     #else
         _connectServerDomainSocket();
@@ -320,7 +320,7 @@ namespace SimuTrace
 
         SafeHandle connection;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         bool clientConnected = false;
         do {
             clientConnected = (::ConnectNamedPipe(_endpoint, nullptr) == TRUE);
@@ -367,7 +367,7 @@ namespace SimuTrace
     void LocalChannel::_disconnect()
     {
         if (_endpoint.isValid()) {
-        #ifdef WIN32
+        #if defined(_WIN32)
             if (_isServerChannel()) {
                 ::FlushFileBuffers(_endpoint);
                 ::DisconnectNamedPipe(_endpoint);
@@ -386,7 +386,7 @@ namespace SimuTrace
     {
         assert(data != nullptr && size > 0);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD bytesWritten;
         if (!::WriteFile(_endpoint, data, (DWORD) size, &bytesWritten, nullptr)) {
             Throw(PlatformException);
@@ -443,7 +443,7 @@ namespace SimuTrace
         size_t size = sizeof(Handle) * handles.size();
         size_t bytesSent;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         // In Windows, duplication of handles does not use the established
         // connection, but instead works by calling the respective API. After
         // the call to duplicateHandles, the handles are valid in the target
@@ -494,7 +494,7 @@ namespace SimuTrace
     {
         assert(data != nullptr && size > 0);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD bytesRead;
         if (!::ReadFile(_endpoint, data, (DWORD) size, &bytesRead, nullptr)) {
             Throw(PlatformException);
@@ -546,11 +546,11 @@ namespace SimuTrace
 
         size_t size = sizeof(Handle) * handleCount;
         size_t bytesReceived;
-        Handle* handlelist;
+        Handle* handlelist = nullptr;
 
         // Receive the list of handles from the communication peer.
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         handlelist = new Handle[handleCount];
 
         try {
@@ -593,11 +593,13 @@ namespace SimuTrace
 
         handles.clear();
 
-        for (uint32_t i = 0; i < handleCount; i++) {
-            handles.push_back(handlelist[i]);
+        if (handlelist != nullptr) {
+            for (uint32_t i = 0; i < handleCount; i++) {
+                handles.push_back(handlelist[i]);
+            }
         }
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         delete [] handlelist;
     #else
         _freeHandleTransferMessage(msgh);

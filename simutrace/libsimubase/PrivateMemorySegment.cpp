@@ -48,10 +48,13 @@ namespace SimuTrace
     {
         ThrowOn(start != 0 && size != getSize(), InvalidOperationException);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         unsigned int prot = (isReadOnly()) ? PAGE_READONLY : PAGE_READWRITE;
         void* buffer = ::VirtualAlloc(nullptr, size, MEM_COMMIT, prot);
     #else
+    #if (defined(__MACH__) && defined(__APPLE__))
+    #define MAP_ANONYMOUS MAP_ANON
+    #endif
         unsigned int prot = (isReadOnly()) ? PROT_READ : PROT_READ | PROT_WRITE;
         void* buffer = ::mmap(0, size, prot, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     #endif
@@ -63,7 +66,7 @@ namespace SimuTrace
 
     void PrivateMemorySegment::_unmap(byte* buffer)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::VirtualFree(buffer, 0, MEM_RELEASE)) {
     #else
         if (::munmap(buffer, getMappedSize()) != 0) {

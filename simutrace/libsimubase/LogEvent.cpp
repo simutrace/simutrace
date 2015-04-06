@@ -34,7 +34,7 @@ namespace SimuTrace
         _category(category),
         _message(message),
         _priority(priority),
-        _timestamp(Clock::timeToTimestamp(Clock::getTime()))
+        _timestamp(Clock::getTimestamp())
     {
 
     }

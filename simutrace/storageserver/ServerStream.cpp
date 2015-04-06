@@ -52,9 +52,9 @@ namespace SimuTrace
             location(),
             id(buffer),
             sideId(INVALID_SEGMENT_ID),
-            referenceCount(1),
             cancel(false),
-            prefetched(false)
+            prefetched(false),
+            referenceCount(1)
         {
             // This constructor should be used to create segment locations
             // for newly allocated writable segments.
@@ -71,9 +71,9 @@ namespace SimuTrace
             location(),
             id(INVALID_SEGMENT_ID),
             sideId(INVALID_SEGMENT_ID),
-            referenceCount(0),
             cancel(false),
-            prefetched(false)
+            prefetched(false),
+            referenceCount(0)
         {
             location = std::move(loc);
 
@@ -1100,6 +1100,7 @@ namespace SimuTrace
                 assert(loc->referenceMap.size() == 1);
 
                 auto it = loc->referenceMap.find(session);
+                (void)it; // Make compiler happy in release build
                 assert(it != loc->referenceMap.end());
                 assert(it->second == 1);
 
@@ -1418,7 +1419,6 @@ namespace SimuTrace
                              bool ignoreErrors)
     {
         LockScopeExclusive(_lock);
-        ServerStreamBuffer& buffer = _getBuffer();
 
         auto lit = _openList.begin();
         while (lit != _openList.end()) {

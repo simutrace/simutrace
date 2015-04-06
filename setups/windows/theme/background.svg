@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="743"
+   height="522"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="background.svg"
+   inkscape:export-filename="D:\Projects\simutrace\setups\windows\theme\background.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="165.76731"
+     inkscape:cy="434.32341"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:snap-global="true"
+     showguides="false"
+     objecttolerance="20"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-paths="false"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:snap-bbox-midpoints="true"
+     showborder="true"
+     inkscape:showpageshadow="false"
+     borderlayer="false"
+     inkscape:window-width="1856"
+     inkscape:window-height="1177"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:snap-nodes="false">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3755"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       color="#0000ff"
+       opacity="0.0627451"
+       empcolor="#0000ff"
+       empopacity="0.09803922" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-530.36218)">
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1"
+       id="rect2985"
+       width="743.57141"
+       height="55"
+       x="0"
+       y="997.36218" />
+    <rect
+       style="fill:#252526;fill-opacity:1"
+       id="rect3757"
+       width="743.57141"
+       height="5.0000033"
+       x="2.1909558e-014"
+       y="992.36218" />
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1"
+       id="rect2985-1"
+       width="219.57141"
+       height="48"
+       x="105.42843"
+       y="539.17694"
+       inkscape:export-filename="D:\Projects\simutrace\setups\windows\theme\text3971.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#262626;fill-opacity:1"
+       id="rect3906"
+       width="92.85714"
+       height="69.930908"
+       x="-0.5715692"
+       y="530.29987"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:#ffffff;fill-opacity:1"
+       d="m 26.716377,542.31754 10.5,22.875 -10.5,22.84375 11.6875,0 10.5,-22.84375 -10.5,-22.875 -11.6875,0 z m 16.375,0 10.46875,22.875 -10.46875,22.84375 11.65625,0 10.5,-22.84375 -10.5,-22.875 -11.65625,0 z m 16.59375,0 10.5,22.875 11.6875,0 -10.5,-22.875 -11.6875,0 z m -39.34375,22.875 -10.500003,22.84375 11.687503,0 10.46875,-22.84375 -11.65625,0 z"
+       id="rect3823"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="D:\Projects\simutrace\setups\windows\theme\rect3906.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1"
+       id="rect3969"
+       width="744"
+       height="392.1716"
+       x="0"
+       y="600.06927"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="108.48869"
+       y="579.58173"
+       id="text3971"
+       sodipodi:linespacing="125%"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"><tspan
+         sodipodi:role="line"
+         id="tspan3973"
+         x="108.48869"
+         y="579.58173"
+         style="-inkscape-font-specification:Ebrima;font-family:Ebrima;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;font-size:48px;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%">Simutrace</tspan></text>
+  </g>
+</svg>

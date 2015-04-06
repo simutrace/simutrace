@@ -35,7 +35,7 @@ namespace SimuTrace
         std::string _pathname;
         std::string _pattern;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         Handle _handle;
         WIN32_FIND_DATAA _data;
         static const char _pathDelimiter = '\\';

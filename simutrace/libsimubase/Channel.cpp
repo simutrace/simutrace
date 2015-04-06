@@ -31,9 +31,9 @@ namespace SimuTrace
 
     Channel::Channel(bool isServer, const std::string& address) :
         _address(address),
+        _isServer(isServer),
         _bytesSent(0),
-        _bytesReceived(0),
-        _isServer(isServer)
+        _bytesReceived(0)
     {
 
     }

@@ -418,7 +418,6 @@ namespace SimuTrace
     {
         TEST_REQUEST_V31(StreamClose, ctx.msg);
         ServerSession& session = ctx.worker._session;
-        ServerPort* port = ctx.worker._port.get();
 
         StreamId id = ctx.msg.parameter0;
         StreamSegmentId sseg = ctx.msg.data.parameter1;
@@ -506,7 +505,6 @@ namespace SimuTrace
 
                 // If the channel does not support shared memory, we use a
                 // payload allocator to speed up segment transfer.
-                ChannelCapabilities caps = _port->getChannelCaps();
                 if (!channelSupportsSharedMemory()) {
                     ctx.msg.allocatorArgs = &_session;
                     ctx.msg.allocator     = _messagePayloadAllocator;

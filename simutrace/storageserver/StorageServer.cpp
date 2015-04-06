@@ -81,17 +81,17 @@ namespace SimuTrace
     std::map<int, StorageServer::RequestHandler> StorageServer::_handlers;
 
     StorageServer::StorageServer(int argc, const char* argv[]) :
+        _bindings(),
+        _requestPool(nullptr),
+        _workerPool(nullptr),
+        _memoryPool(nullptr),
+        _sessionManager(nullptr),
+        _storeManager(nullptr),
         _shouldStop(true),
         _workspace(),
         _specifier(),
         _config(),
         _logRoot(""),
-        _bindings(),
-        _sessionManager(nullptr),
-        _storeManager(nullptr),
-        _workerPool(nullptr),
-        _memoryPool(nullptr),
-        _requestPool(nullptr),
         _environment()
     {
         _environment.log = &_logRoot;
@@ -358,7 +358,6 @@ namespace SimuTrace
         std::string prefix(OPT_LONG_PREFIX);
         auto prefixLength = prefix.length();
 
-        Setting& root = _config.getRoot();
         for (auto it = options.groups.begin(); it != options.groups.end(); ++it) {
             ez::OptionGroup* group = (*it);
             assert(group->flags.size() > 0);
@@ -482,7 +481,7 @@ namespace SimuTrace
         LogInfo("Created %d server processing worker threads.",
                 _workerPool->getWorkerCount());
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         _workerPool->setPoolPriority(THREAD_PRIORITY_BELOW_NORMAL);
     #else
         // On Linux, higher priority values mean lower scheduling
@@ -752,6 +751,7 @@ namespace SimuTrace
         ServerPort& port = request.getServerPort();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
+        (void)ver;
 
         LogDebug("<client: %s> Version information %d.%d",
                  port.getAddress().c_str(),

@@ -28,7 +28,7 @@ namespace Interlocked
 
     uint32_t interlockedAdd(volatile uint32_t* dst, uint32_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedExchangeAdd(
             reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(value));
@@ -39,7 +39,7 @@ namespace Interlocked
 
     uint64_t interlockedAdd(volatile uint64_t* dst, uint64_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedExchangeAdd64(
             reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(value));
@@ -50,7 +50,7 @@ namespace Interlocked
 
     uint32_t interlockedSub(volatile uint32_t* dst, uint32_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedExchangeSubtract(
             reinterpret_cast<volatile unsigned long*>(dst),
             static_cast<unsigned long>(value));
@@ -61,7 +61,7 @@ namespace Interlocked
 
     uint64_t interlockedSub(volatile uint64_t* dst, uint64_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedExchangeSubtract(
             reinterpret_cast<volatile unsigned long*>(dst),
             static_cast<unsigned long>(value));
@@ -74,7 +74,7 @@ namespace Interlocked
                                         uint32_t exchange,
                                         uint32_t comperand)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedCompareExchange(
             reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(exchange),
@@ -88,7 +88,7 @@ namespace Interlocked
                                         uint64_t exchange,
                                         uint64_t comperand)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedCompareExchange64(
             reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(exchange),
@@ -100,7 +100,7 @@ namespace Interlocked
 
     uint32_t interlockedAnd(volatile uint32_t* dst, uint32_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedAnd(
             reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(value));
@@ -111,7 +111,7 @@ namespace Interlocked
 
     uint64_t interlockedAnd(volatile uint64_t* dst, uint64_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedAnd64(
             reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(value));
@@ -122,7 +122,7 @@ namespace Interlocked
 
     uint32_t interlockedOr(volatile uint32_t* dst, uint32_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedOr(
             reinterpret_cast<volatile LONG*>(dst),
             static_cast<LONG>(value));
@@ -133,7 +133,7 @@ namespace Interlocked
 
     uint64_t interlockedOr(volatile uint64_t* dst, uint64_t value)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::InterlockedOr64(
             reinterpret_cast<volatile LONGLONG*>(dst),
             static_cast<LONGLONG>(value));

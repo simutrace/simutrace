@@ -29,7 +29,7 @@
 #include <signal.h>
 #include <setjmp.h>
 
-#ifdef WIN32
+#if defined(_WIN32)
 DWORD WINAPI ThreadStart(LPVOID param);
 #else
 #endif
@@ -45,7 +45,7 @@ namespace SimuTrace
         TsFinished
     } ThreadState;
 
-#ifdef WIN32
+#if defined(_WIN32)
 #else
     typedef struct _SignalJumpBuffer {
         sigjmp_buf signalret;
@@ -56,7 +56,7 @@ namespace SimuTrace
         uint32_t getNumLogicalProcessors();
     }
 
-    class ThreadBase 
+    class ThreadBase
     {
     private:
         DISABLE_COPY(ThreadBase);
@@ -64,7 +64,7 @@ namespace SimuTrace
         ThreadState _state;
         int _retVal;
         int _priority;
-    #ifdef WIN32
+    #if defined(_WIN32)
         SafeHandle _thread;
         DWORD _threadId;
 
@@ -90,7 +90,7 @@ namespace SimuTrace
         // Starts the thread and calls run() in the context of the new thread
         void start();
 
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         // Sets/Gets the signal return point
         void setSignalJmpBuffer(SignalJumpBuffer* jmp);
@@ -133,9 +133,6 @@ namespace SimuTrace
 
         // Returns the current process id
         static unsigned long getCurrentProcessId();
-
-        // Waits for any thread
-        static void waitForThread(unsigned long threadId);
     };
 }
 

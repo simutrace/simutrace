@@ -32,7 +32,7 @@ namespace System
 
     uint32_t getNumLogicalProcessors()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
 
@@ -44,7 +44,7 @@ namespace System
 
 }
 
-#ifdef WIN32
+#if defined(_WIN32)
 #define INVALID_THREAD_ID NULL
 #else
 #define INVALID_THREAD_ID 0
@@ -64,14 +64,15 @@ namespace System
 #endif
 
     ThreadBase::ThreadBase() :
-        _retVal(0),
         _state(TsIdle),
-    #ifdef WIN32
+        _retVal(0),
+        _priority(0),
+    #if defined(_WIN32)
         _thread(),
     #else
+        _signalJmp(nullptr),
     #endif
-        _threadId(INVALID_THREAD_ID),
-        _priority(0)
+        _threadId(INVALID_THREAD_ID)
     {
 
     }
@@ -79,7 +80,7 @@ namespace System
     ThreadBase::~ThreadBase()
     {
         if (_threadId != INVALID_THREAD_ID) {
-        #ifdef WIN32
+        #if defined(_WIN32)
         #else
             ::pthread_detach(_threadId);
         #endif
@@ -91,11 +92,12 @@ namespace System
     // Current thread object stored in thread local storage (TLS)
     __thread ThreadBase* ThreadBase::_currentThread = nullptr;
 
-#ifdef WIN32
+#if defined(_WIN32)
 #else
     void ThreadBase::_prepareSigBusHandling()
     {
-        struct sigaction act = {0};
+        struct sigaction act;
+        memset(&act, 0, sizeof(struct sigaction));
         act.sa_sigaction = _sigbusHandler;
         act.sa_flags = SA_SIGINFO;
 
@@ -112,7 +114,7 @@ namespace System
 
         _state = TsStarting;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         _thread = ::CreateThread(nullptr, 0, ThreadStart, this, 0, &_threadId);
         if (!_thread.isValid()) {
             _state = TsIdle;
@@ -129,7 +131,7 @@ namespace System
         setPriority(_priority);
     }
 
-#ifdef WIN32
+#if defined(_WIN32)
 #else
     void ThreadBase::setSignalJmpBuffer(SignalJumpBuffer* jmp)
     {
@@ -150,7 +152,7 @@ namespace System
         if (!force) {
             _state = TsStopping;
         } else {
-        #ifdef WIN32
+        #if defined(_WIN32)
         #pragma warning(suppress: 6258) // Warning using TerminateThread
             if (!::TerminateThread(_thread, 0xffffffff)) {
                 Throw(PlatformException);
@@ -176,7 +178,7 @@ namespace System
             return;
         }
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (::WaitForSingleObject(_thread, INFINITE) == WAIT_FAILED) {
             Throw(PlatformException);
         }
@@ -194,10 +196,12 @@ namespace System
             return;
         }
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::SetThreadPriority(_thread, priority)) {
             Throw(PlatformException);
         }
+    #elif (defined(__MACH__) && defined(__APPLE__))
+        // Not implemented. Just do nothing.
     #else
         int result = ::pthread_setschedprio(_threadId, priority);
         ThrowOn(result != 0, PlatformException, result);
@@ -225,17 +229,27 @@ namespace System
 
     bool ThreadBase::isExecutingThread() const
     {
+    #if defined(_WIN32)
         return (_threadId == ThreadBase::getCurrentThreadId());
+    #else
+        return (::pthread_equal(_threadId, ::pthread_self()));
+    #endif
     }
 
     unsigned long ThreadBase::getId() const
     {
+    #if (defined(__MACH__) && defined(__APPLE__))
+        uint64_t tid;
+        ::pthread_threadid_np(_threadId, &tid);
+        return static_cast<long>(tid);
+    #else
         return _threadId;
+    #endif
     }
 
     void ThreadBase::sleep(uint32_t ms)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::Sleep(ms);
     #else
         ::usleep(ms * 1000);
@@ -244,8 +258,12 @@ namespace System
 
     unsigned long ThreadBase::getCurrentThreadId()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::GetCurrentThreadId();
+    #elif (defined(__MACH__) && defined(__APPLE__))
+        uint64_t tid;
+        ::pthread_threadid_np(NULL, &tid);
+        return static_cast<long>(tid);
     #else
         return ::pthread_self();
     #endif
@@ -253,7 +271,7 @@ namespace System
 
     unsigned long ThreadBase::getCurrentSystemThreadId()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return getCurrentThreadId();
     #else
         return ::syscall(SYS_gettid);
@@ -267,32 +285,16 @@ namespace System
 
     unsigned long ThreadBase::getCurrentProcessId()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::GetCurrentProcessId();
     #else
         return ::getpid();
     #endif
     }
 
-    static void waitForThread(unsigned long threadId)
-    {
-    #ifdef WIN32
-        SafeHandle handle = ::OpenThread(SYNCHRONIZE, FALSE, threadId);
-        ThrowOnNull(handle, PlatformException);
-
-        if (::WaitForSingleObject(handle, INFINITE) == WAIT_FAILED) {
-            Throw(PlatformException);
-        }
-    #else
-        void* result;
-        ::pthread_join((pthread_t)threadId, &result);
-        ThrowOn(result != 0, PlatformException, *((int*)(&result)));
-    #endif
-    }
-
     // Thread Start Method
 
-#ifdef WIN32
+#if defined(_WIN32)
     DWORD WINAPI ThreadStart(LPVOID param)
 #else
     void* ThreadStart(void* param)
@@ -302,7 +304,7 @@ namespace System
         th = static_cast<ThreadBase*>(param);
         th->_currentThread = th;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         th->_prepareSigBusHandling();
     #endif
@@ -315,7 +317,7 @@ namespace System
         }
         th->_state = TsFinished;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD retval = (DWORD)th->_retVal;
     #else
         void* retval = reinterpret_cast<void*>(th->_retVal);

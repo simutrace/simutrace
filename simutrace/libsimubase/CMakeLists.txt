@@ -29,7 +29,8 @@
 add_definitions(/DSIMUTRACE)
 
 set(SIMUBASE_INCLUDE "../include/simubase")
-include_directories(${SIMUBASE_INCLUDE})
+include_directories("${SIMUBASE_INCLUDE}"
+                    "${CMAKE_CURRENT_BINARY_DIR}/../include/")
 
 set(PRECOMPILE_SOURCE "main.cpp")
 set(PRECOMPILE_HEADER "SimuPlatform.h")
@@ -37,7 +38,7 @@ set(PRECOMPILE_HEADER "SimuPlatform.h")
 # Base
 
 set(HEADER_FILES_BASE_PRIVATE
-    "../include/Version.h")
+    "${CMAKE_CURRENT_BINARY_DIR}/../include/Version.h")
 
 set(HEADER_FILES_BASE_INTERNAL
     "../include/SimuBase.h"
@@ -213,6 +214,17 @@ set(HEADER_FILES_TIME
     "${SIMUBASE_INCLUDE}/StopWatch.h")
 
 
+# Profiling
+
+set(SOURCE_FILES_PROFILING
+    "Profiler.cpp")
+
+set(HEADER_FILES_PROFILING
+    "${SIMUBASE_INCLUDE}/ProfileEntry.h"
+    "${SIMUBASE_INCLUDE}/Profiler.h"
+    "${SIMUBASE_INCLUDE}/ScopedTimer.h"
+    "${SIMUBASE_INCLUDE}/FastDelegate.h")
+
 # Others
 
 set(SOURCE_FILES_OTHERS
@@ -220,8 +232,7 @@ set(SOURCE_FILES_OTHERS
     "Environment.cpp"
     "Exceptions.cpp"
     "SafeHandle.cpp"
-    "Utils.cpp"
-    "Profiler.cpp")
+    "Utils.cpp")
 
 set(HEADER_FILES_OTHERS
     "${SIMUBASE_INCLUDE}/Configuration.h"
@@ -229,14 +240,7 @@ set(HEADER_FILES_OTHERS
     "${SIMUBASE_INCLUDE}/Exceptions.h"
     "${SIMUBASE_INCLUDE}/IdAllocator.h"
     "${SIMUBASE_INCLUDE}/SafeHandle.h"
-    "${SIMUBASE_INCLUDE}/Utils.h"
-    "${SIMUBASE_INCLUDE}/ProfileEntry.h"
-    "${SIMUBASE_INCLUDE}/Profiler.h"
-    "${SIMUBASE_INCLUDE}/ScopedTimer.h"
-    "${SIMUBASE_INCLUDE}/FastDelegate.h")
-
-set(OTHER_FILES_OTHERS
-    "CMakeLists.txt")
+    "${SIMUBASE_INCLUDE}/Utils.h")
 
 
 # Source Code Grouping --------------------------------------------------------
@@ -248,6 +252,7 @@ set(SOURCE_FILES_NOTPRECOMPILED
 
 set(SOURCE_FILES_PRECOMPILED
     ${SOURCE_FILES_OTHERS}
+    ${SOURCE_FILES_PROFILING}
     ${SOURCE_FILES_NETWORK}
     ${SOURCE_FILES_COMPRESSION_BASE}
     ${SOURCE_FILES_HASHING_BASE}
@@ -265,6 +270,7 @@ set(HEADER_FILES
     ${HEADER_FILES_BASE_API}
     ${HEADER_FILES_BASE_INTERNAL}
     ${HEADER_FILES_OTHERS}
+    ${HEADER_FILES_PROFILING}
     ${HEADER_FILES_NETWORK}
     ${HEADER_FILES_COMPRESSION_BASE}
     ${HEADER_FILES_HASHING_BASE}
@@ -273,9 +279,6 @@ set(HEADER_FILES
     ${HEADER_FILES_MEMORY}
     ${HEADER_FILES_THREADING}
     ${HEADER_FILES_TIME})
-
-set(OTHER_FILES
-    ${OTHER_FILES_OTHERS})
 
 source_group("Source files" FILES ${PRECOMPILE_SOURCE} ${SOURCE_FILES_BASE} ${SOURCE_FILES_OTHERS})
 source_group("Source files\\Network" FILES ${SOURCE_FILES_NETWORK})
@@ -289,6 +292,7 @@ source_group("Source files\\Logging" FILES ${SOURCE_FILES_LOGGING})
 source_group("Source files\\Memory" FILES ${SOURCE_FILES_MEMORY})
 source_group("Source files\\Threading" FILES ${SOURCE_FILES_THREADING})
 source_group("Source files\\Time" FILES ${SOURCE_FILES_TIME})
+source_group("Source files\\Profiling" FILES ${SOURCE_FILES_PROFILING})
 
 source_group("Header files" FILES ${HEADER_FILES_BASE_PRIVATE})
 source_group("Header files\\Network" FILES ${HEADER_FILES_NETWORK_PRIVATE})
@@ -306,14 +310,17 @@ source_group("Header files\\Public\\Logging" FILES ${HEADER_FILES_LOGGING})
 source_group("Header files\\Public\\Memory" FILES ${HEADER_FILES_MEMORY})
 source_group("Header files\\Public\\Threading" FILES ${HEADER_FILES_THREADING})
 source_group("Header files\\Public\\Time" FILES ${HEADER_FILES_TIME})
-
-source_group("" FILES ${OTHER_FILES_OTHERS})
+source_group("Header files\\Public\\Profiling" FILES ${HEADER_FILES_PROFILING})
 
 set_source_files_properties(${HEADER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 
 # Build -----------------------------------------------------------------------
+
+set(libsimubase_GUID_CMAKE "BFC5C25F-51F7-4129-9576-22D57D6CA162" CACHE INTERNAL "libsimubase GUID")
+
+configure_file("../include/Version.h.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/../include/Version.h")
 
 add_library(libsimubase
             ${PRECOMPILE_SOURCE}

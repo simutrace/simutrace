@@ -33,7 +33,7 @@ namespace SimuTrace
     {
     public:
         enum AccessMode {
-        #ifdef WIN32
+        #if defined(_WIN32)
             ReadOnly  = GENERIC_READ,
             ReadWrite = GENERIC_READ | GENERIC_WRITE
         #else
@@ -43,7 +43,7 @@ namespace SimuTrace
         };
 
         enum CreateMode {
-        #ifdef WIN32
+        #if defined(_WIN32)
             CreateAlways = CREATE_ALWAYS,
             OpenAlways   = OPEN_ALWAYS,
             OpenExisting = OPEN_EXISTING

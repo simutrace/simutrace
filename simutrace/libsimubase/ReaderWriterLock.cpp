@@ -33,7 +33,7 @@ namespace SimuTrace
     {
     #ifdef _DEBUG
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         ::InitializeSRWLock(&_lock);
     #else
         int result = ::pthread_rwlock_init(&_lock, nullptr);
@@ -46,7 +46,7 @@ namespace SimuTrace
     {
     #ifdef _DEBUG
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
     #else
         ::pthread_rwlock_destroy(&_lock);
     #endif
@@ -58,7 +58,7 @@ namespace SimuTrace
     #ifdef _DEBUG
         return _lock.tryToEnter();
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         if (::TryAcquireSRWLockExclusive(&_lock) != TRUE) {
     #else
         if (::pthread_rwlock_trywrlock(&_lock) != 0) {
@@ -74,7 +74,7 @@ namespace SimuTrace
     #ifdef _DEBUG
         _lock.enter();
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         ::AcquireSRWLockExclusive(&_lock);
     #else
         int result = ::pthread_rwlock_wrlock(&_lock);
@@ -88,7 +88,7 @@ namespace SimuTrace
     #ifdef _DEBUG
         _lock.leave();
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         ::ReleaseSRWLockExclusive(&_lock);
     #else
         int result = ::pthread_rwlock_unlock(&_lock);
@@ -102,7 +102,7 @@ namespace SimuTrace
     #ifdef _DEBUG
         return _lock.tryToEnter();
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         if (::TryAcquireSRWLockShared(&_lock) != TRUE) {
     #else
         if (::pthread_rwlock_tryrdlock(&_lock) != 0) {
@@ -118,7 +118,7 @@ namespace SimuTrace
     #ifdef _DEBUG
         _lock.enter();
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         ::AcquireSRWLockShared(&_lock);
     #else
         int result = ::pthread_rwlock_rdlock(&_lock);
@@ -132,7 +132,7 @@ namespace SimuTrace
     #ifdef _DEBUG
         _lock.leave();
     #else
-    #ifdef _WIN32
+    #if defined(_WIN32)
         ::ReleaseSRWLockShared(&_lock);
     #else
         int result = ::pthread_rwlock_unlock(&_lock);

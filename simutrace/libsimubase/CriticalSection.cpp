@@ -28,7 +28,7 @@ namespace SimuTrace
 {
     CriticalSection::CriticalSection()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::InitializeCriticalSection(&_cs);
     #else
         int result = ::pthread_mutex_init(&_cs, nullptr);
@@ -38,7 +38,7 @@ namespace SimuTrace
 
     CriticalSection::~CriticalSection()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::DeleteCriticalSection(&_cs);
     #else
     #endif
@@ -46,7 +46,7 @@ namespace SimuTrace
 
     void CriticalSection::enter()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::EnterCriticalSection(&_cs);
     #else
         int result = ::pthread_mutex_lock(&_cs);
@@ -63,7 +63,7 @@ namespace SimuTrace
 
     bool CriticalSection::tryToEnter()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (::TryEnterCriticalSection(&_cs) == 0) {
     #else
         if (::pthread_mutex_trylock(&_cs) != 0) {
@@ -75,7 +75,7 @@ namespace SimuTrace
 
     void CriticalSection::leave()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::LeaveCriticalSection(&_cs);
     #else
         int result = ::pthread_mutex_unlock(&_cs);

@@ -71,7 +71,7 @@ namespace Configuration
             case Setting::Type::TypeArray:
             case Setting::Type::TypeList: {
                 std::ostringstream value;
-                value << (t == Setting::Type::TypeArray) ? "[" : "(";
+                value << ((t == Setting::Type::TypeArray) ? "[" : "(");
 
                 if (setting.getLength() > 0) {
                     int i = 0;
@@ -93,7 +93,7 @@ namespace Configuration
                     value << "empty";
                 }
 
-                value << (t == Setting::Type::TypeArray) ? "]" : ")";
+                value << ((t == Setting::Type::TypeArray) ? "]" : ")");
 
                 return value.str();
             }
@@ -199,6 +199,11 @@ namespace Configuration
                 for (int i = 0; i < source.getLength(); ++i) {
                     _apply(*s, source[i], lockList);
                 }
+                break;
+            }
+
+            default: {
+                assert(false);
                 break;
             }
         }

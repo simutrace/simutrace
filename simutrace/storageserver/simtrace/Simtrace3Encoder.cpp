@@ -128,8 +128,6 @@ namespace Simtrace
         // -- pool thread or a session worker thread.                 --
 
         SwapEnvironment(&StorageServer::getInstance().getEnvironment());
-        Simtrace3Store& store = static_cast<Simtrace3Store&>(
-            context.encoder._getStore());
 
         assert(context.encoder._stream != nullptr);
         ServerStream* stream = context.encoder._stream;

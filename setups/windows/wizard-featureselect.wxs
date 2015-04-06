@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <Fragment>
+    <UI>
+      <!-- This is the "Feature selecion dialog" where the user can specify
+           which features should be installed -->
+      <Dialog Id="FeatureSelectDlg"
+              Width="370"
+              Height="270"
+              Title="Simutrace Setup">
+
+        <Control Id="Background" Type="Bitmap" Text="white" Width="370" Height="42" X="0" Y="0" TabSkip="no" />
+        <Control Id="Logo" Type="Bitmap" Text="stblack" Width="30" Height="42" X="340" Y="0" TabSkip="no" />
+        <Control Id="Logoex" Type="Bitmap" Text="logo" Width="56" Height="42" X="300" Y="0" TabSkip="no" />
+        <Control Id="HeaderLine" Type="Line" Height="0" Width="370" X="0" Y="42" />
+        <Control Id="FooterLine" Type="Line" Height="0" Width="370" X="0" Y="234" />
+        <Control Id="VersionText" Type="Text" Text="Version $(var.simutrace_version_string)" Transparent="yes" Height="20" Width="70" X="10" Y="246" />
+
+        <Control Id="Title" Type="Text" Width="220" Height="15" X="15" Y="6" Transparent="yes" Text="{\Tahoma_Bold}Custom Setup" />
+        <Control Id="Description" Type="Text" Width="220" Height="15" X="25" Y="23" Transparent="yes" Text="Select the features you want to install." />
+
+        <!-- Feature Selection -->
+        <Control Id="Tree" Type="SelectionTree" Width="180" Height="130" X="10" Y="55" Property="DIRINSTALLROOT" />
+        <Control Id="FeatureDescription" Type="Text" Width="160" Height ="80" X="200" Y="55" >
+          <Subscribe Event="SelectionDescription" Attribute="Text" />
+        </Control>
+        <Control Id="FeatureSize" Type="Text" Width="160" Height ="40" X="200" Y="145" >
+          <Subscribe Event="SelectionSize" Attribute="Text" />
+        </Control>
+
+        <!-- Install Location -->
+        <Control Id="InstallRootLabel" Type="Text" Width="62" Height="17" X="10" Y="202" Text="Install location:" />
+        <Control Id="InstallRootText" Type="PathEdit" Width="222" Height="17" X="72" Y="200" Property="DIRINSTALLROOT" Disabled="yes" />
+        <Control Id="Browse" Type="PushButton" Text="Browse" Width="56" Height="17" X="304" Y="199">
+          <Publish Property="_installroot" Value="[INSTALLROOTPROP]" Order="1">1</Publish>
+          <Publish Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+        </Control>
+
+        <!-- Wizard Controls -->
+        <Control Id="Back" Type="PushButton" Width="56" Height="17" X="180" Y="243" Text="Back">
+          <Publish Event="NewDialog" Value="WelcomeDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" Width="56" Height="17" X="236" Y="243" Default="yes" Text="Next">
+          <Publish Event="NewDialog" Value="EnvDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" Width="56" Height="17" X="304" Y="243" Cancel="yes" TabSkip="yes" Text="Cancel">
+          <Publish Event="EndDialog" Value="Exit" />
+        </Control>
+
+      </Dialog>
+    </UI>
+  </Fragment>
+</Wix>

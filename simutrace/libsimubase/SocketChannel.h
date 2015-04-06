@@ -29,7 +29,7 @@
 namespace SimuTrace
 {
 
-#ifdef WIN32
+#if defined(_WIN32)
 #else
     typedef Handle SOCKET;
 

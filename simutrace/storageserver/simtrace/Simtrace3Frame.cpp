@@ -120,7 +120,9 @@ namespace Simtrace
                                       uint64_t size,
                                       void* buffer)
     {
-        AttributeHeaderDescription description = {0};
+        AttributeHeaderDescription description;
+        memset(&description, 0, sizeof(AttributeHeaderDescription));
+
         uint8_t index = _header.attributeCount;
 
         ThrowOn(index >= SIMTRACE_V3_FRAME_ATTRIBUTE_TABLE_SIZE,
@@ -154,7 +156,6 @@ namespace Simtrace
     AttributeHeaderDescription* Simtrace3Frame::findAttribute(
         Simtrace3AttributeType type)
     {
-        AttributeHeaderDescription* result = nullptr;
         for (int i = 0; i < _attributes.size(); ++i) {
             AttributeHeaderDescription& desc = _attributes[i];
 

@@ -30,7 +30,7 @@ namespace System
 
     int getLastErrorCode()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::GetLastError();
     #else
         return errno;
@@ -39,7 +39,7 @@ namespace System
 
     int getLastSocketErrorCode()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return ::WSAGetLastError();
     #else
         return getLastErrorCode();
@@ -51,7 +51,7 @@ namespace System
         std::string errorString;
         char* msg = nullptr;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD n = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                                    FORMAT_MESSAGE_FROM_SYSTEM |
                                    FORMAT_MESSAGE_IGNORE_INSERTS,

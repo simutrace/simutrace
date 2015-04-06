@@ -29,8 +29,9 @@
 add_definitions(/DSIMUTRACE)
 
 set(SIMUSTOR_INCLUDE "../include/simustor")
-include_directories("../include/simubase")
-include_directories(${SIMUSTOR_INCLUDE})
+include_directories("../include/simubase"
+                    "${CMAKE_CURRENT_BINARY_DIR}/../include/"
+                    "${SIMUSTOR_INCLUDE}")
 
 set(PRECOMPILE_SOURCE "main.cpp")
 set(PRECOMPILE_HEADER "SimuBase.h")
@@ -84,12 +85,6 @@ set(HEADER_FILES_STREAMS
     "${SIMUSTOR_INCLUDE}/StreamBuffer.h")
 
 
-# Others
-
-set(OTHER_FILES_OTHERS
-    "CMakeLists.txt")
-
-
 # Source Code Grouping --------------------------------------------------------
 
 set(SOURCE_FILES_NOTPRECOMPILED "")
@@ -107,9 +102,6 @@ set(HEADER_FILES
     ${HEADER_FILES_STORAGE}
     ${HEADER_FILES_STREAMS})
 
-set(OTHER_FILES
-    ${OTHER_FILES_OTHERS})
-
 source_group("Source files" FILES ${PRECOMPILE_SOURCE})
 source_group("Source files\\Session" FILES ${SOURCE_FILES_SESSION})
 source_group("Source files\\Storage" FILES ${SOURCE_FILES_STORAGE})
@@ -121,13 +113,12 @@ source_group("Header files\\Public\\Session" FILES ${HEADER_FILES_SESSION})
 source_group("Header files\\Public\\Storage" FILES ${HEADER_FILES_STORAGE})
 source_group("Header files\\Public\\Streams" FILES ${HEADER_FILES_STREAMS})
 
-source_group("" FILES ${OTHER_FILES_OTHERS})
-
 set_source_files_properties(${HEADER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 
 # Build -----------------------------------------------------------------------
+
+set(libsimustor_GUID_CMAKE "D123C4C4-F561-494E-9E06-BADE186996B5" CACHE INTERNAL "libsimustor GUID")
 
 add_library(libsimustor
             ${PRECOMPILE_SOURCE}

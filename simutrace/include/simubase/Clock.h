@@ -28,15 +28,13 @@ namespace SimuTrace
 {
 
     namespace Clock {
-        const uint64_t getTicks();
-        const uint64_t getTimerFrequency();
+        uint64_t getTicks();
+        Timestamp getTimestamp();
 
-        const time_t getTime();
-        const Timestamp getTimestamp();
-
-        const double ticksToSeconds(uint64_t ticks);
-        const Timestamp timeToTimestamp(const time_t t);
-        const time_t timestampToTime(const Timestamp ts);
+        static inline uint64_t ticksToSeconds(uint64_t ticks)
+        {
+            return ticks / 1000000000;
+        }
 
         std::string formatTime(const std::string& format, const Timestamp ts);
         std::string formatTimeIso8601(const Timestamp ts);

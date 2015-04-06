@@ -58,7 +58,7 @@ namespace SimuTrace
                                                        bool writeable,
                                                        size_t size)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return INVALID_HANDLE_VALUE;
     #else
         int protection = (writeable) ? O_RDWR : O_RDONLY;

@@ -44,7 +44,7 @@ namespace SimuTrace
         enum Color {
             Black       = 0x0000,
 
-        #ifdef WIN32
+        #if defined(_WIN32)
             Red         = FOREGROUND_RED,
             Green       = FOREGROUND_GREEN,
             Blue        = FOREGROUND_BLUE,
@@ -65,7 +65,7 @@ namespace SimuTrace
     private:
         DISABLE_COPY(TerminalLogAppender);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         SafeHandle _consoleHandle;
     #else
     #endif

@@ -46,8 +46,8 @@ namespace SimuTrace
 
     public:
         StreamEncoder(ServerStore& store, const std::string& friendlyName) :
-            _store(store),
-            _friendlyName(friendlyName) { }
+            _friendlyName(friendlyName),
+            _store(store) { }
         virtual ~StreamEncoder() { }
 
         virtual void close(StreamWait* wait = nullptr) { };

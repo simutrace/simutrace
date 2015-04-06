@@ -28,8 +28,9 @@
 
 add_definitions(/DSIMUTRACE)
 
-include_directories("../include/simubase")
-include_directories("../include/simustor")
+include_directories("../include/simubase"
+                    "${CMAKE_CURRENT_BINARY_DIR}/../include/"
+                    "../include/simustor")
 
 set(PRECOMPILE_SOURCE "main.cpp")
 set(PRECOMPILE_HEADER "SimuStor.h")
@@ -127,8 +128,17 @@ set(HEADER_FILES_WORKERS
 
 # Others
 
-set(OTHER_FILES_OTHERS
-    "CMakeLists.txt")
+if(WIN32)
+    configure_file("simustore.rc.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/simustore.rc"
+                   @ONLY)
+
+    set(SOURCE_FILES_RESOURCES
+        "${CMAKE_CURRENT_BINARY_DIR}/simustore.rc")
+
+else()
+    set(SOURCE_FILES_RESOURCES "")
+endif()
 
 
 # Source Code Grouping --------------------------------------------------------
@@ -152,9 +162,6 @@ set(HEADER_FILES
     ${HEADER_FILES_STREAMS}
     ${HEADER_FILES_WORKERS})
 
-set(OTHER_FILES
-    ${OTHER_FILES_OTHERS})
-
 source_group("Source files" FILES ${SOURCE_FILES_BASE} ${PRECOMPILE_SOURCE})
 source_group("Source files\\Session" FILES ${SOURCE_FILES_SESSION})
 source_group("Source files\\Storage" FILES ${SOURCE_FILES_STORAGE_BASE})
@@ -170,35 +177,38 @@ source_group("Header files\\Storage\\Simtrace\\VPC4" FILES ${HEADER_FILES_STORAG
 source_group("Header files\\Streams" FILES ${HEADER_FILES_STREAMS})
 source_group("Header files\\Workers" FILES ${HEADER_FILES_WORKERS})
 
-source_group("" FILES ${OTHER_FILES_OTHERS})
-
 set_source_files_properties(${HEADER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 
 # Build -----------------------------------------------------------------------
 
-add_executable(simustore
-               ${PRECOMPILE_SOURCE}
-               ${SOURCE_FILES_NOTPRECOMPILED}
-               ${SOURCE_FILES_PRECOMPILED}
-               ${HEADER_FILES})
+if(BUILD_SIMUTRACE_SERVER)
+    set(simustore_GUID_CMAKE "392E9EAE-E39D-45CC-975F-44E620318465" CACHE INTERNAL "simustore GUID")
 
-target_link_libraries(simustore
-                      libsimustor
-                      libsimubase
-                      libconfig++
-                      ${RT_LIBRARY}
-                      ${CMAKE_THREAD_LIBS_INIT}  # pthreads for Linux
-                      )
+    add_executable(simustore
+                   ${PRECOMPILE_SOURCE}
+                   ${SOURCE_FILES_NOTPRECOMPILED}
+                   ${SOURCE_FILES_PRECOMPILED}
+                   ${SOURCE_FILES_RESOURCES}
+                   ${HEADER_FILES})
 
-add_precompiled_header(simustore
-                       SOURCE_FILES_NOTPRECOMPILED
-                       ${PRECOMPILE_HEADER}
-                       ${PRECOMPILE_SOURCE})
+    target_link_libraries(simustore
+                          libsimustor
+                          libsimubase
+                          libconfig++
+                          ${RT_LIBRARY}
+                          ${CMAKE_THREAD_LIBS_INIT}  # pthreads for Linux
+                          )
 
-set_multiprocessor_compilation(simustore)
-set_sdl_compilation(simustore)
+    add_precompiled_header(simustore
+                           SOURCE_FILES_NOTPRECOMPILED
+                           ${PRECOMPILE_HEADER}
+                           ${PRECOMPILE_SOURCE})
+
+    set_multiprocessor_compilation(simustore)
+    set_sdl_compilation(simustore)
+
+endif()
 
 # Build the server config file ------------------------------------------------
 
@@ -215,37 +225,41 @@ set(CFG_SERVER_MEMMGMT_READAHEAD "4" CACHE STRING "server.memmgmt.readAhead")
 
 set(CFG_CLIENT_MEMMGMT_POOLSIZE "" CACHE STRING "client.memmgmt.poolSize")
 
-if (CFG_SERVER_QUIET)
-    set(_CFG_SERVER_QUIET "true")
-else()
-    set(_CFG_SERVER_QUIET "false")
-endif()
+if(BUILD_SIMUTRACE_SERVER)
 
-if (CFG_SERVER_MEMMGMT_DISABLECACHE)
-    set(_CFG_SERVER_MEMMGMT_DISABLECACHE "true")
-else()
-    set(_CFG_SERVER_MEMMGMT_DISABLECACHE "false")
-endif()
+    if(CFG_SERVER_QUIET)
+        set(_CFG_SERVER_QUIET "true")
+    else()
+        set(_CFG_SERVER_QUIET "false")
+    endif()
 
-if (CFG_CLIENT_MEMMGMT_POOLSIZE)
-    set(_CFG_CLIENT_MEMMGMT_POOLSIZE "poolSize = ${CFG_CLIENT_MEMMGMT_POOLSIZE};")
-else()
-    set(_CFG_CLIENT_MEMMGMT_POOLSIZE "//poolSize = 1024;")
-endif()
+    if(CFG_SERVER_MEMMGMT_DISABLECACHE)
+        set(_CFG_SERVER_MEMMGMT_DISABLECACHE "true")
+    else()
+        set(_CFG_SERVER_MEMMGMT_DISABLECACHE "false")
+    endif()
 
-if(MSVC)
-    configure_file("simustore.cfg-template"
-                   "${EXECUTABLE_OUTPUT_PATH}/simustore.cfg"
-                   NEWLINE_STYLE WIN32)
-else()
-    configure_file("simustore.cfg-template"
-                   "${EXECUTABLE_OUTPUT_PATH}/simustore.cfg"
-                   NEWLINE_STYLE UNIX)
+    if(CFG_CLIENT_MEMMGMT_POOLSIZE)
+        set(_CFG_CLIENT_MEMMGMT_POOLSIZE "poolSize = ${CFG_CLIENT_MEMMGMT_POOLSIZE};")
+    else()
+        set(_CFG_CLIENT_MEMMGMT_POOLSIZE "//poolSize = 1024;")
+    endif()
+
+    if(MSVC)
+        configure_file("simustore.cfg.in"
+                       "${EXECUTABLE_OUTPUT_PATH}/simustore.cfg"
+                       NEWLINE_STYLE WIN32)
+    else()
+        configure_file("simustore.cfg.in"
+                       "${EXECUTABLE_OUTPUT_PATH}/simustore.cfg"
+                       NEWLINE_STYLE UNIX)
+    endif()
+
 endif()
 
 # Install ---------------------------------------------------------------------
 
-if (UNIX)
+if(UNIX AND BUILD_SIMUTRACE_SERVER)
     install(TARGETS simustore
-            RUNTIME DESTINATION "bin")
+            RUNTIME DESTINATION ${INSTALL_BIN_DIR})
 endif()

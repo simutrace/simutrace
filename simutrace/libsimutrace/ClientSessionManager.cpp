@@ -29,8 +29,8 @@ namespace SimuTrace
 
     ClientSessionManager::ClientSessionManager() :
         SessionManager(),
-        _log(""),
         _config(),
+        _log(""),
         _environment()
     {
         _environment.log = &_log;

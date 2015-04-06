@@ -29,7 +29,7 @@
 
 namespace SimuTrace {
 
-#ifdef WIN32
+#if defined(_WIN32)
 namespace System
 {
 
@@ -91,7 +91,7 @@ namespace System
             _info = nullptr;
         }
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         System::_cleanupWinsock();
     #else
     #endif
@@ -100,7 +100,7 @@ namespace System
     void SocketChannel::_initChannel(bool isServer, const std::string& address,
                                      SOCKET endpoint)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         System::_initializeWinsock();
     #else
     #endif
@@ -126,7 +126,7 @@ namespace System
                 _info = nullptr;
             }
 
-        #ifdef WIN32
+        #if defined(_WIN32)
             System::_cleanupWinsock();
         #else
         #endif
@@ -151,7 +151,7 @@ namespace System
 
         int result = ::getaddrinfo(host, port, &hints, info);
         if (result != 0) {
-        #ifdef WIN32
+        #if defined(_WIN32)
         #else
             ThrowOn(result == EAI_SYSTEM, PlatformException);
         #endif
@@ -451,7 +451,7 @@ namespace System
         assert(socket != INVALID_SOCKET);
         int result;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         result = ::closesocket(socket);
     #else
         result = ::close(socket);
@@ -528,7 +528,7 @@ namespace System
     {
         assert(data != nullptr && size > 0);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         int bytesWritten = 0;
         int result;
     #else
@@ -542,7 +542,7 @@ namespace System
                 void* buf = reinterpret_cast<void*>(
                     reinterpret_cast<size_t>(data) + bytesWritten);
 
-            #ifdef WIN32
+            #if defined(_WIN32)
                 result = ::send(_endpoint, (const char*)buf,
                                 (int)(size - bytesWritten), 0);
                 if (result == SOCKET_ERROR) {
@@ -564,7 +564,7 @@ namespace System
                 } else {
                     assert(result == 0);
 
-                #ifdef WIN32
+                #if defined(_WIN32)
                     Throw(PlatformException, ERROR_NO_DATA);
                 #else
                     System::unmaskSignal(SIGPIPE);
@@ -574,7 +574,7 @@ namespace System
 
             } while((result < 0) || (bytesWritten < size));
 
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         }
         System::unmaskSignal(SIGPIPE);
@@ -596,7 +596,7 @@ namespace System
     {
         assert(data != nullptr && size > 0);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         int bytesRead = 0;
         int result;
     #else
@@ -610,7 +610,7 @@ namespace System
                 void* buf = reinterpret_cast<void*>(
                     reinterpret_cast<size_t>(data) + bytesRead);
 
-            #ifdef WIN32
+            #if defined(_WIN32)
                 result = ::recv(_endpoint, (char*)buf,
                                 (int)(size - bytesRead), 0);
                 if (result == SOCKET_ERROR) {
@@ -632,7 +632,7 @@ namespace System
                 } else {
                     assert(result == 0);
 
-                #ifdef WIN32
+                #if defined(_WIN32)
                     Throw(PlatformException, ERROR_NO_DATA);
                 #else
                     System::unmaskSignal(SIGPIPE);
@@ -642,7 +642,7 @@ namespace System
 
             } while ((result < 0) || (bytesRead < size));
 
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         }
         System::unmaskSignal(SIGPIPE);

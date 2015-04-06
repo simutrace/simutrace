@@ -51,7 +51,7 @@ namespace SimuTrace
         /// Returns the time eleapsed for the measurement period
         ///
         const uint64_t getTicks() const;
-        const double getSeconds() const;
+        const uint64_t getSeconds() const;
     };
 
 }

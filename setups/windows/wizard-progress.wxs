@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <Fragment>
+    <UI>
+      <!-- This is the "Progress dialog", which displays the install progress -->
+      <Dialog Id="ProgressDlg"
+              Width="370"
+              Height="270"
+              Title="Simutrace Setup"
+              Modeless="yes">
+
+        <Control Id="Background" Type="Bitmap" Text="white" Width="370" Height="42" X="0" Y="0" TabSkip="no" />
+        <Control Id="Logo" Type="Bitmap" Text="stblack" Width="30" Height="42" X="340" Y="0" TabSkip="no" />
+        <Control Id="Logoex" Type="Bitmap" Text="logo" Width="56" Height="42" X="300" Y="0" TabSkip="no" />
+        <Control Id="HeaderLine" Type="Line" Height="0" Width="370" X="0" Y="42" />
+        <Control Id="FooterLine" Type="Line" Height="0" Width="370" X="0" Y="234" />
+        <Control Id="VersionText" Type="Text" Text="Version $(var.simutrace_version_string)" Transparent="yes" Height="20" Width="70" X="10" Y="246" />
+
+        <Control Id="Title" Type="Text" Width="220" Height="15" X="15" Y="6" Transparent="yes" Text="{\Tahoma_Bold}Installing" />
+        <Control Id="Description" Type="Text" Width="290" Height="15" X="25" Y="23" Transparent="yes" Text="Please wait while the Setup Wizard installs Simutrace on your computer." />
+
+        <!-- Progress -->
+        <Control Id="ActionText" Type="Text" Width="285" Height="17" X="10" Y="100" >
+          <Subscribe Event="ActionText" Attribute="Text" />
+        </Control>
+        <Control Id="ProgressBar" Type="ProgressBar" Width="350" Height="17" X="10" Y="117" ProgressBlocks="yes" >
+          <Subscribe Event="SetProgress" Attribute="Progress" />
+        </Control>
+
+        <!-- Wizard Controls -->
+        <Control Id="Back" Type="PushButton" Width="56" Height="17" X="180" Y="243" Text="Back" Disabled="yes" />
+        <Control Id="Next" Type="PushButton" Width="56" Height="17" X="236" Y="243" Text="Install" Disabled="yes" />
+        <Control Id="Cancel" Type="PushButton" Width="56" Height="17" X="304" Y="243" Cancel="yes" TabSkip="yes" Text="Cancel" Default="yes">
+          <Publish Event="EndDialog" Value="Exit" />
+        </Control>
+      </Dialog>
+    </UI>
+  </Fragment>
+</Wix>

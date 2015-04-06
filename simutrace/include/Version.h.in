@@ -1,3 +1,7 @@
+/* This file is configured by CMake. Changes are lost!
+ * To make changes see the respective .in file 
+ */
+
 /*
  * Copyright 2014 (C) Karlsruhe Institute of Technology (KIT)
  * Marc Rittinghaus, Thorsten Groeninger
@@ -42,8 +46,8 @@
     integrated oder the behavior of components has changed more than a bug
     fix would require. */
 
-#define SIMUTRACE_VERSION_MAJOR 3
-#define SIMUTRACE_VERSION_MINOR 1
+#define SIMUTRACE_VERSION_MAJOR @SIMUTRACE_VERSION_MAJOR@
+#define SIMUTRACE_VERSION_MINOR @SIMUTRACE_VERSION_MINOR@
 
 /* Increment the revision number for bug fixes in a minor version. It does not
    matter in which component (even 3rd party lib) the bug was, as long as this
@@ -52,7 +56,7 @@
 
    Reset the revision number to 0 for each new minor version. */
 
-#define SIMUTRACE_REVISION 1
+#define SIMUTRACE_REVISION @SIMUTRACE_VERSION_REVISION@
 
 
 #define SIMUTRACE_VER_MAJOR(ver) (((ver) >> 8) & 0xFF)

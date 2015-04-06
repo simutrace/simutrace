@@ -30,8 +30,8 @@ namespace SimuTrace
     Stream::Stream(StreamId id, const StreamDescriptor& desc,
                    StreamBuffer& buffer) :
         _id(id),
-        _buffer(buffer),
-        _desc(desc)
+        _desc(desc),
+        _buffer(buffer)
     {
         ThrowOn(id == INVALID_STREAM_ID, ArgumentException);
         ThrowOn((getEntrySize(&_desc.type) == 0) ||

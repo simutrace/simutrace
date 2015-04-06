@@ -155,7 +155,7 @@ namespace SimuTrace
                             continue;
                         }
 
-                    #ifdef WIN32
+                    #if defined(_WIN32)
                         ::CloseHandle(handle);
                     #else
                         ::close(handle);

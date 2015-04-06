@@ -22,6 +22,8 @@
 
 #include "Event.h"
 
+#include "Utils.h"
+#include "Logging.h"
 #include "Exceptions.h"
 
 namespace SimuTrace
@@ -29,7 +31,7 @@ namespace SimuTrace
 
     void Event::_initEvent(const char* name)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         SECURITY_ATTRIBUTES security;
         security.nLength              = sizeof(SECURITY_ATTRIBUTES);
         security.bInheritHandle       = TRUE;
@@ -38,18 +40,30 @@ namespace SimuTrace
         _event = ::CreateEventA(&security, FALSE, FALSE, name);
         ThrowOn(!_event.isValid(), PlatformException);
     #else
+        std::string sname;
         if (name == nullptr) {
+            Guid guid;
 
-            // This semaphore is shareable between processes, but only after
-            // fork or in a shared memory segment. It is initialized with 0.
-            if (::sem_init(&_sem, 1, 0) == -1) {
-                Throw(PlatformException);
-            }
+            // MacOSX does not support unnamed semaphores and plus only
+            // supports names no longer than SEM_NAME_LEN (31 chars).
+            // Generate a temporary random GUID name for the event.
+            generateGuid(guid);
 
-            _event = &_sem;
+            sname = stringFormat("simutrace.event.%s",
+    #if (defined(__MACH__) && defined(__APPLE__))
+                                 guidToString(guid, true).c_str());
+    #else
+                                 guidToString(guid).c_str());
+    #endif
         } else {
-            _event = ::sem_open(name, O_CREAT, S_IRWXU, 0);
-            ThrowOn(_event == SEM_FAILED, PlatformException);
+            sname = std::string(name);
+        }
+
+        _event = ::sem_open(sname.c_str(), O_CREAT, S_IRWXU, 0);
+        ThrowOn(_event == SEM_FAILED, PlatformException);
+
+        if (name == nullptr) {
+            ::sem_unlink(sname.c_str());
         }
     #endif
     }
@@ -70,12 +84,10 @@ namespace SimuTrace
 
     Event::~Event()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         if (_event != nullptr) {
-            if (_name.empty()) {
-                ::sem_destroy(_event);
-            } else {
+            if (!_name.empty()) {
                 ::sem_unlink(_name.c_str());
             }
 
@@ -86,7 +98,7 @@ namespace SimuTrace
 
     void Event::signal()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::SetEvent(_event)) {
     #else
         if (::sem_post(_event) != 0) {
@@ -97,7 +109,7 @@ namespace SimuTrace
 
     void Event::wait()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD result = ::WaitForSingleObject(_event, INFINITE);
         ThrowOn(result != WAIT_OBJECT_0, PlatformException, result);
     #else
@@ -109,7 +121,7 @@ namespace SimuTrace
 
     bool Event::tryWait()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (::WaitForSingleObject(_event, 0) == WAIT_TIMEOUT) {
     #else
         if (::sem_trywait(_event) != 0) {

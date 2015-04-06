@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProductVersion>3.9</ProductVersion>
+    <ProjectGuid>97bf4191-db57-4f12-aae6-3aa1b1a21dcb</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>simutrace-@SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.@SIMUTRACE_VERSION_REVISION@</OutputName>
+    <OutputType>Package</OutputType>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>@EXECUTABLE_OUTPUT_PATH@/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;DevRes_ApiDocRoot=@EOUTPUT_PATH@\doc\</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>@EXECUTABLE_OUTPUT_PATH@/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>DevRes_ApiDocRoot=@EOUTPUT_PATH@\doc\</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="@SOURCE_DIR@\main.wxs" />
+    <Compile Include="@SOURCE_DIR@\components-core.wxs" />
+    <Compile Include="@SOURCE_DIR@\components-devres-apiheaders.wxs" />
+    <Compile Include="@SOURCE_DIR@\components-devres-apidocs-shortcuts.wxs" />
+    <Compile Include="@SOURCE_DIR@\components-simutrace-net.wxs" />
+
+    <Compile Include="@SOURCE_DIR@\wizard.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-welcome.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-featureselect.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-browse.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-env.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-progress.wxs" />
+
+    <Compile Include="@SOURCE_DIR@\wizard-filesinuse.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-error.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-fatalerror.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-userexit.wxs" />
+    <Compile Include="@SOURCE_DIR@\wizard-finished.wxs" />
+
+    <Compile Include="@SOURCE_DIR@\wizard-alreadyinstalled.wxs" />
+
+    <!-- Dynamically created -->
+    <Compile Include="components-devres-apidoc.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\3rdparty\libconfig-1.4.9\libconfig++.vcxproj">
+      <Name>libconfig++</Name>
+      <Project>{b5943ff7-86fd-4bde-9f2f-083b9297978a}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\simutrace\bindings\dotnet\SimuTrace.Net.Interop.csproj">
+      <Name>SimuTrace.Net.Interop</Name>
+      <Project>{5316cc10-f5c3-4606-a269-72a3060e6061}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\simutrace\libsimutrace\libsimutrace.vcxproj">
+      <Name>libsimutrace</Name>
+      <Project>{e8066b21-b511-4d32-8334-3b5c3739ce15}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\simutrace\storageserver\simustore.vcxproj">
+      <Name>simustore</Name>
+      <Project>{392e9eae-e39d-45cc-975f-44e620318465}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\simutrace\documentation\simutrace-doc.vcxproj">
+      <Name>simutrace-doc</Name>
+      <Project>{f35ce8e7-117d-443b-924b-aee73b6c97e5}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(WixTargetsPath)" />
+  <!--
+  To modify your build process, add your task inside one of the targets below and uncomment it.
+  Other similar extension points exist, see Wix.targets.
+  -->
+  <Target Name="BeforeBuild">
+    <Exec Command="&quot;@WIX_ROOT_DIR@\bin\heat.exe&quot; dir &quot;@EOUTPUT_PATH@\doc&quot; -dr DIR_doc -cg DevRes_ApiDocs -gg -g1 -srd -sfrag -var &quot;var.DevRes_ApiDocRoot&quot; -out &quot;@BINARY_DIR@\components-devres-apidoc.wxs&quot;" />
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

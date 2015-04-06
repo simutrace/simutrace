@@ -112,7 +112,7 @@ namespace SimuTrace
     #endif
 
         try {
-        #ifdef WIN32
+        #if defined(_WIN32)
             buffer = std::unique_ptr<ServerStreamBuffer>(
                 new ServerStreamBuffer(id, segmentSize, numSegments,
                                        sharedMemory));
@@ -154,7 +154,7 @@ namespace SimuTrace
             thread->setSignalJmpBuffer(nullptr);
         #endif
         } catch (...) {
-        #ifdef WIN32
+        #if defined(_WIN32)
         #else
             thread->setSignalJmpBuffer(nullptr);
         #endif
@@ -263,7 +263,7 @@ namespace SimuTrace
             return;
         }
 
-        uint32_t newRefCount;
+        uint32_t newRefCount = _referenceCount;
         LockExclusive(_referenceLock); {
             StreamWait wait;
 

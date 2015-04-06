@@ -35,7 +35,7 @@ namespace SimuTrace
     private:
         DISABLE_COPY(ConditionVariable);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         CONDITION_VARIABLE _cv;
     #else
         pthread_cond_t _cv;

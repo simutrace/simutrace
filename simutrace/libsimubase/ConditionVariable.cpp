@@ -30,7 +30,7 @@ namespace SimuTrace
     ConditionVariable::ConditionVariable() :
         CriticalSection()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::InitializeConditionVariable(&_cv);
     #else
         int result = ::pthread_cond_init(&_cv, nullptr);
@@ -42,7 +42,7 @@ namespace SimuTrace
 
     ConditionVariable::~ConditionVariable()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         ::pthread_cond_destroy(&_cv);
     #endif
@@ -50,7 +50,7 @@ namespace SimuTrace
 
     void ConditionVariable::wait()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::SleepConditionVariableCS(&_cv, &_cs, INFINITE)) {
             Throw(PlatformException);
         }
@@ -64,7 +64,7 @@ namespace SimuTrace
 
     void ConditionVariable::wakeOne()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::WakeConditionVariable(&_cv);
     #else
         int result = ::pthread_cond_signal(&_cv);
@@ -76,7 +76,7 @@ namespace SimuTrace
 
     void ConditionVariable::wakeAll()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::WakeAllConditionVariable(&_cv);
     #else
         int result = ::pthread_cond_broadcast(&_cv);

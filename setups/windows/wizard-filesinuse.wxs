@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <Fragment>
+    <UI>
+      <!-- This is the "FilesInUse error dialog", which displays a list of
+           applications which use files that the setup wants to update -->
+      <Dialog Id="FilesInUse"
+              Width="370"
+              Height="270"
+              Title="Simutrace Setup">
+
+        <Control Id="Background" Type="Bitmap" Text="white" Width="370" Height="42" X="0" Y="0" TabSkip="no" />
+        <Control Id="Logo" Type="Bitmap" Text="stblack" Width="30" Height="42" X="340" Y="0" TabSkip="no" />
+        <Control Id="Logoex" Type="Bitmap" Text="logo" Width="56" Height="42" X="300" Y="0" TabSkip="no" />
+        <Control Id="HeaderLine" Type="Line" Height="0" Width="370" X="0" Y="42" />
+        <Control Id="FooterLine" Type="Line" Height="0" Width="370" X="0" Y="234" />
+        <Control Id="VersionText" Type="Text" Text="Version $(var.simutrace_version_string)" Transparent="yes" Height="20" Width="70" X="10" Y="246" />
+
+        <Control Id="Title" Type="Text" Width="220" Height="15" X="15" Y="6" Transparent="yes" Text="{\Tahoma_Bold}Files in Use" />
+
+        <!-- Process List -->
+        <Control Id="Description" Type="Text" Width="350" Height="30" X="10" Y="55" Text="The following applications are using files that need to be updated by this setup." />
+        <Control Id="InUseFiles" Type="ListBox" Width="350" Height="150" X="10" Y="95" Property="FileInUseProcess" Sorted="yes" />
+
+        <!-- Wizard Controls -->
+        <Control Id="Retry" Type="PushButton" Width="56" Height="17" X="180" Y="243"  Default="yes" Cancel="yes" Text="Retry">
+          <Publish Event="EndDialog" Value="Retry" />
+        </Control>
+        <Control Id="Ignore" Type="PushButton" Width="56" Height="17" X="236" Y="243" Text="Ignore">
+          <Publish Event="EndDialog" Value="Ignore" />
+        </Control>
+        <Control Id="Exit" Type="PushButton" Width="56" Height="17" X="304" Y="243" Text="Exit">
+          <Publish Event="EndDialog" Value="Exit" />
+        </Control>
+
+      </Dialog>
+    </UI>
+  </Fragment>
+</Wix>

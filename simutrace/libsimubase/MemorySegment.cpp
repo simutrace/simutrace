@@ -30,10 +30,10 @@ namespace SimuTrace
 
     MemorySegment::MemorySegment(bool writeable) :
         _size(0),
-        _writeable(writeable),
-        _buffer(nullptr),
         _mapStart(0),
-        _mapSize(0)
+        _mapSize(0),
+        _writeable(writeable),
+        _buffer(nullptr)
     {
 
     }
@@ -48,10 +48,10 @@ namespace SimuTrace
 
     MemorySegment::MemorySegment(const MemorySegment& instance) :
         _size(instance._size),
-        _writeable(instance._writeable),
-        _buffer(nullptr),
         _mapStart(0),
-        _mapSize(0)
+        _mapSize(0),
+        _writeable(instance._writeable),
+        _buffer(nullptr)
     {
         // Since a true copy semantic does not make sense for a memory segment
         // (we would get two owners of the same virtual address space region),
@@ -151,7 +151,7 @@ namespace SimuTrace
             return;
         }
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD oldpro;
         DWORD prot = (writeable) ? PAGE_READONLY : PAGE_READWRITE;
         if (!::VirtualProtect(_buffer, _mapSize, prot, &oldpro)) {

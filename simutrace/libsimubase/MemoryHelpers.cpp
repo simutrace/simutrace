@@ -22,21 +22,42 @@
 
 #include "MemoryHelpers.h"
 
+#include "Utils.h"
 #include "Exceptions.h"
 
 namespace SimuTrace {
 namespace System
 {
 
+#if (defined(__MACH__) && defined(__APPLE__))
+    void _machGetVmStats(vm_statistics_data_t* vmstats)
+    {
+        kern_return_t result;
+        mach_msg_type_number_t info_count = HOST_VM_INFO_COUNT;
+        mach_port_t mport = ::mach_host_self();
+
+        result = ::host_statistics(mport, HOST_VM_INFO, (host_info_t)vmstats,
+                                   &info_count);
+
+        ThrowOn(result != KERN_SUCCESS, Exception,
+                stringFormat("Failed to receive vm stats '%s'.",
+                    ::mach_error_string(result)));
+
+        ::mach_port_deallocate(::mach_task_self(), mport);
+    }
+#endif
+
     const int getPageSize()
     {
         static int _pageSize = 0;
 
         if (_pageSize <= 0) {
-        #ifdef WIN32
+        #if defined(_WIN32)
             SYSTEM_INFO sysinfo;
             ::GetSystemInfo(&sysinfo);
             _pageSize = sysinfo.dwPageSize;
+        #elif (defined(__MACH__) && defined(__APPLE__))
+            _pageSize = vm_page_size;
         #else
             _pageSize = ::sysconf(_SC_PAGE_SIZE);
             ThrowOn(_pageSize == -1, PlatformException);
@@ -51,7 +72,7 @@ namespace System
         static int _allocationGranularity = 0;
 
         if (_allocationGranularity <= 0) {
-        #ifdef WIN32
+        #if defined(_WIN32)
             SYSTEM_INFO sysinfo;
             ::GetSystemInfo(&sysinfo);
             _allocationGranularity = sysinfo.dwAllocationGranularity;
@@ -66,7 +87,7 @@ namespace System
     const uint64_t getAvailablePhysicalMemory()
     {
         uint64_t ret = 0;
-    #ifdef WIN32
+    #if defined(_WIN32)
         MEMORYSTATUSEX memstat;
         memstat.dwLength = sizeof(memstat);
 
@@ -75,6 +96,11 @@ namespace System
         }
 
         ret = memstat.ullAvailPhys;
+    #elif (defined(__MACH__) && defined(__APPLE__))
+        vm_statistics_data_t vm_info;
+        _machGetVmStats(&vm_info);
+
+        ret = vm_info.free_count * vm_page_size;
     #else
         // In Linux we have to read /proc/meminfo to get the available amount
         // of physical memory including the caches
@@ -109,7 +135,7 @@ namespace System
     const uint64_t getPhysicalMemory()
     {
         uint64_t ret;
-    #ifdef WIN32
+    #if defined(_WIN32)
         MEMORYSTATUSEX memstat;
         memstat.dwLength = sizeof(memstat);
 
@@ -118,6 +144,12 @@ namespace System
         }
 
         ret = memstat.ullTotalPhys;
+    #elif (defined(__MACH__) && defined(__APPLE__))
+        vm_statistics_data_t vm_info;
+        _machGetVmStats(&vm_info);
+
+        ret = (vm_info.active_count + vm_info.inactive_count +
+            vm_info.wire_count + vm_info.free_count) * vm_page_size;
     #else
         ret = ::sysconf(_SC_PHYS_PAGES) * getPageSize();
         ThrowOn(ret == -1, PlatformException);

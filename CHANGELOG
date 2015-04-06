@@ -1,43 +1,59 @@
-Version 3.1.1
+Version 3.1.2 Marc Rittinghaus <rittinghaus@kit.edu>  Sat, 04 Apr 2015 12:00:00 +0100
 
-    - Added FarmHash to libsimubase
+- Added setup and packaging projects for WiX (MSI), openSUSE Build Service and Launchpad
+- Added support for MacOSX 10.9+ with LLVM/Apple Clang
+- Added version information to binaries on Windows
+- Added conditional build of projects to cmake scripts (see cmake cache variables)
+- Added documentation project to cmake scripts
+- Added strong name for .net binding to allow GAC installation
 
-  Bug Fixes:
-    - StGetNextEntry() may corrupt segment control for certain entry sizes
-    - False assert in debug build for segments with only 1 entry
-    - Fixed "function declaration isn’t a prototype" in C compilers for
-        StGetClientVersion()
+Incompatible Changes:
+- Renamed csharp binding to generic .net binding (Simutrace.Net.Interop) 
+
+Bug Fixes:
+- Fixed milliseconds output in timestamps (e.g., log)
+- Fixed wrong formatting and references in documentation for SimuTrace.h
 
 
-Version 3.1.0
+Version 3.1.1 Marc Rittinghaus <rittinghaus@kit.edu>  Wed, 04 Mar 2015 19:20:02 +0100
 
-    - Changed build system to cmake
-    - Integrated libconfig to simplify build on Windows
-    - Added support for reverse open queries and reverse read of streams
-    - Completely removed data pools
-    - Stream open returns handle to exact entry in segment
-    - Improved open speed for sessions with large numbers of streams
-    - Added support for recognition of new streams registered by other clients
-    - Added support for server log files (--server.logfile)
-    - Client output redirected to client log file
-    - Added log detail (shared vs. private stream buffer)
-    - Made referenceOut in StWriteVariableData optional
-    - Added CSharp binding and sample
-    - Added simplified native sample
-    - Added submodule for simutrace qemu version
-    - Added exported version of tracing API
+- Added FarmHash to libsimubase
 
-  Incompatible Changes:
-    - Added explicit store open and removed functionality from store creation
+Bug Fixes:
+- StGetNextEntry() may corrupt segment control for certain entry sizes
+- False assert in debug build for segments with only 1 entry
+- Fixed "function declaration isn't a prototype" in C compilers for StGetClientVersion()
 
-  Bug Fixes:
-    - Fixed overflow in log level to string method
-    - Fixed overflow in RPC debug messages
-    - Fixed segment end computation in stream buffer for variable-sized data
-    - Fixed stream buffer shared memory allocation policy
-    - Exclusion of internals from headers to resolve name conflicts with qemu
-    - Removed asserts from fast trace functions for use with qemu
-    - Switched to own bool type to mitigate platform dependent size
-    - Switched entry size to 32 bit integer to mitigate platform dependent size
-    - Fixed memory logging in Linux build
-    - Added missing RPC message on client session close
+
+Version 3.1.0 Marc Rittinghaus <rittinghaus@kit.edu>  Mon, 02 Mar 2015 15:13:32 +0100
+
+- Changed build system to cmake
+- Integrated libconfig to simplify build on Windows
+- Added support for reverse open queries and reverse read of streams
+- Completely removed data pools
+- Stream open returns handle to exact entry in segment
+- Improved open speed for sessions with large numbers of streams
+- Added support for recognition of new streams registered by other clients
+- Added support for server log files (--server.logfile)
+- Client output redirected to client log file
+- Added log detail (shared vs. private stream buffer)
+- Made referenceOut in StWriteVariableData optional
+- Added CSharp binding and sample
+- Added simplified native sample
+- Added submodule for simutrace qemu version
+- Added exported version of tracing API
+
+Incompatible Changes:
+- Added explicit store open and removed functionality from store creation
+
+Bug Fixes:
+- Fixed overflow in log level to string method
+- Fixed overflow in RPC debug messages
+- Fixed segment end computation in stream buffer for variable-sized data
+- Fixed stream buffer shared memory allocation policy
+- Exclusion of internals from headers to resolve name conflicts with qemu
+- Removed asserts from fast trace functions for use with qemu
+- Switched to own bool type to mitigate platform dependent size
+- Switched entry size to 32 bit integer to mitigate platform dependent size
+- Fixed memory logging in Linux build
+- Added missing RPC message on client session close

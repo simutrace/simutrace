@@ -70,7 +70,7 @@ namespace SimuTrace
  #define GUID_STRING_LENGTH 38
 
     void generateGuid(Guid& guid);
-    std::string guidToString(const Guid& guid);
+    std::string guidToString(const Guid& guid, bool data1Only = false);
 
 
     //
@@ -80,7 +80,7 @@ namespace SimuTrace
     namespace System {
         Handle duplicateHandle(Handle handle);
         void closeHandle(Handle handle);
-    #ifdef WIN32
+    #if defined(_WIN32)
     #else
         void maskSignal(uint32_t signal);
         void unmaskSignal(uint32_t signal);

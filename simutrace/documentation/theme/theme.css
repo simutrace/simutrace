@@ -2,7 +2,7 @@
  * Based on Qmi style css for the doxygen by Sergey Kozlov
  * http://github.com/skozlovf/doxygen-qmi-style
  ******************************************************************************/
- 
+
 
 /***********************************************************
  * Globals.
@@ -20,7 +20,7 @@ body, table, div, p, dl
   color: #363534;
 }
 
-.remark dd 
+.remark dd
 {
     padding-bottom: 10px;
 }
@@ -73,14 +73,14 @@ body, table, div, p, dl
 
 /* Footer. */
 
-#page-content 
+#page-content
 {
     height: auto;
     min-height: 100%;
     position: relative;
 }
 
-#bottom 
+#bottom
 {
     height: 50px;
     background-color: #f1f1f1;
@@ -88,7 +88,7 @@ body, table, div, p, dl
     margin-top: 60px;
 }
 
-#bottom-gen 
+#bottom-gen
 {
     font-size: smaller;
     text-align: right;
@@ -163,7 +163,7 @@ pre.fragment
   word-wrap: break-word;
   font-size:  9pt;
   line-height: 125%;
-  
+
   background-color: #F6F6F6;
   border-color: #E6E6E6;
   border-width: 1px;

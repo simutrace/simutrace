@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+  <Fragment>
+    <Binary Id="white" SourceFile="$(var.theme_directory)/white.bmp" />
+    <Binary Id="stblack" SourceFile="$(var.theme_directory)/stblack.bmp" />
+    <Binary Id="logo" SourceFile="$(var.theme_directory)/logo.bmp" />
+    <Binary Id="newIcon" SourceFile="$(var.theme_directory)/new.ico" />
+    <Binary Id="upIcon" SourceFile="$(var.theme_directory)/up.ico" />
+
+    <UI Id="StWizard">
+      <!-- Styles -->
+      <TextStyle Id="Tahoma_Regular" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="Tahoma_Bold" FaceName="Tahoma" Size="8" Bold="yes" />
+      <TextStyle Id="Tahoma_Italic" FaceName="Tahoma" Size="8" Italic="yes" />
+      <TextStyle Id="Tahoma_Title" FaceName="Tahoma" Size="12" />
+
+      <Property Id="DefaultUIFont" Value="Tahoma_Regular" />
+
+      <!-- Strings -->
+      <UIText Id="AbsentPath" />
+      <UIText Id="MenuLocal">The feature will be installed locally.</UIText>
+      <UIText Id="MenuAllLocal">The feature and all of its subfeatures will be installed locally.</UIText>
+      <UIText Id="MenuAdvertise">The feature will be installed when needed.</UIText>
+      <UIText Id="MenuAbsent">The feature will not be installed.</UIText>
+      <UIText Id="Bytes"> Bytes</UIText>
+      <UIText Id="KB"> KB</UIText>
+      <UIText Id="MB"> MB</UIText>
+      <UIText Id="GB"> GB</UIText>
+      <UIText Id="SelChildCostPos">This feature requires [1] on your hard drive.</UIText>
+      <UIText Id="SelChildCostNeg">This feature frees up [1] on your hard drive.</UIText>
+      <UIText Id="SelChildCostPending">Figuring space needed for this feature...</UIText>
+      <UIText Id="SelParentCostNegNeg">This feature frees up [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures free up [4] on your hard drive.</UIText>
+      <UIText Id="SelParentCostNegPos">This feature frees up [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures require [4] on your hard drive.</UIText>
+      <UIText Id="SelParentCostPosNeg">This feature requires [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures free up [4] on your hard drive.</UIText>
+      <UIText Id="SelParentCostPosPos">This feature requires [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures require [4] on your hard drive.</UIText>
+
+      <!-- Dialogs and Install Sequence -->
+      <DialogRef Id="WelcomeDlg" />
+      <DialogRef Id="FeatureSelectDlg" />
+      <DialogRef Id="BrowseDlg" />
+      <DialogRef Id="EnvDlg" />
+      <DialogRef Id="ProgressDlg" />
+
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalErrorDlg" />
+      <DialogRef Id="UserExitDlg" />
+      <DialogRef Id="FinishedDlg" />
+
+      <DialogRef Id="AlreadyInstalledDlg" />
+
+      <InstallUISequence>
+        <Show Dialog="ProgressDlg" Before="ExecuteAction">NOT Installed</Show>
+        <Show Dialog="WelcomeDlg" Before="ProgressDlg">NOT Installed</Show>
+        <Show Dialog="AlreadyInstalledDlg" Before="ExecuteAction">Installed</Show>
+      </InstallUISequence>
+
+      <Property Id="INSTALLROOTPROP" Value="DIRINSTALLROOT" />
+      <Property Id="ADDTOPATH" Value="yes" />
+    </UI>
+  </Fragment>
+</Wix>

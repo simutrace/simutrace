@@ -35,11 +35,10 @@ namespace SimuTrace
         DISABLE_COPY(Event);
 
         std::string _name;
-    #ifdef WIN32
+    #if defined(_WIN32)
         SafeHandle _event;
     #else
         sem_t* _event;
-        sem_t _sem;
     #endif
 
         void _initEvent(const char* name);

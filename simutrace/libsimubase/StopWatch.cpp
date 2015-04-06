@@ -63,7 +63,7 @@ namespace SimuTrace
         return end - _start;
     }
 
-    const double StopWatch::getSeconds() const
+    const uint64_t StopWatch::getSeconds() const
     {
         return Clock::ticksToSeconds(this->getTicks());
     }

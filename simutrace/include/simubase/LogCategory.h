@@ -60,7 +60,7 @@ namespace SimuTrace
         void registerAppender(std::shared_ptr<LogAppender>& appender);
         void enableAppender(const std::string& name, bool enable);
 
-        void log(LogPriority::Value priority, const std::string& format, ...);
+        void log(LogPriority::Value priority, const std::string format, ...);
 
         const std::string& getName() const;
 

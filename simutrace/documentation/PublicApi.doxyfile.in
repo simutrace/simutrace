@@ -1,0 +1,123 @@
+# This file is configured by CMake. Changes are lost!
+# To make changes see the respective .in file
+
+#---------------------------------------------------------------------------
+# Project configuration
+#---------------------------------------------------------------------------
+
+DOXYFILE_ENCODING      = UTF-8
+
+PROJECT_NAME           = Simutrace
+PROJECT_NUMBER         = @SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.@SIMUTRACE_VERSION_REVISION@
+PROJECT_BRIEF          = "Simulation Tracing Framework"
+PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/Simutrace.png
+
+OUTPUT_DIRECTORY       = @EXECUTABLE_OUTPUT_PATH@/doc/
+
+REPEAT_BRIEF           = NO
+ABBREVIATE_BRIEF       = "The $name class" \
+                         "The $name widget" \
+                         "The $name file" \
+                         is \
+                         provides \
+                         specifies \
+                         contains \
+                         represents \
+                         a \
+                         an \
+                         the
+
+FULL_PATH_NAMES        = NO
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+BUILTIN_STL_SUPPORT    = YES
+CPP_CLI_SUPPORT        = YES
+TYPEDEF_HIDES_STRUCT   = YES
+
+
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+
+EXTRACT_STATIC         = YES
+CASE_SENSE_NAMES       = NO
+SHOW_GROUPED_MEMB_INC  = NO
+SORT_MEMBER_DOCS       = NO
+
+
+#---------------------------------------------------------------------------
+# Configuration options related to the input files
+#---------------------------------------------------------------------------
+
+INPUT                  = @PROJECT_SOURCE_DIR@/simutrace/include/SimuTrace.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/include/SimuTraceTypes.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/include/SimuStorTypes.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/include/SimuTraceEntryTypes.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/include/SimuBaseTypes.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/libsimutrace/SimuTrace.cpp
+
+FILE_PATTERNS          = *.c \
+                         *.cpp \
+                         *.h \
+                         *.cs \
+
+EXCLUDE_SYMBOLS        = SimuTrace::_* \
+                         SimuTrace::*::_* \
+                         Guid \
+                         *_H \
+                         SIMUTRACE_API \
+                         DefGuid \
+                         GUID_STRING_LEN \
+                         INVALID_* \
+                         VDataBlockHeader \
+                         MAX_* \
+                         SERVER_* \
+                         VARIABLE_* \
+                         TEMPORAL_* \
+                         CLIENT_* \
+                         MASTYPETABLE_* \
+                         StreamStateDescriptor \
+                         _mastypeTable \
+                         SegmentId \
+                         StreamSegmentLink \
+                         SegmentControlElement \
+                         ObjectId \
+                         Timestamp
+
+EXAMPLE_PATTERNS       = *
+
+#---------------------------------------------------------------------------
+# Configuration options related to source browsing
+#---------------------------------------------------------------------------
+
+VERBATIM_HEADERS       = NO
+
+
+#---------------------------------------------------------------------------
+# Configuration options related to the alphabetical class index
+#---------------------------------------------------------------------------
+
+COLS_IN_ALPHA_INDEX    = 4
+
+
+#---------------------------------------------------------------------------
+# Configuration options related to the HTML output
+#---------------------------------------------------------------------------
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+
+HTML_HEADER            = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/header.html
+HTML_FOOTER            = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/footer.html
+HTML_STYLESHEET        = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/theme.css
+HTML_EXTRA_STYLESHEET  = 
+HTML_EXTRA_FILES       = 
+
+GENERATE_TREEVIEW      = YES
+TREEVIEW_WIDTH         = 250
+
+ENUM_VALUES_PER_LINE   = 0
+
+SEARCHENGINE           = YES
+SEARCHDATA_FILE        = searchdata.xml

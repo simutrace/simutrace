@@ -118,11 +118,11 @@ namespace SimuTrace
                                            uint32_t numSegments,
                                            bool sharedMemory) :
         StreamBuffer(id, segmentSize, numSegments, sharedMemory),
+        _cookie(0),
         _segments(nullptr),
         _freeHead(nullptr),
-        _standbyHead(nullptr),
         _enableCache(false),
-        _cookie(0)
+        _standbyHead(nullptr)
     {
         _cookie = (static_cast<uint64_t>(rand()) << 32) | rand();
 
@@ -476,6 +476,7 @@ namespace SimuTrace
 
             Segment* fseg = _findStandbySegment(link, true);
             assert(fseg == seg);
+            (void)fseg; // Make compiler happy in release build
 
             // Remove the segment from the LRU list
             _dequeueFromStandbyList(*seg);
@@ -943,6 +944,7 @@ namespace SimuTrace
 
         SegmentId id;
         bool completed = _requestSegment(id, &stream, sequenceNumber);
+        (void)completed; // Make compiler happy in release build
         assert(completed == true);
 
         return id;
@@ -952,6 +954,7 @@ namespace SimuTrace
     {
         SegmentId id;
         bool completed = _requestSegment(id);
+        (void)completed; // Make compiler happy in release build
         assert(completed == true);
 
         return id;
@@ -1081,6 +1084,7 @@ namespace SimuTrace
                 StoreStreamSegmentLink link(streamStore, seg->control.link);
 
                 Segment* fseg = _findStandbySegment(link, true);
+                (void)fseg; // Make compiler happy in release build
                 assert(fseg == seg);
 
                 LogMem("Flushing cached segment %d in buffer %s "

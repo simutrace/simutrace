@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <!-- Simutrace Development API Headers -->
+  <Fragment>
+    <ComponentGroup Id="DevRes_ApiHeaders" Directory="DIR_include">
+      <Component Id="CMP_InstallRoot_include_SimuTrace_h"
+                 Guid="387FEFD0-EC2D-4CE7-AED0-67652AD9FB5D">
+        <File Id="FILE_InstallRoot_include_SimuTrace_h"
+              Source="$(var.project_directory)/simutrace/include/SimuTrace.h"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_include_SimuTraceEntryTypes_h"
+                 Guid="B74E5F54-BF82-4728-AF13-0AB432CD3C02">
+        <File Id="FILE_InstallRoot_include_SimuTraceEntryTypes_h"
+              Source="$(var.project_directory)/simutrace/include/SimuTraceEntryTypes.h"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_include_SimuTraceTypes_h"
+                 Guid="BC57CCBC-A578-47B4-87E7-DC3521A1D481">
+        <File Id="FILE_InstallRoot_include_SimuTraceTypes_h"
+              Source="$(var.project_directory)/simutrace/include/SimuTraceTypes.h"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_include_SimuStorTypes_h"
+                 Guid="70871E40-C5A2-4C2A-ABB5-AFE0E31D29CD">
+        <File Id="FILE_InstallRoot_include_SimuStorTypes_h"
+              Source="$(var.project_directory)/simutrace/include/SimuStorTypes.h"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_include_SimuBaseTypes_h"
+                 Guid="2DD57676-B334-4D6A-8D1C-5D250C6ECD33">
+        <File Id="FILE_InstallRoot_include_SimuBaseTypes_h"
+              Source="$(var.project_directory)/simutrace/include/SimuBaseTypes.h"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_include_SimuPlatform_h"
+                 Guid="3FC925E3-7C2A-40BA-B94E-18339BD0959C">
+        <File Id="FILE_InstallRoot_include_SimuPlatform_h"
+              Source="$(var.project_directory)/simutrace/include/SimuPlatform.h"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DevRes_ApiLibs" Directory="DIR_lib">
+      <Component Id="CMP_InstallRoot_lib_libsimutrace_lib"
+                 Guid="4391F718-28BB-428D-AF90-7DEB493CDACE">
+        <File Id="FILE_InstallRoot_lib_libsimutrace_lib"
+              Source="$(var.libsimutrace.TargetDir)/libsimutrace.lib"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

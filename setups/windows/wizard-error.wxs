@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <Fragment>
+    <UI>
+      <!-- This is the "Error dialog" that displays error messages -->
+      <Dialog Id="ErrorDlg"
+              Width="270"
+              Height="105"
+              Title="Simutrace Setup"
+              ErrorDialog="yes">
+
+        <Control Id="ErrorText" Type="Text" Width="240" Height="60" X="15" Y="15" TabSkip="no" NoPrefix="yes" />
+
+        <Control Id="Y" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="Yes">
+          <Publish Event="EndDialog" Value="ErrorYes" />
+        </Control>
+        <Control Id="A" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="Abort">
+          <Publish Event="EndDialog" Value="ErrorAbort" />
+        </Control>
+        <Control Id="C" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="Cancel">
+          <Publish Event="EndDialog" Value="ErrorCancel" />
+        </Control>
+        <Control Id="I" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="Ignore">
+          <Publish Event="EndDialog" Value="ErrorIgnore" />
+        </Control>
+        <Control Id="N" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="No">
+          <Publish Event="EndDialog" Value="ErrorNo" />
+        </Control>
+        <Control Id="O" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="OK">
+          <Publish Event="EndDialog" Value="ErrorOk" />
+        </Control>
+        <Control Id="R" Type="PushButton" Width="56" Height="17" X="100" Y="80" TabSkip="yes" Text="Retry">
+          <Publish Event="EndDialog" Value="ErrorRetry" />
+        </Control>
+      </Dialog>
+
+      <Property Id="ErrorDialog" Value="ErrorDlg" />
+    </UI>
+  </Fragment>
+</Wix>

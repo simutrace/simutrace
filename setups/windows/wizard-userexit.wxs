@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <Fragment>
+    <UI>
+      <!-- This is the "User exit dialog", which is displayed when the setup
+           was interrupted by the user -->
+      <Dialog Id="UserExitDlg"
+              Width="370"
+              Height="270"
+              Title="Simutrace Setup">
+
+        <Control Id="Background" Type="Bitmap" Text="white" Width="370" Height="42" X="0" Y="0" TabSkip="no" />
+        <Control Id="Logo" Type="Bitmap" Text="stblack" Width="30" Height="42" X="340" Y="0" TabSkip="no" />
+        <Control Id="Logoex" Type="Bitmap" Text="logo" Width="56" Height="42" X="300" Y="0" TabSkip="no" />
+        <Control Id="HeaderLine" Type="Line" Height="0" Width="370" X="0" Y="42" />
+        <Control Id="FooterLine" Type="Line" Height="0" Width="370" X="0" Y="234" />
+        <Control Id="VersionText" Type="Text" Text="Version $(var.simutrace_version_string)" Transparent="yes" Height="20" Width="70" X="10" Y="246" />
+
+        <Control Id="Title" Type="Text" Width="220" Height="15" X="15" Y="6" Transparent="yes" Text="{\Tahoma_Bold}Setup Canceled" />
+
+        <Control Id="FatalText" Type="Text" Width="350" Height="80" X="10" Y="55" Text="Simutrace Setup Wizard was interrupted. Your system has not been modified. To install this program at a later time, run Setup Wizard again." />
+
+        <!-- Wizard Controls -->
+        <Control Id="Back" Type="PushButton" Width="56" Height="17" X="180" Y="243" Text="Back" Disabled="yes" />
+        <Control Id="Finish" Type="PushButton" Width="56" Height="17" X="236" Y="243" Text="Finish" Default="yes" Cancel="yes" >
+          <Publish Event="EndDialog" Value="Exit" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" Width="56" Height="17" X="304" Y="243" TabSkip="yes" Text="Cancel" Disabled="yes" />
+      </Dialog>
+
+      <InstallUISequence>
+        <Show Dialog="UserExitDlg" OnExit="cancel">NOT Installed</Show>
+      </InstallUISequence>
+
+      <AdminUISequence>
+        <Show Dialog="UserExitDlg" OnExit="cancel">NOT Installed</Show>
+      </AdminUISequence>
+    </UI>
+  </Fragment>
+</Wix>

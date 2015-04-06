@@ -33,7 +33,7 @@ namespace SimuTrace
         _pattern(pattern)
     {
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         _handle = ::FindFirstFileA((_pathname + "*" + _pattern).c_str(), &_data);
         ThrowOn(_handle == INVALID_HANDLE_VALUE, PlatformException);
     #else
@@ -45,7 +45,7 @@ namespace SimuTrace
 
     Directory::~Directory(void)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::FindClose(_handle);
     #else
         ::closedir(_handle);
@@ -68,7 +68,7 @@ namespace SimuTrace
 
     void Directory::create(const std::string& path)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         BOOL result = CreateDirectoryA(path.c_str(), NULL);
         ThrowOn(!result, PlatformException);
     #else
@@ -79,7 +79,7 @@ namespace SimuTrace
 
     std::string Directory::getWorkingDirectory()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         char buffer[MAX_PATH];
         if (::GetCurrentDirectoryA(MAX_PATH, buffer) == 0) {
             Throw(PlatformException);
@@ -95,7 +95,7 @@ namespace SimuTrace
 
     void Directory::setWorkingDirectory(const std::string& path)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::SetCurrentDirectoryA(path.c_str())) {
             Throw(PlatformException);
         }
@@ -108,7 +108,7 @@ namespace SimuTrace
 
     std::string Directory::getAbsolutePath(const std::string& path)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         char buffer[MAX_PATH];
         if(::GetFullPathNameA(path.c_str(), MAX_PATH, buffer, nullptr) == 0) {
             Throw(PlatformException);
@@ -161,7 +161,7 @@ namespace SimuTrace
         uint32_t numFiles = 0;
         std::string str;
         size_t pos;
-    #ifdef WIN32
+    #if defined(_WIN32)
         do {
             str = std::string(_data.cFileName);
     #else
@@ -182,7 +182,7 @@ namespace SimuTrace
 
                 numFiles++;
             }
-    #ifdef WIN32
+    #if defined(_WIN32)
         } while (::FindNextFileA(_handle, &_data));
     #else
             _data = ::readdir(_handle);

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <!-- Simutrace.Net -->
+  <Fragment>
+    <ComponentGroup Id="Simutrace.Net" Directory="DIRINSTALLROOT">
+      <Component Id="CMP_InstallRoot_SimuTrace_Net_Interop_dll"
+                 Guid="D1382790-877D-44CA-82FD-A27524CEC0DF">
+        <File Id="FILE_InstallRoot_SimuTrace_Net_Interop_dll"
+              Source="$(var.SimuTrace.Net.Interop.TargetPath)"
+              KeyPath="yes"
+              Vital="yes" />
+        <RegistryKey Key="SOFTWARE\Microsoft\.NETFramework\AssemblyFolders\[ProductName]"
+                     Root="HKLM">
+          <RegistryValue Id="RegVal_SimuTrace_Net_AssemblyFolders"
+                         Value="[$CMP_InstallRoot_SimuTrace_Net_Interop_dll]"
+                         Type="string" />
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Simutrace.Net_GAC" Directory="DIR_GAC">
+      <Component Id="CMP_GAC_SimuTrace_Net_Interop_dll"
+                 Guid="02895B6E-0512-43EF-92A4-45206D40C4FB">
+        <File Id="FILE_GAC_SimuTrace_Net_Interop_dll"
+              Source="$(var.SimuTrace.Net.Interop.TargetPath)"
+              Assembly=".net"
+              KeyPath="yes"
+              Vital="yes" />
+        <File Id="FILE_GAC_libsimutrace_dll"
+              Name="$(var.libsimutrace.TargetFileName)"
+              Source="$(var.libsimutrace.TargetPath)"
+              CompanionFile="FILE_GAC_SimuTrace_Net_Interop_dll"
+              Vital="yes" />
+        <File Id="FILE_GAC_libconfig_dll"
+              Name="$(var.libconfig++.TargetFileName)"
+              Source="$(var.libconfig++.TargetPath)"
+              CompanionFile="FILE_GAC_SimuTrace_Net_Interop_dll"
+              Vital="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

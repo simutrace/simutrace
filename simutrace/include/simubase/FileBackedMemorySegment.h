@@ -36,14 +36,14 @@ namespace SimuTrace
     private:
         std::string _name;
         SafeHandle _file;
-    #ifdef WIN32
+    #if defined(_WIN32)
         SafeHandle _fileMapping;
     #else
     #endif
 
         void _initFile(bool writeable);
         void _updateSize();
-    #ifdef WIN32
+    #if defined(_WIN32)
         void _initFileMapping();
     #else
     #endif

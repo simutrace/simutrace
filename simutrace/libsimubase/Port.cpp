@@ -37,8 +37,9 @@ namespace SimuTrace
     Port::Port(bool isServer, const std::string& specifier) :
         _channel(nullptr),
         _specifier(specifier),
+        _messagesSent(0),
         _messagesReceived(0),
-        _messagesSent(0)
+        _lastSequenceNumber(0)
     {
         _channel = ChannelProvider::createChannelFromSpecifier(isServer,
                                                                specifier);
@@ -46,8 +47,10 @@ namespace SimuTrace
 
     Port::Port(std::unique_ptr<Channel>& channel) :
         _channel(nullptr),
+        _specifier(),
+        _messagesSent(0),
         _messagesReceived(0),
-        _messagesSent(0)
+        _lastSequenceNumber(0)
     {
         assert(channel != nullptr);
         _channel = std::move(channel);

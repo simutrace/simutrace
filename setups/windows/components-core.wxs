@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <!-- Simutrace Core Components -->
+  <Fragment>
+    <ComponentGroup Id="CoreComponents" Directory="DIRINSTALLROOT">
+      <Component Id="CMP_InstallRoot_libsimutrace_dll"
+                 Guid="2B0468BB-3EEC-4E27-9B8C-EDDCD6BC4277">
+        <File Id="FILE_InstallRoot_libsimutrace_dll"
+              Name="$(var.libsimutrace.TargetFileName)"
+              Source="$(var.libsimutrace.TargetPath)"
+              KeyPath="yes"
+              Vital="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_libconfig_dll"
+                 Guid="0EE5A504-44E6-4B47-B915-C75EE47B2DFC">
+        <File Id="FILE_InstallRoot_libconfig_dll"
+              Name="$(var.libconfig++.TargetFileName)"
+              Source="$(var.libconfig++.TargetPath)"
+              KeyPath="yes"
+              Vital="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_simustore_exe"
+                 Guid="8D57C6F7-D8AE-4106-BB1A-3B61CCA88A49">
+        <File Id="FILE_InstallRoot_simustore_exe"
+              Name="$(var.simustore.TargetFileName)"
+              Source="$(var.simustore.TargetPath)"
+              KeyPath="yes"
+              Vital="yes" />
+      </Component>
+
+      <Component Id="CMP_SystemEnvironment"
+                 Guid="71C12487-BAEC-4724-A8CE-5701CEF654EA">
+        <CreateFolder />
+        <Condition><![CDATA[ADDTOPATH="yes"]]></Condition>
+        <Environment Id="PATH"
+                     Name="PATH"
+                     Value="[DIRINSTALLROOT]"
+                     Part="last"
+                     Action="set"
+                     System="yes"/>
+      </Component>
+
+      <Component Id="CMP_HKLM_Simutrace_installroot"
+                 Guid="892E20D4-F06B-49C1-A566-0E93E9C07E40">
+        <RegistryValue Root="HKLM"
+                       Key="Software\Simutrace"
+                       Name="installroot"
+                       Type="string"
+                       Value="[DIRINSTALLROOT]"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

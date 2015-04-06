@@ -263,7 +263,6 @@ namespace Simtrace
                             ServerStreamBuffer& buffer =
                                 static_cast<ServerStreamBuffer&>(
                                 _streams[i]->getStreamBuffer());
-                            size_t entrySize = getEntrySize(&_streams[i]->getType());
 
                             SegmentControlElement* ctrl =
                                 buffer.getControlElement(_segmentIds[i]);
@@ -715,7 +714,8 @@ namespace Simtrace
                 return streams[index];
             }
 
-            StreamDescriptor desc = {0};
+            StreamDescriptor desc;
+            memset(&desc, 0, sizeof(StreamDescriptor));
 
             desc.hidden             = true;
             desc.type.entrySize     = 1;

@@ -97,9 +97,9 @@ namespace SimuTrace
             _sharedDfcmHistory(),
             _firstOrderDfcmPredictor(0, _sharedDfcmHistory),
             _thirdOrderDfcmPredictor(2, _sharedDfcmHistory),
-            _last4ValuePredictor(4),
             _privateFcmHistory(),
-            _firstOrderFcmPredictor(8, _privateFcmHistory) { }
+            _firstOrderFcmPredictor(8, _privateFcmHistory),
+            _last4ValuePredictor(4) { }
 
         PredictorId encodeValue(PredictorId** codeBuffer, T** dataBuffer,
                                 const T value, const K key)

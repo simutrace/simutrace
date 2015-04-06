@@ -23,6 +23,7 @@
 
 #include "SimuPlatform.h"
 
+#include "Clock.h"
 #include "Profiler.h"
 
 namespace SimuTrace
@@ -40,15 +41,12 @@ namespace SimuTrace
     public:
         ScopedTimer(ProfileContext& profileContext, const char* name) :
             _profileContext(profileContext),
-            _name(name)
-        {
-            _start = Clock::getTicks();
-        }
+            _name(name),
+            _start(Clock::getTicks()) { }
 
         ~ScopedTimer()
         {
-            uint64_t ticks = Clock::getTicks() - _start;
-            uint64_t milliseconds = ticks / (Clock::getTimerFrequency() / 1000);
+            uint64_t milliseconds = (Clock::getTicks() - _start) / 1000000;
 
             _profileContext.add(_name, milliseconds);
         }

@@ -22,109 +22,107 @@
 #include "Clock.h"
 
 #include "SimuBaseTypes.h"
+#include "Utils.h"
 #include "Exceptions.h"
 
 namespace SimuTrace {
 namespace Clock
 {
 
-    const uint64_t getTimerFrequency()
+    uint64_t getTicks()
     {
+    #if defined(_WIN32)
+        // Number of ticks in a second
         static uint64_t freq = 0;
 
         if (freq == 0) {
-        #ifdef WIN32
             LARGE_INTEGER li;
             if (!::QueryPerformanceFrequency(&li)) {
                 Throw(PlatformException);
             }
 
             freq = li.QuadPart;
-        #else
-            freq = 1e+9;
-        #endif
         }
 
-        return freq;
-    }
-
-    const uint64_t getTicks()
-    {
-    #ifdef WIN32
         LARGE_INTEGER li;
         if (!::QueryPerformanceCounter(&li)) {
             Throw(PlatformException);
         }
 
-        return li.QuadPart;
+        return (li.QuadPart * 1000000000ULL) / freq;
+    #elif (defined(__MACH__) && defined(__APPLE__))
+        static mach_timebase_info_data_t timebase = {0};
+
+        if (timebase.denom == 0) {
+            (void)mach_timebase_info(&timebase);
+        }
+
+        return ::mach_absolute_time() * timebase.numer / timebase.denom;
     #else
         struct timespec ts;
         if (::clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
             Throw(PlatformException);
         }
 
-        return (ts.tv_sec * 1e+9) + ts.tv_nsec;
+        return (ts.tv_sec * 1000000000ULL) + ts.tv_nsec;
     #endif
     }
 
-    const time_t getTime()
+    Timestamp getTimestamp()
     {
-        return time(nullptr);
-    }
+    #if defined(_WIN32)
+        FILETIME ft;
+        ::GetSystemTimeAsFileTime(&ft);
 
-    // Disables the deprecated warnings for time functions
-#pragma warning(push)
-#pragma warning(disable : 4996)
-    const Timestamp getTimestamp()
-    {
-    #ifdef WIN32
-        LARGE_INTEGER tmp2;
-        if (!::QueryPerformanceCounter(&tmp2)) {
-            Throw(PlatformException);
-        }
-        return ((tmp2.QuadPart * 10000000) / getTimerFrequency()) +
-            116444736000000000;
+        Timestamp ts = ft.dwHighDateTime;
+        ts = (ts << 32) | ft.dwLowDateTime;
+
+        // Convert to UNIX epoch (1970-01-01 00:00:00) from Windows NT FILETIME
+        return (ts - 116444736000000000ULL) * 100;
+    #elif (defined(__MACH__) && defined(__APPLE__))
+        kern_return_t result;
+        clock_serv_t clock;
+        mach_timespec_t mts;
+        result = ::host_get_clock_service(::mach_host_self(), CALENDAR_CLOCK,
+                                          &clock);
+
+        ThrowOn(result != KERN_SUCCESS, Exception,
+                stringFormat("Failed to receive calender clock '%s'.",
+                    ::mach_error_string(result)));
+
+        result = ::clock_get_time(clock, &mts);
+
+        ThrowOn(result != KERN_SUCCESS, Exception,
+                stringFormat("Failed to receive clock value '%s'.",
+                    ::mach_error_string(result)));
+
+        ::mach_port_deallocate(::mach_task_self(), clock);
+
+        Timestamp ts = mts.tv_sec;
+        ts *= 1000000000ULL;
+        ts += mts.tv_nsec;
+
+        return ts;
     #else
-        // Higher resolution than time
         struct timespec tspec;
-        if (::clock_gettime(CLOCK_MONOTONIC, &tspec) != 0) {
+        if (::clock_gettime(CLOCK_REALTIME, &tspec) != 0) {
             Throw(PlatformException);
         }
 
-        Timestamp ts = timeToTimestamp(tspec.tv_sec);
-        ts += tspec.tv_nsec / 100;
+        Timestamp ts = tspec.tv_sec;
+        ts *= 1000000000ULL;
+        ts += tspec.tv_nsec;
+
         return ts;
     #endif
-    }
-#pragma warning(pop)
-
-    const double ticksToSeconds(uint64_t ticks)
-    {
-        return (double)ticks / (double)getTimerFrequency();
-    }
-
-    const Timestamp timeToTimestamp(const time_t t)
-    {
-        //TDOO: Add comment: Conversion from UNIX time to FILETIME
-#ifdef WIN32
-        return Int32x32To64(t, 10000000) + 116444736000000000;
-#else
-        return (Timestamp)(t * 10000000) + 116444736000000000;
-#endif
-    }
-
-    const time_t timestampToTime(const Timestamp ts)
-    {
-        time_t ll = ts - 116444736000000000;
-        return ll / 10000000;
     }
 
     std::string formatTime(const std::string& format, const Timestamp ts)
     {
         // Convert timestamp to struct tm so we can use it with strftime()
         struct tm time;
-        time_t t = timestampToTime(ts);
-    #ifdef WIN32
+        time_t t = ts / 1000000000ULL;
+    #if defined(_WIN32)
         ::localtime_s(&time, &t);
     #else
         ::localtime_r(&t, &time);
@@ -137,7 +135,7 @@ namespace Clock
 
         auto pos = format.find("%~");
         if (pos != std::string::npos) {
-            Timestamp milliseconds = (ts / 10000) % 1000;
+            Timestamp milliseconds = (ts / 1000000ULL) % 1000;
             std::ostringstream formatStream;
 
             formatStream << format.substr(0, pos)

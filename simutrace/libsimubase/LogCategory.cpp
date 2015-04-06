@@ -128,7 +128,7 @@ namespace SimuTrace
     }
 
     void LogCategory::log(LogPriority::Value priority,
-                          const std::string& format, ...)
+                          const std::string format, ...)
     {
         if (priority > _priorityThreshold) {
             return;

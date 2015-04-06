@@ -33,7 +33,7 @@ namespace SimuTrace
         DISABLE_COPY(CriticalSection);
 
     protected:
-    #ifdef WIN32
+    #if defined(_WIN32)
         CRITICAL_SECTION _cs;
     #else
         pthread_mutex_t _cs;

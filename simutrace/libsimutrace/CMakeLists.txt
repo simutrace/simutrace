@@ -28,8 +28,9 @@
 
 add_definitions(/DSIMUTRACE)
 
-include_directories("../include/simubase")
-include_directories("../include/simustor")
+include_directories("../include/simubase"
+                    "${CMAKE_CURRENT_BINARY_DIR}/../include/"
+                    "../include/simustor")
 
 set(PRECOMPILE_SOURCE "main.cpp")
 set(PRECOMPILE_HEADER "SimuStor.h")
@@ -81,8 +82,17 @@ set(HEADER_FILES_STREAMS
 
 # Others
 
-set(OTHER_FILES_OTHERS
-    "CMakeLists.txt")
+if(WIN32)
+    configure_file("libsimutrace.rc.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/libsimutrace.rc"
+                   @ONLY)
+
+    set(SOURCE_FILES_RESOURCES
+        "${CMAKE_CURRENT_BINARY_DIR}/libsimutrace.rc")
+
+else()
+    set(SOURCE_FILES_RESOURCES "")
+endif()
 
 
 # Source Code Grouping --------------------------------------------------------
@@ -103,9 +113,6 @@ set(HEADER_FILES
     ${HEADER_FILES_STORAGE}
     ${HEADER_FILES_STREAMS})
 
-set(OTHER_FILES
-    ${OTHER_FILES_OTHERS})
-
 source_group("Source files" FILES ${PRECOMPILE_SOURCE} ${SOURCE_FILES_API})
 source_group("Source files\\Session" FILES ${SOURCE_FILES_SESSION})
 source_group("Source files\\Storage" FILES ${SOURCE_FILES_STORAGE})
@@ -118,40 +125,43 @@ source_group("Header files\\Session" FILES ${HEADER_FILES_SESSION})
 source_group("Header files\\Storage" FILES ${HEADER_FILES_STORAGE})
 source_group("Header files\\Streams" FILES ${HEADER_FILES_STREAMS})
 
-source_group("" FILES ${OTHER_FILES_OTHERS})
-
 set_source_files_properties(${HEADER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 
 # Build -----------------------------------------------------------------------
 
-add_library(libsimutrace SHARED
-            ${PRECOMPILE_SOURCE}
-            ${SOURCE_FILES_NOTPRECOMPILED}
-            ${SOURCE_FILES_PRECOMPILED}
-            ${HEADER_FILES})
+if(BUILD_LIBSIMUTRACE)
+    set(libsimutrace_GUID_CMAKE "E8066B21-B511-4D32-8334-3B5C3739CE15" CACHE INTERNAL "libsimutrace GUID")
 
-set_target_properties(libsimutrace PROPERTIES
-                      PREFIX ""
-                      VERSION ${SIMUTRACE_VERSION}
-                      SOVERSION "3")
+    add_library(libsimutrace SHARED
+                ${PRECOMPILE_SOURCE}
+                ${SOURCE_FILES_NOTPRECOMPILED}
+                ${SOURCE_FILES_PRECOMPILED}
+                ${SOURCE_FILES_RESOURCES}
+                ${HEADER_FILES})
 
-target_link_libraries(libsimutrace
-                      libsimustor
-                      libsimubase
-                      libconfig++
-                      ${RT_LIBRARY}
-                      ${CMAKE_THREAD_LIBS_INIT}  # pthreads for Linux
-                      )
+    set_target_properties(libsimutrace PROPERTIES
+                          PREFIX ""
+                          VERSION ${SIMUTRACE_VERSION}
+                          SOVERSION "3")
 
-add_precompiled_header(libsimutrace
-                       SOURCE_FILES_NOTPRECOMPILED
-                       ${PRECOMPILE_HEADER}
-                       ${PRECOMPILE_SOURCE})
+    target_link_libraries(libsimutrace
+                          libsimustor
+                          libsimubase
+                          libconfig++
+                          ${RT_LIBRARY}
+                          ${CMAKE_THREAD_LIBS_INIT}  # pthreads for Linux
+                          )
 
-set_multiprocessor_compilation(libsimutrace)
-set_sdl_compilation(libsimutrace)
+    add_precompiled_header(libsimutrace
+                           SOURCE_FILES_NOTPRECOMPILED
+                           ${PRECOMPILE_HEADER}
+                           ${PRECOMPILE_SOURCE})
+
+    set_multiprocessor_compilation(libsimutrace)
+    set_sdl_compilation(libsimutrace)
+
+endif()
 
 # Install ---------------------------------------------------------------------
 
@@ -160,9 +170,9 @@ set(HEADER_FILES_API_SIMUTRACE
     ${HEADER_FILES_STOR_API}
     ${HEADER_FILES_BASE_API})
 
-if (UNIX)
+if(UNIX AND BUILD_LIBSIMUTRACE)
     install(TARGETS libsimutrace
-            LIBRARY DESTINATION "lib")
+            LIBRARY DESTINATION ${INSTALL_LIB_DIR})
 
-    install(FILES ${HEADER_FILES_API_SIMUTRACE} DESTINATION "include")
+    install(FILES ${HEADER_FILES_API_SIMUTRACE} DESTINATION ${INSTALL_INCLUDE_DIR})
 endif()

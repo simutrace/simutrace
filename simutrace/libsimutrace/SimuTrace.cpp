@@ -333,7 +333,9 @@ namespace SimuTrace
             ThrowOnNull(name, ArgumentNullException);
             ThrowOnNull(descOut, ArgumentNullException);
 
-            StreamTypeDescriptor type = {0};
+            StreamTypeDescriptor type;
+            memset(&type, 0, sizeof(StreamTypeDescriptor));
+
             StreamTypeId id;
             generateGuid(id);
 

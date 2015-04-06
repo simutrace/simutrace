@@ -1,0 +1,39 @@
+// This file is configured by CMake. Changes are lost!
+// To make changes see the respective .in file
+
+#define APSTUDIO_READONLY_SYMBOLS
+#include "winres.h"
+#undef APSTUDIO_READONLY_SYMBOLS
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION @SIMUTRACE_VERSION_MAJOR@,@SIMUTRACE_VERSION_MINOR@,@SIMUTRACE_VERSION_REVISION@,0
+ PRODUCTVERSION @SIMUTRACE_VERSION_MAJOR@,@SIMUTRACE_VERSION_MINOR@,@SIMUTRACE_VERSION_REVISION@,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040704b0"
+        BEGIN
+            VALUE "CompanyName", "Karlsruhe Institute of Technology (KIT)"
+            VALUE "FileDescription", "Simutrace Client Library"
+            VALUE "FileVersion", "@SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.@SIMUTRACE_VERSION_REVISION@.0"
+            VALUE "InternalName", "libsimutrace.dll"
+            VALUE "LegalCopyright", "Copyright \251 2015 Marc Rittinghaus"
+            VALUE "OriginalFilename", "libsimutrace.dll"
+            VALUE "ProductName", "Simutrace"
+            VALUE "ProductVersion", "@SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.@SIMUTRACE_VERSION_REVISION@.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x407, 1200
+    END
+END

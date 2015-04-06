@@ -52,7 +52,7 @@ namespace SimuTrace
 
         SafeHandle handle;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         SECURITY_ATTRIBUTES attr  = {0};
         attr.nLength              = sizeof(SECURITY_ATTRIBUTES);
         attr.bInheritHandle       = TRUE;
@@ -88,7 +88,7 @@ namespace SimuTrace
         ThrowOnNull(buffer, ArgumentNullException);
         ThrowOn(size == 0, ArgumentException);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD bytesRead;
         OVERLAPPED _overlappedRead = {0};
 
@@ -124,7 +124,7 @@ namespace SimuTrace
         ThrowOnNull(buffer, ArgumentNullException);
         ThrowOn(size == 0, ArgumentException);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         DWORD result;
         LARGE_INTEGER off;
 
@@ -157,7 +157,7 @@ namespace SimuTrace
     {
         ThrowOn(!_file.isValid(), InvalidOperationException);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::FlushFileBuffers(_file)) {
             Throw(PlatformException);
         }
@@ -172,7 +172,7 @@ namespace SimuTrace
     {
         ThrowOn(!_file.isValid(), InvalidOperationException);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::SetFilePointer(_file, (long)size, nullptr, FILE_BEGIN);
         if (!::SetEndOfFile(_file)) {
             Throw(PlatformException);
@@ -189,7 +189,7 @@ namespace SimuTrace
         ThrowOn(!_file.isValid(), InvalidOperationException);
 
         size_t retVal;
-    #ifdef WIN32
+    #if defined(_WIN32)
         LARGE_INTEGER result;
         if (!::GetFileSizeEx(_file, &result)) {
             Throw(PlatformException);

@@ -41,7 +41,7 @@ namespace SimuTrace
 
         LocalChannel(SafeHandle& endpoint, const std::string& address);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         void _createServerNamedPipe();
         void _connectServerNamedPipe();
 

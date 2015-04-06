@@ -39,8 +39,8 @@ namespace Simtrace
 
     Simtrace3Store::Simtrace3Store(StoreId id, const std::string& path) :
         ServerStore(id, path),
-        _file(),
         _fileLock(),
+        _file(),
         _readMode(false),
         _loading(false),
         _headerMapping(),

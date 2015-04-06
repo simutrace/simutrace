@@ -28,7 +28,8 @@
 
 add_definitions(/DSIMUTRACE)
 
-include_directories("../../simutrace/include/simubase")
+include_directories("../../simutrace/include/simubase"
+                    "${CMAKE_CURRENT_BINARY_DIR}/../../simutrace/include/")
 
 # Base
 
@@ -51,21 +52,24 @@ set(OTHER_FILES
 
 source_group("Source files" FILES ${SOURCE_FILES})
 
-source_group("" FILES ${OTHER_FILES_OTHERS})
-
-set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+source_group("" FILES ${OTHER_FILES})
 
 
 # Build -----------------------------------------------------------------------
 
-add_executable(storemon ${SOURCE_FILES})
+if(BUILD_SAMPLES)
+    set(storemon_GUID_CMAKE "0B401DC9-3F3B-4A2D-B3C4-1DB08D61E50E" CACHE INTERNAL "storemon GUID")
 
-target_link_libraries(storemon
-                      libsimutrace
-                      libsimubase
-                      ${RT_LIBRARY}
-                      ${CMAKE_THREAD_LIBS_INIT}  # pthreads for Linux
-                      )
+    add_executable(storemon ${SOURCE_FILES})
 
-append_target_property(storemon FOLDER "Samples")
-set_sdl_compilation(storemon)
+    target_link_libraries(storemon
+                          libsimutrace
+                          libsimubase
+                          ${RT_LIBRARY}
+                          ${CMAKE_THREAD_LIBS_INIT}  # pthreads for Linux
+                          )
+
+    append_target_property(storemon FOLDER "Samples")
+    set_sdl_compilation(storemon)
+
+endif()

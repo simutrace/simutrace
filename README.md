@@ -85,9 +85,9 @@ by giving a short introduction on how to start Simutrace.
 
 ### Supported Platforms
 
-Simutrace supports Windows Vista+ and Linux. Since trace processing is a
-memory intensive task, we only support 64 bit operating system versions.
-We tested Simutrace on x86-64 hardware, only.
+Simutrace supports Windows Vista+ and Linux and MacOSX 10.9+. Since trace 
+processing is a memory intensive task, we only support 64 bit operating system 
+versions. We tested Simutrace on x86-64 hardware, only.
 
 For best performance, we recommend running the server on a system with at least
 8 CPU cores (4+4) and 12 GiB of RAM. The server very well operates a 24 core
@@ -105,7 +105,7 @@ Simutrace and its prerequisites. If you cannot find a version of Simutrace on
 http://simutrace.org/downloads suitable to your environment (e.g., OS), you can
 build Simutrace [from source](#building-from-source).
 
-Note: The installation does not include extensions for a full system
+Note: The installation does not currently include extensions for a full system
 simulators to generate trace events from a simulation. For information on
 simulator extensions, please refer to http://simutrace.org.
 
@@ -121,6 +121,11 @@ already on your system.</i>
 #### Step 2: Simutrace
 
 Download the latest version of Simutrace from http://simutrace.org/downloads.
+For Windows we provide msi installation packages. For rpm-based and deb-based 
+Linux distributions you can add repositories to your packaging software from
+Launchpad and openSUSE Build Service. For all other supported platforms, we
+currently do not provide binary packages. You have to  
+[build from source](#building-from-source) for these systems.
 
 ### Building from Source
 
@@ -129,13 +134,12 @@ that is not officially supported, you can build the software from source.
 
 #### Step 1: Setting up the Build Environment
 
-Simutrace uses CMake (2.8.9 or newer) to generate build files for the
+Simutrace uses CMake (2.8 or newer) to generate build files for the
 development tools available on your system.
 
 On <b>Windows</b>, download the latest CMake version from http://cmake.org. To
 build Simutrace, we use Microsoft Visual Studio 2013 (Visual C++). A free
-(express) version can be downloaded from Microsoft. The source of libconfig is
-provided in the 3rdParty directory and is automatically added to the build process.
+(express) version can be downloaded from Microsoft.
 
 On <b>Linux</b>, you have to install cmake, the basic development tools such
 a C++11 compatible GCC (version 4.7 or higher) and make. Some distributions
@@ -175,6 +179,8 @@ The repository has the following structure:
 |   |-- simple              <i>Very basic sample client in C</i>
 |   `-- parallel            <i>Sample client in C, which writes and reads</i>
 |                           <i>to/from a trace using multiple threads</i>
+|-- <b>setups</b>			<i>Setup and packaging projects and metadata</i>
+|
 `-- <b>simutrace</b>
     |-- bindings            <i>Bindings for libsimutrace</i>
     |-- documentation       <i>Documentation source and theme.</i>
@@ -203,7 +209,7 @@ directory of the source tree:
     $ cmake -DCMAKE_BUILD_TYPE=Release ..
     $ make
 
-The final executables will be located in <i>build/bin</i> and can be installed
+The final executables will be located in <i>bin/</i> and can be installed
 using:
 
     $ make install
@@ -272,20 +278,21 @@ http://simutrace.org/.
 
 The documentation in Simutrace is automatically build from source using
 doxygen. On <b>Windows</b>, you will find the latest version of doxygen at
-http://www.doxygen.org. You are then able to execute <i>make-doc.bat</i>
-in the root of the source tree.
-
-On <b>Linux</b>, install doxygen with your package management system.
-On Ubuntu 14.04 LTS you can enter:
+http://www.doxygen.org. On <b>Linux</b>, install doxygen with your 
+package management system. On Ubuntu 14.04 LTS you can enter:
 
     $ sudo apt-get install doxygen
 
-Afterwards, you can build the documentation by typing in the root of the
-source directory:
+Afterwards, you can build the documentation by running cmake as usual and
+building the <i>simutrace-doc</i> target. On Ubuntu 14.04 LTS you may enter
+the following commands from the root directory of the source tree:
 
-    $ make-doc.sh
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make simutrace-doc
 
-You will find the documentation in <i>build/documentation/html</i>.
+You will find the documentation in <i>bin/doc/html</i>.
 
 
 Bugs and Feature Requests

@@ -68,6 +68,15 @@ packages/
 #Old Makefiles
 *.old
 
+# CMake
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
+*.sln
+*.*proj
+*.vcxproj.filters
+
 #Traces
 *.sim
 *.csv

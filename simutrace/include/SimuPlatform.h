@@ -30,7 +30,7 @@
 #define SIMUPLATFORM_H
 
 #ifdef SIMUTRACE
-#ifdef WIN32
+#if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
@@ -44,7 +44,10 @@
 
 #include <sys/stat.h>
 
+#define attribute_unused
+
 #else
+
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
@@ -69,13 +72,24 @@
 
 #include <errno.h>
 
+#include <time.h>
+
+#if (defined(__MACH__) && defined(__APPLE__))
+#include <mach/mach.h>
+#include <mach/clock.h>
+#include <mach/mach_time.h>
+#include <mach/mach_init.h>
+#include <mach/mach_host.h>
+#include <mach/host_info.h>
+#endif
+
 #ifndef NDEBUG
 #define _DEBUG
 #endif
 
-#endif /* WIN32 */
+#define attribute_unused __attribute__((unused))
 
-#include <time.h>
+#endif /* WIN32 */
 
 #include <stdio.h>
 #include <stddef.h>

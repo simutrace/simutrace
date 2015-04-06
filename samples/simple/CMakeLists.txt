@@ -47,17 +47,20 @@ set(OTHER_FILES
 
 source_group("Source files" FILES ${SOURCE_FILES})
 
-source_group("" FILES ${OTHER_FILES_OTHERS})
-
-set_source_files_properties(${OTHER_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+source_group("" FILES ${OTHER_FILES})
 
 
 # Build -----------------------------------------------------------------------
 
-add_executable(simple ${SOURCE_FILES})
+if(BUILD_SAMPLES)
+    set(simple_GUID_CMAKE "94C6D044-D4CD-415A-9DEA-897D2238AF16" CACHE INTERNAL "simple GUID")
 
-target_link_libraries(simple
-                      libsimutrace)
+    add_executable(simple ${SOURCE_FILES})
 
-append_target_property(simple FOLDER "Samples")
-set_sdl_compilation(simple)
+    target_link_libraries(simple
+                          libsimutrace)
+
+    append_target_property(simple FOLDER "Samples")
+    set_sdl_compilation(simple)
+
+endif()

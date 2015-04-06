@@ -26,30 +26,33 @@ set(SOURCE_FILES_BASE
 
 # Others
 
-set(OTHER_FILES_OTHERS
-    "AssemblyInfo.cs"
-    "CMakeLists.txt")
+set(SOURCE_FILES_RESOURCES
+    "AssemblyInfo.cs")
 
 
 # Source Code Grouping --------------------------------------------------------
 
-source_group("" FILES ${SOURCE_FILES_BASE} ${OTHER_FILES_OTHERS})
+source_group("" FILES ${SOURCE_FILES_BASE} ${SOURCE_FILES_RESOURCES})
 
 
 # Build -----------------------------------------------------------------------
 
-if(MSVC)
+if(("${CMAKE_GENERATOR}" MATCHES "Visual Studio [^6]") AND (BUILD_SAMPLES))
+
     file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" SOURCE_DIR)
 
-    configure_file("CSharp.Simple.csproj-template"
+    configure_file("CSharp.Simple.csproj.in"
                    "${CMAKE_CURRENT_BINARY_DIR}/CSharp.Simple.csproj"
                    NEWLINE_STYLE WIN32)
 
     include_external_msproject(
         CSharp.Simple
         "${CMAKE_CURRENT_BINARY_DIR}/CSharp.Simple.csproj"
-        GUID C59E70A8-B4A4-4445-80C2-30CD28895864
-        TYPE FAE04EC0-301F-11D3-BF4B-00C04F79EFBC)
+        GUID "C59E70A8-B4A4-4445-80C2-30CD28895864")
 
     append_target_property(CSharp.Simple FOLDER "Samples")
+
+    add_dependencies(CSharp.Simple
+                     SimuTrace.Net.Interop)
+
 endif()

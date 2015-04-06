@@ -37,13 +37,13 @@ namespace SimuTrace
                                              std::unique_ptr<LogLayout>& layout,
                                              bool inherit) :
         LogAppender(name, layout, inherit),
-    #ifdef WIN32
+    #if defined(_WIN32)
         _consoleHandle(),
     #else
     #endif
         _enableColor(false)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         _consoleHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
 
         // If the application does not possess a console, we deactivate color
@@ -91,7 +91,7 @@ namespace SimuTrace
 
     void TerminalLogAppender::_setTerminalColor(uint16_t color)
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         ::SetConsoleTextAttribute(_consoleHandle, color);
     #else
         // We first have to convert the color value to the ANSI escape code.
@@ -108,7 +108,7 @@ namespace SimuTrace
 
     void TerminalLogAppender::_setColorOff()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         _setTerminalColor(Color::White);
     #else
         std::cout << "\x1b[0m";

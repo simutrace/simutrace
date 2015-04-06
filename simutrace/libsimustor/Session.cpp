@@ -34,16 +34,16 @@ namespace SimuTrace
 
     Session::Session(SessionManager& manager, uint16_t peerApiVersion,
                      SessionId localId, const Environment& root) :
-        _peerApiVersion(peerApiVersion),
         _manager(manager),
+        _peerApiVersion(peerApiVersion),
         _localId(localId),
-        _store(nullptr, nullptr),
-        _isAlive(true),
         _referenceCount(1),
+        _isAlive(true),
         _config(),
         _configLockList(nullptr),
+        _log(stringFormat("[Session %d]", localId), root.log),
         _environment(root),
-        _log(stringFormat("[Session %d]", localId), root.log)
+        _store(nullptr, nullptr)
     {
         _environment.log = &_log;
         _environment.config = &_config;
@@ -77,6 +77,8 @@ namespace SimuTrace
     {
         return Reference(session, [](Session* instance){
             SessionId id = instance->getLocalId();
+            (void)id; // Make compiler happy in release build
+
             delete instance;
 
             LogDebug("Session %d released.", id);

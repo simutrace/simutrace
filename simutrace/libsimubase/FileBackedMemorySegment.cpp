@@ -33,7 +33,7 @@ namespace SimuTrace
                                                      bool writeable) :
         MemorySegment(writeable),
         _name(fileName),
-    #ifdef WIN32
+    #if defined(_WIN32)
         _fileMapping(),
     #else
     #endif
@@ -41,7 +41,7 @@ namespace SimuTrace
     {
         _initFile(writeable);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         _initFileMapping();
     #else
     #endif
@@ -51,7 +51,7 @@ namespace SimuTrace
         const FileBackedMemorySegment& instance) :
         MemorySegment(instance),
         _name(instance._name),
-    #ifdef WIN32
+    #if defined(_WIN32)
         _fileMapping(instance._fileMapping),
     #else
     #endif
@@ -66,13 +66,13 @@ namespace SimuTrace
                                                      const std::string* name) :
         MemorySegment(writeable, size),
         _name((name != nullptr) ? name->c_str() : ""),
-    #ifdef WIN32
+    #if defined(_WIN32)
         _fileMapping(),
     #else
     #endif
         _file()
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (fileMapping == INVALID_HANDLE_VALUE) {
             ThrowOn(_name.empty(), ArgumentException);
 
@@ -93,7 +93,7 @@ namespace SimuTrace
     void FileBackedMemorySegment::_initFile(bool writeable)
     {
         // Open the specified file
-    #ifdef WIN32
+    #if defined(_WIN32)
         SECURITY_ATTRIBUTES attr;
         attr.nLength              = sizeof(SECURITY_ATTRIBUTES);
         attr.bInheritHandle       = TRUE;
@@ -125,7 +125,7 @@ namespace SimuTrace
 
         // Get the file size
         size_t size;
-    #ifdef WIN32
+    #if defined(_WIN32)
         LARGE_INTEGER fileSize;
         BOOL success = ::GetFileSizeEx(_file, &fileSize);
         ThrowOn(!success, PlatformException);
@@ -142,7 +142,7 @@ namespace SimuTrace
 
         _setSize(size);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         // On Windows, we have to create a new section object if the size of
         // the backing file has changed.
         if ((size != oldSize) && (_fileMapping.isValid())) {
@@ -152,7 +152,7 @@ namespace SimuTrace
     #endif
     }
 
-#ifdef WIN32
+#if defined(_WIN32)
     void FileBackedMemorySegment::_initFileMapping()
     {
         SECURITY_ATTRIBUTES attr;
@@ -190,7 +190,7 @@ namespace SimuTrace
         size_t mappingOffset   = start & mask;
         size_t mappingSizeDiff = start - mappingOffset;
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         LARGE_INTEGER offset;
         offset.QuadPart = mappingOffset;
 
@@ -223,7 +223,7 @@ namespace SimuTrace
         void* alignedBuffer = reinterpret_cast<void*>(
             reinterpret_cast<uint64_t>(buffer) & mask);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::UnmapViewOfFile(alignedBuffer)) {
     #else
         if (::munmap(alignedBuffer, getMappedSize()) != 0) {
@@ -237,7 +237,7 @@ namespace SimuTrace
         ThrowOn((!_file.isValid()) || (isReadOnly()),
                 InvalidOperationException);
 
-    #ifdef WIN32
+    #if defined(_WIN32)
         if (!::FlushFileBuffers(_file)) {
     #else
         if (::fsync(_file) != 0) {
@@ -261,7 +261,7 @@ namespace SimuTrace
 
     const SafeHandle& FileBackedMemorySegment::getHandle() const
     {
-    #ifdef WIN32
+    #if defined(_WIN32)
         return _fileMapping;
     #else
         return _file;

@@ -48,7 +48,7 @@ static T fromString(const char* s) {
   return t;
 };
 /* ################################################################### */
-static bool isdigit(const std::string & s, int i=0) {
+/*static bool isdigit(const std::string & s, int i=0) {
   int n = s.length();
   for(; i < n; ++i)
     switch(s[i]) {
@@ -59,7 +59,7 @@ static bool isdigit(const std::string & s, int i=0) {
     }
 
   return true;
-};
+};*/
 /* ################################################################### */
 static bool isdigit(const std::string * s, int i=0) {
   int n = s->length();
@@ -334,7 +334,7 @@ static char** CommandLineToArgvA(char* CmdLine, int* _argc) {
   i = 0;
   j = 0;
 
-  while( a = CmdLine[i] ) {
+  while( (a = CmdLine[i]) ) {
     if(in_QM) {
       if( (a == '\"') ||
           (a == '\'')) // rsz. Added single quote.
@@ -443,6 +443,10 @@ public:
   enum TYPE { NOTYPE=0, S1, U1, S2, U2, S4, U4, S8, U8, F, D, T };
   enum TYPE2 { NOTYPE2=0, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT, DOUBLE, TEXT };
 
+  bool insensitive;
+  char op;
+  int size;
+
   union {
     unsigned char *u1;
     char *s1;
@@ -457,12 +461,9 @@ public:
     std::string** t;
   };
 
-  char op;
+  char type;
   bool quiet;
   short id;
-  char type;
-  int size;
-  bool insensitive;
 };
 /* ------------------------------------------------------------------- */
 ezOptionValidator::~ezOptionValidator() {
@@ -801,7 +802,7 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
     }
   } else {
     if (op == OP_IN) {
-		  int i=0;
+          int i=0;
       if (insensitive) {
         std::string valueAsStringLower(*valueAsString);
         ToLowerASCII(valueAsStringLower);
@@ -931,10 +932,10 @@ bool ezOptionValidator::isValid(const std::string * valueAsString) {
 /* ################################################################### */
 class OptionGroup {
 public:
-  OptionGroup() : delim(0), expectArgs(0), isSet(false), isRequired(false) { }
+  OptionGroup() : delim(0), expectArgs(0), isRequired(false), isSet(false) { }
 
   ~OptionGroup() {
-    int i, j;
+    int i;
     for(i=0; i < flags.size(); ++i)
       delete flags[i];
 
@@ -1556,7 +1557,7 @@ bool ezOptionParser::exportFile(const char * filename, bool all) {
     out.append("\n");
 
   std::vector<std::string* > stringPtrs(groups.size());
-  int j,m;
+  int m;
   int n = groups.size();
   for(i=0; i < n; ++i) {
     stringPtrs[i] = groups[i]->flags[0];
@@ -1809,7 +1810,7 @@ void ezOptionParser::getUsageDescriptions(std::string & usage, int width, Layout
     stringPtrs[i] = groups[i]->flags[0];
   }
 
-  size_t j, k, n;
+  size_t j, k;
   std::string opts;
   std::vector<std::string> sortedOpts;
   // Sort first flag of each group with other groups.
@@ -2013,7 +2014,7 @@ void ezOptionParser::parse(int argc, const char * argv[]) {
     std::cout << (*it).first << " => " << (*it).second << std::endl;
   */
 
-  int found=0, i, k, firstOptIndex=0, lastOptIndex=0;
+  int i, k, firstOptIndex=0, lastOptIndex=0;
   std::string s;
   OptionGroup *g;
 

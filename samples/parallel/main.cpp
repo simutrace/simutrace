@@ -626,7 +626,7 @@ int main(int argc, char *argv[])
 
         watch.stop();
         const uint64_t size = memoryEntriesCount * sizeof(DataWrite64);
-        const uint64_t speed = (uint64_t)((double)size / watch.getSeconds());
+        const uint64_t speed = (uint64_t)(size / watch.getSeconds());
 
         std::cout << "Read " << sizeToString(size)
                   << " memory stream in " << watch.getSeconds()

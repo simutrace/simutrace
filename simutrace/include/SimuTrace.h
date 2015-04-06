@@ -38,7 +38,7 @@ extern "C"
 {
 #endif
 
-#ifdef WIN32
+#if defined(_WIN32)
 #ifdef SIMUTRACE
 #define SIMUTRACE_API __declspec(dllexport)
 #else
@@ -766,15 +766,15 @@ extern "C"
      *           invalidated version of the handle will be returned). For a
      *           more detailed error description call StGetLastError().
      *
-     *           The method returns a #NotFoundException, when the supplied
+     *           The method returns a #RteNotFoundException, when the supplied
      *           query did not deliver any results and the target element or
      *           area in the stream could not be identified. <b>Note that
      *           stream segments are only visible to a query after the
-     *           processing by the server has been completed!<\b>. For that
-     *           reason you may encounter a #NotFoundException for stream
+     *           processing by the server has been completed!</b>. For that
+     *           reason you may encounter a #RteNotFoundException for stream
      *           elements that were only recently send to the server.
      *           Queries working on sequence numbers return an
-     *           #OperationInProgressException in that case.
+     *           #RteOperationInProgressException in that case.
      *
      *           If successful, the handle will point to the exact entry
      *           requested by the <\c type, \c value>-pair.

@@ -62,6 +62,7 @@ namespace SimuTrace
     // only available in DEBUG builds.
     //
 
+    attribute_unused
     static std::string payloadTypeToStr(uint8_t payloadType)
     {
         switch (payloadType)
@@ -80,6 +81,7 @@ namespace SimuTrace
         }
     }
 
+    attribute_unused
     static std::string messageFlagsToStr(uint8_t flags)
     {
         static const char* flagChars[] = {
@@ -94,12 +96,13 @@ namespace SimuTrace
             }
 
             assert(i < sizeof(flagChars) / sizeof(char*));
-            str << ((flags && flag) != 0) ? flagChars[i] : "-";
+            str << (((flags && flag) != 0) ? flagChars[i] : "-");
         }
 
         return str.str();
     }
 
+    attribute_unused
     static std::string localMessageFlagsToStr(uint8_t flags)
     {
         static const char* flagChars[] = {
@@ -115,7 +118,7 @@ namespace SimuTrace
             }
 
             assert(i < sizeof(flagChars) / sizeof(char*));
-            str << ((flags && flag) != 0) ? flagChars[i] : "-";
+            str << (((flags && flag) != 0) ? flagChars[i] : "-");
         }
 
         return str.str();

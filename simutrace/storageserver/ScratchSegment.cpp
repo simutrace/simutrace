@@ -29,16 +29,16 @@ namespace SimuTrace
 
     ScratchSegment::ScratchSegment() :
         _buffer(StorageServer::getInstance().getMemoryPool()),
-        _fallbackMemory(nullptr, nullptr),
-        _id(INVALID_SEGMENT_ID)
+        _id(INVALID_SEGMENT_ID),
+        _fallbackMemory(nullptr, nullptr)
     {
         _initializeMemory();
     }
 
     ScratchSegment::ScratchSegment(ServerStreamBuffer& buffer) :
         _buffer(buffer),
-        _fallbackMemory(nullptr, nullptr),
-        _id(INVALID_SEGMENT_ID)
+        _id(INVALID_SEGMENT_ID),
+        _fallbackMemory(nullptr, nullptr)
     {
         _initializeMemory();
     }

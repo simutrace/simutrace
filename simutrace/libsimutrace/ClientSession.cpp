@@ -40,8 +40,8 @@ namespace SimuTrace
                                  uint16_t serverApiVersion, SessionId localId,
                                  SessionId serverSideId, const Environment& root) :
         Session(manager, serverApiVersion, localId, root),
-        _serverSideId(serverSideId),
-        _address()
+        _address(),
+        _serverSideId(serverSideId)
     {
         ThrowOnNull(port, ArgumentNullException);
 
@@ -72,8 +72,10 @@ namespace SimuTrace
         auto it = context->portMap.find(getLocalId());
         assert(it != context->portMap.end());
 
+    #ifdef _DEBUG
         ClientPort* port = it->second.get();
         assert(port != nullptr);
+    #endif
 
         int index;
         assert(_clients.size() > 0);

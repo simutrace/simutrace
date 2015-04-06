@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <!-- Version information -->
+  <?define simutrace_version_major = "@SIMUTRACE_VERSION_MAJOR@" ?>
+  <?define simutrace_version_minor = "@SIMUTRACE_VERSION_MINOR@" ?>
+  <?define simutrace_version_revision = "@SIMUTRACE_VERSION_REVISION@" ?>
+  <?define simutrace_version_string = "$(var.simutrace_version_major).$(var.simutrace_version_minor).$(var.simutrace_version_revision)" ?>
+
+  <!-- Paths -->
+  <?define project_directory = "@PROJECT_SOURCE_DIR@" ?>
+  <?define theme_directory = "@CMAKE_CURRENT_SOURCE_DIR@/theme/" ?>
+  <?define output_directory = "@EXECUTABLE_OUTPUT_PATH@" ?>
+</Include>

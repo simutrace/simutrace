@@ -1,12 +1,15 @@
-﻿using System.Reflection;
+﻿// This file is configured by CMake. Changes are lost!
+// To make changes see the respective .in file
+
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SimuTrace.CSharp")]
-[assembly: AssemblyDescription("SimuTrace CSharp Binding")]
+[assembly: AssemblyTitle("SimuTrace.Net.Interop")]
+[assembly: AssemblyDescription("SimuTrace .Net Interop")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Karlsruhe Institute of Technology (KIT)")]
 [assembly: AssemblyProduct("Simutrace")]
@@ -20,14 +23,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("b27f697d-9725-4f15-b7bb-a506733aeae9")]
+[assembly: Guid("a57bdb25-80bc-4746-9042-474522c9a6bd")]
 
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version
-//      Build Number
-//      Revision
-//
-[assembly: AssemblyVersion("3.1.0.0")]
-[assembly: AssemblyFileVersion("3.1.0.0")]
+[assembly: AssemblyVersion("@SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.0.0")]
+[assembly: AssemblyFileVersion("@SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.@SIMUTRACE_VERSION_REVISION@.0")]

@@ -62,11 +62,11 @@ namespace SimuTrace
     throw exceptionClass(ExceptionLocation(__LINE__, __FILE__), ##__VA_ARGS__)
 #endif // _MSC_VER
 #else
-#define LOC_ARG0 
+#define LOC_ARG0
 #define LOC_PARAM0
 #define LOC_PARAM
 #define LOC_ARG
-#define LOC_EMPTY 
+#define LOC_EMPTY
 
 #define Throw(exceptionClass, ...) \
     throw exceptionClass(__VA_ARGS__)
@@ -89,14 +89,14 @@ namespace SimuTrace
     private:
         std::string _message;
 
-        ExceptionClass _errorClass;
-        int _errorCode;
-
     #ifdef _DEBUG
         ExceptionLocation _location;
     #endif
+
+        ExceptionClass _errorClass;
+        int _errorCode;
     public:
-        Exception(LOC_PARAM const std::string& message, 
+        Exception(LOC_PARAM const std::string& message,
                   ExceptionClass errorClass, int errorCode);
         Exception(LOC_PARAM const std::string& message);
         Exception(LOC_PARAM ExceptionClass errorClass, int errorCode);
@@ -130,8 +130,8 @@ namespace SimuTrace
     {
     public:
         OutOfMemoryException() :
-            Exception(LOC_EMPTY "The process failed to allocate memory.", 
-    #ifdef WIN32
+            Exception(LOC_EMPTY "The process failed to allocate memory.",
+    #if defined(_WIN32)
                 EcPlatform, ERROR_NOT_ENOUGH_MEMORY) {}
     #else
                 EcPlatform, ENOMEM) { }
@@ -158,7 +158,7 @@ namespace SimuTrace
     class PeerException : public Exception
     {
     public:
-        PeerException(LOC_PARAM const std::string& message, 
+        PeerException(LOC_PARAM const std::string& message,
                       ExceptionClass errorClass, int errorCode) :
             Exception(LOC_ARG message, errorClass, errorCode) {}
 
@@ -171,8 +171,8 @@ namespace SimuTrace
         static const int code = NetworkException::NeRpcMessageMalformedException;
 
         RpcMessageMalformedException(LOC_PARAM0) :
-            Exception(LOC_ARG 
-                      "RPC protocol violation. The message is malformed.", 
+            Exception(LOC_ARG
+                      "RPC protocol violation. The message is malformed.",
                       EcNetwork, code) {}
 
         ~RpcMessageMalformedException() throw() {}
@@ -189,7 +189,7 @@ namespace SimuTrace
 
         NotImplementedException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "The requested feature is not implemented.", 
+                      "The requested feature is not implemented.",
                       EcRuntime, code) {}
 
         ~NotImplementedException() throw() {}
@@ -202,7 +202,7 @@ namespace SimuTrace
 
         NotFoundException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "The requested object could not be found.", 
+                      "The requested object could not be found.",
                       EcRuntime, code) {}
 
         ~NotFoundException() throw() {}
@@ -214,8 +214,8 @@ namespace SimuTrace
         static const int code = RuntimeException::RteNotSupportedException;
 
         NotSupportedException(LOC_PARAM0) :
-            Exception(LOC_ARG 
-                      "The requested operation or feature is not supported.", 
+            Exception(LOC_ARG
+                      "The requested operation or feature is not supported.",
                       EcRuntime, code) {}
 
         ~NotSupportedException() throw() {}
@@ -227,9 +227,9 @@ namespace SimuTrace
         static const int code = RuntimeException::RteInvalidOperationException;
 
         InvalidOperationException(LOC_PARAM0) :
-            Exception(LOC_ARG 
+            Exception(LOC_ARG
                       "The operation is not valid due to the current state "
-                      "of the object.", 
+                      "of the object.",
                       EcRuntime, code) {}
 
         ~InvalidOperationException() throw() {}
@@ -254,7 +254,7 @@ namespace SimuTrace
         static const int code = RuntimeException::RteTimeoutException;
 
         TimeoutException(LOC_PARAM0) :
-            Exception(LOC_ARG 
+            Exception(LOC_ARG
                       "The requested operation timed out.",
                       EcRuntime, code) {}
 
@@ -280,8 +280,8 @@ namespace SimuTrace
         static const int code = RuntimeException::RteArgumentNullException;
 
         ArgumentNullException(LOC_PARAM0) :
-            Exception(LOC_ARG 
-                      "One or more arguments are null.", 
+            Exception(LOC_ARG
+                      "One or more arguments are null.",
                       EcRuntime, code) {}
 
         ~ArgumentNullException() throw() {}
@@ -293,8 +293,8 @@ namespace SimuTrace
         static const int code = RuntimeException::RteArgumentOutOfBoundsException;
 
         ArgumentOutOfBoundsException(LOC_PARAM0) :
-            Exception(LOC_ARG 
-                      "One or more arguments are out of bounds.", 
+            Exception(LOC_ARG
+                      "One or more arguments are out of bounds.",
                       EcRuntime, code) {}
 
         ~ArgumentOutOfBoundsException() throw() {}
@@ -306,7 +306,7 @@ namespace SimuTrace
         static const int code = RuntimeException::RteOptionException;
 
         OptionException(LOC_PARAM0) :
-            Exception(LOC_ARG 
+            Exception(LOC_ARG
                       "One or more options are invalid.",
                       EcRuntime, 0x009) {}
         OptionException(LOC_PARAM const std::string& message) :
@@ -322,7 +322,7 @@ namespace SimuTrace
 
         ConfigurationException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "The specified configuration is invalid.", 
+                      "The specified configuration is invalid.",
                       EcRuntime, code) {}
         ConfigurationException(LOC_PARAM const std::string& message) :
             Exception(LOC_ARG message, EcRuntime, code) {}

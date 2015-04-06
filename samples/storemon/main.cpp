@@ -231,7 +231,7 @@ int main(int argc, const char *argv[])
         int rounds = 0;
         do {
 
-        #ifdef WIN32
+        #if defined(_WIN32)
             std::system("cls");
         #else
             std::system("clear");

@@ -29,9 +29,9 @@ namespace SimuTrace
 {
 
     Store::Store(StoreId id, const std::string& name) :
+        _configurationLocked(false),
         _id(id),
-        _name(name),
-        _configurationLocked(false)
+        _name(name)
     {
         ThrowOn(id == INVALID_STORE_ID, ArgumentException);
     }

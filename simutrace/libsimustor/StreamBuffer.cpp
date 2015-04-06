@@ -31,11 +31,11 @@ namespace SimuTrace
     StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize,
                                uint32_t numSegments, bool sharedMemory) :
         _id(id),
+        _master(true),
         _buffer(nullptr),
         _segmentSize(segmentSize),
         _lineSize(_computeLineSize(segmentSize)),
-        _numSegments(numSegments),
-        _master(true)
+        _numSegments(numSegments)
     {
         ThrowOn(id == INVALID_BUFFER_ID, ArgumentException);
         ThrowOn((segmentSize != SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB) ||
@@ -50,8 +50,12 @@ namespace SimuTrace
             // Generate a random GUID for the data buffer.
             generateGuid(guid);
 
-            std::string guidStr = stringFormat("simutrace:buffer:%s",
-                                               guidToString(guid).c_str());
+            std::string guidStr = stringFormat("simutrace.buffer.%s",
+    #if (defined(__MACH__) && defined(__APPLE__))
+                                 guidToString(guid, true).c_str());
+    #else
+                                 guidToString(guid).c_str());
+    #endif
 
             _buffer = std::unique_ptr<MemorySegment>(
                 new SharedMemorySegment(guidStr.c_str(), true,
@@ -67,11 +71,11 @@ namespace SimuTrace
     StreamBuffer::StreamBuffer(BufferId id, size_t segmentSize,
                                uint32_t numSegments, Handle& buffer) :
         _id(id),
+        _master(false),
         _buffer(nullptr),
         _segmentSize(segmentSize),
         _lineSize(_computeLineSize(segmentSize)),
-        _numSegments(numSegments),
-        _master(false)
+        _numSegments(numSegments)
     {
         ThrowOn(id == INVALID_BUFFER_ID, ArgumentException);
         ThrowOn((segmentSize != SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB) ||

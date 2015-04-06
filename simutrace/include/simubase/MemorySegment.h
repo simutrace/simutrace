@@ -54,34 +54,34 @@ namespace SimuTrace
 
         // Returns the size of the memory segment
         size_t getSize() const;
-        
+
         // Returns the currently mapped size
         size_t getMappedSize() const;
 
         // Returns the start address of the memory segment
         byte* getBuffer() const;
-        
+
         // Makes the associated memory accessible and returns the address
         byte* map();
         byte* map(size_t start, size_t size);
-    
-        // Unmaps any previously mapped memory. 
+
+        // Unmaps any previously mapped memory.
         // N.B. Call unmap() before destroying the memory segment object!
         void unmap();
-        
+
         // Sets the memory segment's protection
         void setProtection(bool writeable);
-        
+
         // Fills the memory with zeros
         void zero();
-        
+
         // Fills the memory with a user specified byte.
         void fill(uint8_t value);
-        
+
         // Touches the associated memory, reading each page's first word
         void touch();
 
-        // Copies the specified buffer to an offset in this memory segment. 
+        // Copies the specified buffer to an offset in this memory segment.
         void copy(const byte* source, size_t size, size_t offset = 0);
         void copy(MemorySegment& source, size_t offset = 0);
 

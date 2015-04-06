@@ -45,6 +45,7 @@ namespace SimuTrace
                                        [](WorkerThread* instance) {
                     assert(!instance->isRunning());
                     unsigned long id = instance->getId();
+                    (void)id; // Make compiler happy in release build
 
                     delete instance;
 

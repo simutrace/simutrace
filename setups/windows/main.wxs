@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)config.wxi ?>
+
+  <Product Id="*"
+           Name="Simutrace"
+           Language="1033"
+           Version="$(var.simutrace_version_string).0"
+           Manufacturer="Karlsruhe Institute of Technology (KIT)"
+           UpgradeCode="7d4a82eb-30ee-49c3-a218-7b880ade09d3">
+
+    <Package InstallerVersion="200"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Manufacturer="Marc Rittinghaus"
+             Description="Windows Installer for Simutrace"
+             Comments="(C) 2015 Marc Rittinghaus" />
+
+    <Icon Id="Simutrace.ico" SourceFile="$(var.project_directory)/Simutrace.ico" />
+    <Property Id="ARPPRODUCTICON" Value="Simutrace.ico" />
+    <Property Id="ARPHELPLINK" Value="http://simutrace.org/" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="INSTALLLEVEL" Value="100" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Condition Message="Simutrace requires Windows Vista (64-bit) or newer.">
+      <![CDATA[Installed OR VersionNT64 >= "600"]]>
+    </Condition>
+
+    <!-- Feature Tree -->
+    <Feature Id="FEAT_CoreComponents"
+             Title="Simutrace Core"
+             Description="The Simutrace core feature includes the storage server and client library. The storage server is responsible for trace processing and storage. The client library allows applications to communicate with the storage server."
+             Level="1"
+             Absent="disallow"
+             AllowAdvertise="no">
+      <ComponentGroupRef Id="CoreComponents" />
+    </Feature>
+
+    <Feature Id="FEAT_Simutrace.Net"
+             Title="Simutrace .Net"
+             Description="This feature provides a .Net binding for Simutrace, which allows interfacing the storage server from .Net applications."
+             Level="10"
+             AllowAdvertise="no">
+      <ComponentGroupRef Id="Simutrace.Net" />
+      <ComponentGroupRef Id="Simutrace.Net_GAC" />
+    </Feature>
+
+    <Feature Id="FEAT_DevRes"
+             Title="Development Resources"
+             Description="The development resources include components that facilitate developing applications for Simutrace."
+             Level="11"
+             AllowAdvertise="no"
+             Display="expand">
+
+      <!-- Make the msi installer happy and prevent the "run from network" option to show up -->
+      <Component Id="CMP_empty0"
+                 Directory="DIRINSTALLROOT"
+                 Guid="7FCBACC5-8945-4074-B9D0-C4A2FDC82A8C"
+                 KeyPath="yes" />
+
+      <Feature Id="FEAT_DevRes_ApiHeaders"
+               Title="C API Headers and Libs"
+               Description="This feature provides the C API headers for the Simutrace client library. The headers are installed into the include directory within the install location. Import libraries are located in the lib directory."
+               AllowAdvertise="no">
+        <ComponentGroupRef Id="DevRes_ApiHeaders" />
+        <ComponentGroupRef Id="DevRes_ApiLibs" />
+      </Feature>
+
+      <Feature Id="FEAT_DevRes_ApiDocs"
+               Title="API Documentation"
+               Description="This features provides a local copy of the HTML-based C API documentation for the development headers."
+               AllowAdvertise="no">
+        <ComponentGroupRef Id="DevRes_ApiDocs" />
+        <ComponentGroupRef Id="DevRes_ApiDocs_Shortcuts" />
+      </Feature>
+    </Feature>
+
+    <!-- Wizard -->
+    <UIRef Id="StWizard"/>
+  </Product>
+
+  <!-- Directory Hierarchy -->
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="DIRINSTALLROOT" Name="Simutrace">
+          <Directory Id="DIR_include" Name="include" />
+          <Directory Id="DIR_lib" Name="lib" />
+          <Directory Id="DIR_doc" Name="doc" />
+        </Directory>
+      </Directory>
+      <Directory Id="DIR_GAC" />
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="DIR_ShortcutsDir" Name="Simutrace" />
+      </Directory>
+    </Directory>
+  </Fragment>
+</Wix>

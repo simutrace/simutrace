@@ -9,7 +9,9 @@
 #                         http://simutrace.org
 #
 #
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+
+cmake_policy(SET CMP0009 NEW) # Do not follow symlinks in file glob recurse
 
 # General Project Settings and Dependencies -----------------------------------
 
@@ -17,15 +19,21 @@ set(CMAKE_CONFIGURATION_TYPES Release Debug)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
-message("Path: ${CMAKE_MODULE_PATH}")
 
 add_subdirectory("3rdparty/libconfig-1.4.9")
 
 project(Simutrace C CXX)
-set(SIMUTRACE_VERSION_MAJOR 3)
-set(SIMUTRACE_VERSION_MINOR 1)
-set(SIMUTRACE_VERSION_REVISION 1)
+
+file(READ "${PROJECT_SOURCE_DIR}/VERSION" _VERSION)
+if (NOT _VERSION MATCHES "([0-9]+).([0-9]+).([0-9]+)")
+    message(FATAL_ERROR "Version information in VERSION file not compatible. Must be 'major.minor.revision'")
+endif()
+
+set(SIMUTRACE_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(SIMUTRACE_VERSION_MINOR ${CMAKE_MATCH_2})
+set(SIMUTRACE_VERSION_REVISION ${CMAKE_MATCH_3})
 set(SIMUTRACE_VERSION ${SIMUTRACE_VERSION_MAJOR}.${SIMUTRACE_VERSION_MINOR}.${SIMUTRACE_VERSION_REVISION})
+message(STATUS "Detected version: ${SIMUTRACE_VERSION}")
 
 find_package(Threads REQUIRED)
 
@@ -36,12 +44,35 @@ set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
 
 if(UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
-    set(RT_LIBRARY "rt")
+
+    if(NOT APPLE)
+        set(RT_LIBRARY "rt")
+    endif()
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/3rdparty/libconfig-1.4.9")
 include_directories("${PROJECT_SOURCE_DIR}/simutrace/include")
 
+# Build settings --------------------------------------------------------------
+
+set(BUILD_SAMPLES OFF CACHE BOOL "Build Samples")
+set(BUILD_LIBSIMUTRACE ON CACHE BOOL "Build Client Library")
+set(BUILD_SIMUTRACE_SERVER ON CACHE BOOL "Build Storage Server")
+
+if(UNIX)
+    set(INSTALL_LIB_DIR "lib" CACHE STRING "Library Installation Directory")
+    set(INSTALL_BIN_DIR "bin" CACHE STRING "Binary Installation Directory")
+    set(INSTALL_INCLUDE_DIR "include" CACHE STRING "Header Installation Directory")
+else()
+    if("${CMAKE_GENERATOR}" MATCHES "Visual Studio [^6]")
+        set(BUILD_DOTNET_INTEROP ON CACHE BOOL "Build .Net Interop Library")
+        set(BUILD_WINDOWS_SETUP OFF CACHE BOOL "Build Windows Setup")
+    endif()
+endif()
+
+set(BUILD_SRCTARBALL ON CACHE BOOL "Build source tarball")
+set(BUILD_OPENSUSE_OSC ON CACHE BOOL "Build package data for openSUSE build service")
+set(BUILD_DEBIAN ON CACHE BOOL "Build package data for debian")
 
 # Macros ----------------------------------------------------------------------
 
@@ -120,14 +151,26 @@ endmacro()
 
 # Projects --------------------------------------------------------------------
 
+# Simutrace
 add_subdirectory(simutrace/libsimubase)
 add_subdirectory(simutrace/libsimustor)
 add_subdirectory(simutrace/libsimutrace)
 add_subdirectory(simutrace/storageserver)
 
-add_subdirectory(simutrace/bindings/csharp)
+# Bindings
+add_subdirectory(simutrace/bindings/dotnet)
 
+# Samples
 add_subdirectory(samples/simple)
 add_subdirectory(samples/parallel)
 add_subdirectory(samples/storemon)
 add_subdirectory(samples/csharp.simple)
+
+# Documentation
+add_subdirectory(simutrace/documentation)
+
+# Setup
+add_subdirectory(setups/windows)
+add_subdirectory(setups/tarball)
+add_subdirectory(setups/osc)
+add_subdirectory(setups/debian)

@@ -40,7 +40,7 @@ extern "C"
     /* Object Handle and Id */
 
 #ifdef SIMUTRACE
-#ifdef WIN32
+#if defined(_WIN32)
     typedef HANDLE Handle;
 #else
 #define INVALID_HANDLE_VALUE -1
@@ -80,7 +80,7 @@ extern "C"
     } Guid;
 
 #define DefGuid(a, b, c, d, e, f, g, h, i, j, k) \
-    {a, b, c, {d, e, f, g, h, i, j, k}}
+    {{a, b, c, {d, e, f, g, h, i, j, k}}}
 #define GUID_STRING_LEN (1 + 8 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 12 + 1)
 
 
