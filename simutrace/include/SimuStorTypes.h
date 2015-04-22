@@ -388,8 +388,8 @@ extern "C"
         uint32_t arch32Bit : 1;   /*!< \brief Indicates if type is meant for
                                        32 bit architectures */
 
-        uint32_t reserved0 : 29;  /*!< \internal \brief Internal. Do not use */
-        uint32_t reserved1;       /*!< \internal \brief Internal. Do not use */
+        uint32_t reserved0 : 29;  /*!< \brief Reserved. Set to 0 */
+        uint32_t reserved1;       /*!< \brief Reserved. Set to 0 */
 
         /*! \brief Entry size
 
@@ -398,7 +398,7 @@ extern "C"
             the entry size directly, instead use getEntrySize() */
         uint32_t entrySize;
 
-        uint32_t reserved2;       /*!< \internal \brief Internal. Do not use */
+        uint32_t reserved2;       /*!< \brief Reserved. Set to 0 */
     } StreamTypeDescriptor;
 
 
@@ -439,8 +439,8 @@ extern "C"
         _bool hidden;                      /*!< \brief Internal, set to
                                                 \c _false */
 
-        _bool reserved0[3];       /*!< \internal \brief Internal. Do not use */
-        uint32_t reserved1;       /*!< \internal \brief Internal. Do not use */
+        _bool reserved0[3];                /*!< \brief Reserved. Set to 0 */
+        uint32_t reserved1;                /*!< \brief Reserved. Set to 0 */
 
         StreamTypeDescriptor type;         /*!< \brief Type of the stream */
     } StreamDescriptor;

@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProductVersion>3.9</ProductVersion>
-    <ProjectGuid>97bf4191-db57-4f12-aae6-3aa1b1a21dcb</ProjectGuid>
+    <ProjectGuid>{97bf4191-db57-4f12-aae6-3aa1b1a21dcb}</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>simutrace-@SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@.@SIMUTRACE_VERSION_REVISION@</OutputName>
     <OutputType>Package</OutputType>

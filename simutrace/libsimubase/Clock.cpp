@@ -156,5 +156,25 @@ namespace Clock
         return formatTime("%Y-%m-%d %H:%M:%S,%~", ts);
     }
 
+    std::string formatDuration(const Timestamp ts)
+    {
+        Timestamp milliseconds, seconds, minutes, hours, days;
+
+        milliseconds = (ts / 1000000ULL);
+        seconds = milliseconds / 1000ULL;
+        minutes = seconds / 60ULL;
+        hours = minutes / 60ULL;
+        days = hours / 24ULL;
+
+        std::ostringstream str;
+        str << days << " " << std::setw(2) << std::setfill('0')
+            << (hours % 24) << ":" << std::setw(2) << std::setfill('0')
+            << (minutes % 60) << ":" << std::setw(2) << std::setfill('0')
+            << (seconds % 60) << "," << std::setw(3) << std::setfill('0')
+            << (milliseconds % 1000);
+
+        return str.str();
+    }
+
 }
 }

@@ -38,6 +38,8 @@ namespace SimuTrace
 
         std::string formatTime(const std::string& format, const Timestamp ts);
         std::string formatTimeIso8601(const Timestamp ts);
+
+        std::string formatDuration(const Timestamp ts);
     }
 
 }

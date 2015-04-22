@@ -40,8 +40,8 @@ if(BUILD_DEBIAN)
                 file(APPEND ${CHANGELOG} "${SIG}\n")
             endif()
 
-            file(APPEND ${CHANGELOG} "simutrace (${CMAKE_MATCH_1}-1) STABLE; urgency=medium\n")
-            set(SIG "\n-- ${CMAKE_MATCH_2}\n")
+            file(APPEND ${CHANGELOG} "simutrace (${CMAKE_MATCH_1}-1) STABLE; urgency=medium\n\n")
+            set(SIG "\n -- ${CMAKE_MATCH_2}\n")
 
         elseif(LINE MATCHES "^- (.*)")
             # This is a line describing a change

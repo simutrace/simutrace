@@ -218,6 +218,46 @@ namespace SimuTrace
         _enumerateStreams(out, includeHidden);
     }
 
+    uint32_t Store::queryTotalStreamStats(StreamStatistics& stats,
+                                          uint64_t& uncompressedSize,
+                                          bool includeHidden) const
+    {
+        memset(&stats, 0, sizeof(StreamStatistics));
+        memset(&stats.ranges, static_cast<int>(INVALID_LARGE_OBJECT_ID),
+               sizeof(StreamRangeInformation));
+        uncompressedSize = 0;
+
+        std::vector<Stream*> streams;
+        this->_enumerateStreams(streams, includeHidden);
+        for (const auto stream : streams) {
+            StreamQueryInformation info;
+            stream->queryInformation(info);
+
+            stats.compressedSize += info.stats.compressedSize;
+            stats.entryCount     += info.stats.entryCount;
+            stats.rawEntryCount  += info.stats.rawEntryCount;
+            uncompressedSize     += info.stats.rawEntryCount *
+                getEntrySize(&info.descriptor.type);
+
+            for (int i = 0; i < 3; ++i) {
+                Range& in  = info.stats.ranges.ranges[i];
+                Range& sum = stats.ranges.ranges[i];
+
+                if (in.start < sum.start) {
+                    sum.start = in.start;
+                }
+
+                if ((sum.end == INVALID_LARGE_OBJECT_ID) ||
+                    ((in.end != INVALID_LARGE_OBJECT_ID) &&
+                     (in.end > sum.end))) {
+                    sum.end = in.end;
+                }
+            }
+        }
+
+        return static_cast<uint32_t>(streams.size());
+    }
+
     StoreId Store::getId() const
     {
         return _id;

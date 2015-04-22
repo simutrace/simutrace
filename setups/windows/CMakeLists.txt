@@ -42,8 +42,7 @@ if(("${CMAKE_GENERATOR}" MATCHES "Visual Studio [^6]") AND (BUILD_WINDOWS_SETUP)
         configure_file("winmsi.wixproj.in"
                        "${CMAKE_CURRENT_BINARY_DIR}/winmsi.wixproj")
 
-        include_external_msproject(
-            winmsi
+        include_external_msproject(winmsi
             "${CMAKE_CURRENT_BINARY_DIR}/winmsi.wixproj"
             GUID "97bf4191-db57-4f12-aae6-3aa1b1a21dcb")
 

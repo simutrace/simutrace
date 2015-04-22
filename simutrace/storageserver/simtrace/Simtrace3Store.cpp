@@ -343,6 +343,37 @@ namespace Simtrace
                          &_header->v3.checksum, sizeof(uint32_t), 0);
 
         _markClean();
+
+        // Log some stats about the new store contents
+        StreamStatistics stats;
+        uint64_t usize;
+        uint32_t nstreams = queryTotalStreamStats(stats, usize, false);
+
+        std::ostringstream str;
+        Timestamp dur = stats.ranges.endTime - stats.ranges.startTime;
+        str << "<store: " << this->getName()
+            << ">\n Streams: " << nstreams
+            << "\n Entries: " << stats.entryCount
+            << " (raw: " << stats.rawEntryCount
+            << ")\n Size: " << sizeToString(_header->v3.fileSize)
+            << " (uncomp.: " << sizeToString(usize)
+            << " ratio: " << (_header->v3.fileSize * 100) / usize
+            << "%)\n Wall Time"
+            << " (start: " << Clock::formatTimeIso8601(stats.ranges.startTime)
+            << " end: " << Clock::formatTimeIso8601(stats.ranges.endTime)
+            << " duration: " << Clock::formatDuration(dur)
+            << ")";
+
+        if (_header->v3.startCycle != INVALID_CYCLE_COUNT) {
+            assert(_header->v3.endCycle != INVALID_CYCLE_COUNT);
+
+            str << "\n Cycle Time"
+                << " (start: " << stats.ranges.startCycle
+                << " end: " << stats.ranges.endCycle
+                << ").";
+        }
+
+        LogInfo("%s", str.str().c_str());
     }
 
     void Simtrace3Store::_mapDirectory(uint64_t offset)
@@ -441,23 +472,23 @@ namespace Simtrace
         _header->v3.fileSize += fheader.totalSize;
         _header->v3.uncompressedFileSize += uncompressedSize;
 
-        if ((_header->v3.startTime == INVALID_TIME_STAMP) ||
-            (fheader.startTime < _header->v3.startTime)) {
+        if (fheader.startTime < _header->v3.startTime) {
             _header->v3.startTime = fheader.startTime;
         }
 
         if ((_header->v3.endTime == INVALID_TIME_STAMP) ||
-            (fheader.endTime > _header->v3.endTime)) {
+            ((fheader.endTime != INVALID_TIME_STAMP) &&
+             (fheader.endTime > _header->v3.endTime))) {
             _header->v3.endTime = fheader.endTime;
         }
 
-        if ((_header->v3.startCycle == INVALID_CYCLE_COUNT) ||
-            (fheader.startCycle < _header->v3.startCycle)) {
+        if (fheader.startCycle < _header->v3.startCycle) {
             _header->v3.startCycle = fheader.startCycle;
         }
 
         if ((_header->v3.endCycle == INVALID_CYCLE_COUNT) ||
-            (fheader.endCycle > _header->v3.endCycle)) {
+            ((fheader.endCycle != INVALID_CYCLE_COUNT) &&
+             (fheader.endCycle > _header->v3.endCycle))) {
             _header->v3.endCycle = fheader.endCycle;
         }
 

@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 
 namespace SimuTrace
 {
-    public static class Native
+    public static partial class Native
     {
         /* SimuBase Types */
 
@@ -343,7 +343,6 @@ namespace SimuTrace
             AtLinear   = AtVirtual
         }
 
-
         /* Base API */
 
         /// <summary>
@@ -353,9 +352,10 @@ namespace SimuTrace
         /// with the revision being stored in the high word.
         /// </summary>
         /// <returns></returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern uint StGetClientVersion();
+        public static uint StGetClientVersion()
+        {
+            return NativeMethods.StGetClientVersion();
+        }
 
 
         /// <summary>
@@ -366,10 +366,11 @@ namespace SimuTrace
         ///     that will receive the error information.</param>
         /// <returns>The last error code. For platform exceptions this is the
         ///     operating system error code.</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern int StGetLastError(
-            out ExceptionInformation informationOut);
+        public static int StGetLastError(
+            out ExceptionInformation informationOut)
+        {
+            return NativeMethods.StGetLastError(out informationOut);
+        }
 
 
         /// <summary>
@@ -402,10 +403,10 @@ namespace SimuTrace
         /// <returns>A session id, identifying the newly created session if
         ///     successful, INVALID_SESSION_ID otherwise. For a more detailed
         ///     error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        public static extern uint StSessionCreate(string server);
+        public static uint StSessionCreate(string server)
+        {
+            return NativeMethods.StSessionCreate(server);
+        }
 
 
         /// <summary>
@@ -417,10 +418,10 @@ namespace SimuTrace
         ///     originally returned by StSessionCreate().</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StSessionOpen(uint session);
+        public static bool StSessionOpen(uint session)
+        {
+            return NativeMethods.StSessionOpen(session);
+        }
 
 
         /// <summary>
@@ -433,10 +434,10 @@ namespace SimuTrace
         ///     originally returned by StSessionCreate().</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StSessionClose(uint session);
+        public static bool StSessionClose(uint session)
+        {
+            return NativeMethods.StSessionClose(session);
+        }
 
 
         /// <summary>
@@ -456,12 +457,13 @@ namespace SimuTrace
         ///     overwritten, if it already exists.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StSessionCreateStore(uint session,
-            string specifier, [MarshalAs(UnmanagedType.I1)] bool alwaysCreate);
+        public static bool StSessionCreateStore(uint session,
+            string specifier, bool alwaysCreate)
+        {
+            return NativeMethods.StSessionCreateStore(session, specifier,
+                alwaysCreate);
+
+        }
 
 
         /// <summary>
@@ -480,12 +482,10 @@ namespace SimuTrace
         ///     StSessionCreateStore().</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StSessionOpenStore(uint session,
-            string specifier);
+        public static bool StSessionOpenStore(uint session, string specifier)
+        {
+            return NativeMethods.StSessionOpenStore(session, specifier);
+        }
 
 
         /// <summary>
@@ -497,11 +497,10 @@ namespace SimuTrace
         ///     closed as originally returned by StSessionCreate().</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StSessionCloseStore(uint session);
+        public static bool StSessionCloseStore(uint session)
+        {
+            return NativeMethods.StSessionCloseStore(session);
+        }
 
 
         /// <summary>
@@ -516,12 +515,12 @@ namespace SimuTrace
         ///     libconfig.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StSessionSetConfiguration(uint session,
-            string configuration);
+        public static bool StSessionSetConfiguration(uint session,
+            string configuration)
+        {
+            return NativeMethods.StSessionSetConfiguration(session,
+                configuration);
+        }
 
 
         /* Stream API */
@@ -546,13 +545,12 @@ namespace SimuTrace
         ///     receive the new stream information.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StMakeStreamDescriptor(string name,
-            uint entrySize, [MarshalAs(UnmanagedType.I1)] bool temporalOrder,
-            out StreamDescriptor descOut);
+        public static bool StMakeStreamDescriptor(string name,
+            uint entrySize, bool temporalOrder, out StreamDescriptor descOut)
+        {
+            return NativeMethods.StMakeStreamDescriptor(name, entrySize,
+                temporalOrder, out descOut);
+        }
 
 
         /// <summary>
@@ -570,13 +568,13 @@ namespace SimuTrace
         ///     receive the new stream information.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl,
-            CharSet = CharSet.Ansi)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StMakeStreamDescriptorFromType(
+        public static bool StMakeStreamDescriptorFromType(
             string name, ref StreamTypeDescriptor type,
-            out StreamDescriptor descOut);
+            out StreamDescriptor descOut)
+        {
+            return NativeMethods.StMakeStreamDescriptorFromType(name, ref type,
+                out descOut);
+        }
 
 
         /// <summary>
@@ -595,13 +593,13 @@ namespace SimuTrace
         ///     the data read or written with the memory entry.</param>
         /// <returns>Stream descriptor identifying the desired memory entry
         ///     type. Do not modify the returned stream descriptor.</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.LPStruct)]
-        public static extern StreamTypeDescriptor StStreamFindMemoryType(
+        public static StreamTypeDescriptor StStreamFindMemoryType(
             ArchitectureSize size, MemoryAccessType accessType,
-            MemoryAddressType addressType,
-            [MarshalAs(UnmanagedType.I1)] bool hasData);
+            MemoryAddressType addressType, bool hasData)
+        {
+            return NativeMethods.StStreamFindMemoryType(size, accessType,
+                addressType, hasData);
+        }
 
 
         /// <summary>
@@ -619,16 +617,12 @@ namespace SimuTrace
         /// <returns>The id of the new stream if successful, INVALID_STREAM_ID
         ///     otherwise. For a more detailed error description call
         ///     StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern uint StStreamRegister(uint session,
-            ref StreamDescriptor desc);
+        public static uint StStreamRegister(uint session,
+            ref StreamDescriptor desc)
+        {
+            return NativeMethods.StStreamRegister(session, ref desc);
+        }
 
-
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        private static extern int StStreamEnumerate(uint session,
-            IntPtr bufferSize, IntPtr streamIdsOut);
 
         /// <summary>
         /// After registering streams or opening an existing store, all streams
@@ -647,7 +641,8 @@ namespace SimuTrace
         public static int StStreamEnumerate(uint session,
             out uint[] streamIdsOut)
         {
-            int num = StStreamEnumerate(session, IntPtr.Zero, IntPtr.Zero);
+            int num = NativeMethods.StStreamEnumerate(session, IntPtr.Zero,
+                IntPtr.Zero);
             if (num <= 0) {
                 streamIdsOut = null;
                 return num;
@@ -660,7 +655,8 @@ namespace SimuTrace
                 pids = GCHandle.Alloc(streamIdsOut, GCHandleType.Pinned);
 
                 IntPtr len = (IntPtr)(streamIdsOut.Length * sizeof(uint));
-                num = StStreamEnumerate(session, len, pids.AddrOfPinnedObject());
+                num = NativeMethods.StStreamEnumerate(session, len,
+                    pids.AddrOfPinnedObject());
                 if (num == -1) {
                     streamIdsOut = null;
                 }
@@ -673,6 +669,7 @@ namespace SimuTrace
             return num;
         }
 
+
         /// <summary>
         /// Returns the number of streams in a session.
         /// </summary>
@@ -683,7 +680,8 @@ namespace SimuTrace
         ///     detailed error description call StGetLastError().</returns>
         public static int StStreamEnumerate(uint session)
         {
-            return StStreamEnumerate(session, IntPtr.Zero, IntPtr.Zero);
+            return NativeMethods.StStreamEnumerate(session, IntPtr.Zero,
+                IntPtr.Zero);
         }
 
 
@@ -702,17 +700,12 @@ namespace SimuTrace
         ///     stream information.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StStreamQuery(uint session, uint stream,
-            out StreamQueryInformation informationOut);
+        public static bool StStreamQuery(uint session, uint stream,
+            out StreamQueryInformation informationOut)
+        {
+            return StStreamQuery(session, stream, out informationOut);
+        }
 
-
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr StStreamAppend(uint session, uint stream,
-            IntPtr handle);
 
         /// <summary>
         /// This method opens a write handle to the specified stream.
@@ -728,15 +721,9 @@ namespace SimuTrace
         ///     StGetLastError().</returns>
         public static IntPtr StStreamAppend(uint session, uint stream)
         {
-            return StStreamAppend(session, stream, IntPtr.Zero);
+            return NativeMethods.StStreamAppend(session, stream, IntPtr.Zero);
         }
 
-
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr StStreamOpen(uint session, uint stream,
-            QueryIndexType type, ulong value, StreamAccessFlags flags,
-            IntPtr handle);
 
         /// <summary>
         /// This method opens a new read handle to the specified stream. The
@@ -762,7 +749,8 @@ namespace SimuTrace
         public static IntPtr StStreamOpen(uint session, uint stream,
             QueryIndexType type, ulong value, StreamAccessFlags flags)
         {
-            return StStreamOpen(session, stream, type, value, flags, IntPtr.Zero);
+            return NativeMethods.StStreamOpen(session, stream, type, value,
+                flags, IntPtr.Zero);
         }
 
 
@@ -772,10 +760,10 @@ namespace SimuTrace
         /// <param name="handle">The handle to be closed.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool StStreamClose(IntPtr handle);
+        public static bool StStreamClose(IntPtr handle)
+        {
+            return NativeMethods.StStreamClose(handle);
+        }
 
 
         /* Tracing API */
@@ -791,9 +779,10 @@ namespace SimuTrace
         /// <returns>A pointer to the next trace entry if successful, 0
         ///     otherwise. For a more detailed error description call
         ///     StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr StGetNextEntry(ref IntPtr handle);
+        public static IntPtr StGetNextEntry(ref IntPtr handle)
+        {
+            return NativeMethods.StGetNextEntry(ref handle);
+        }
 
 
         /// <summary>
@@ -812,9 +801,10 @@ namespace SimuTrace
         ///     may be used to retry the operation. If successful, the caller
         ///     must cast the pointer to the data type (e.g., #DataWrite64)
         ///     for the type supplied at stream registration.</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr StGetPreviousEntry(ref IntPtr handle);
+        public static IntPtr StGetPreviousEntry(ref IntPtr handle)
+        {
+            return NativeMethods.StGetPreviousEntry(ref handle);
+        }
 
 
         /// <summary>
@@ -824,9 +814,10 @@ namespace SimuTrace
         /// </summary>
         /// <param name="handle">The write handle of the stream, which has been
         ///     used in matching call to StGetNextEntryFast().</param>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern void StSubmitEntry(IntPtr handle);
+        public static void StSubmitEntry(IntPtr handle)
+        {
+            NativeMethods.StSubmitEntry(handle);
+        }
 
 
         /// <summary>
@@ -846,10 +837,13 @@ namespace SimuTrace
         /// <returns>The number of bytes written, \p sourceLength if successful.
         ///     For a more detailed error description call
         ///     StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr StWriteVariableData(ref IntPtr handle,
-            IntPtr sourceBuffer, IntPtr sourceLength, out ulong referenceOut);
+        public static IntPtr StWriteVariableData(ref IntPtr handle,
+            IntPtr sourceBuffer, IntPtr sourceLength, out ulong referenceOut)
+        {
+            return StWriteVariableData(ref handle, sourceBuffer, sourceLength,
+                out referenceOut);
+        }
+
 
         /// <summary>
         /// In Simutrace, entries are required to be of fixed size. This
@@ -890,9 +884,10 @@ namespace SimuTrace
         /// <returns>The length of the referenced variable-sized data in bytes,
         ///     if successful, -1 otherwise. For a more detailed error
         ///     description call StGetLastError().</returns>
-        [DllImport("libsimutrace",
-            CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr StReadVariableData(ref IntPtr handle,
-            ulong reference, IntPtr destinationBuffer);
+        public static IntPtr StReadVariableData(ref IntPtr handle,
+            ulong reference, IntPtr destinationBuffer)
+        {
+            return StReadVariableData(ref handle, reference, destinationBuffer);
+        }
     }
 }

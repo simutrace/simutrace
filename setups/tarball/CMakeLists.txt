@@ -15,7 +15,7 @@ if(BUILD_SRCTARBALL)
 
     set(TARBALL_BASE_PATH "${EXECUTABLE_OUTPUT_PATH}/tarball")
     set(TARBALL_CONTENT_PATH "${TARBALL_BASE_PATH}/simutrace-${SIMUTRACE_VERSION}/")
-    
+
     file(MAKE_DIRECTORY "${TARBALL_BASE_PATH}")
 
     file(GLOB_RECURSE FILES RELATIVE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/*")
@@ -28,7 +28,7 @@ if(BUILD_SRCTARBALL)
 
     list(REMOVE_ITEM FILES ${EXCLUDEFILES})
 
-    add_custom_target(srctarball                      
+    add_custom_target(srctarball
                       COMMAND ${CMAKE_COMMAND} -E remove_directory
                       "${TARBALL_CONTENT_PATH}")
 

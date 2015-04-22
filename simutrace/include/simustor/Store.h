@@ -132,6 +132,10 @@ namespace SimuTrace
         void enumerateStreamBuffers(std::vector<BufferId>& out) const;
         void enumerateStreams(std::vector<StreamId>& out, bool includeHidden) const;
 
+        uint32_t queryTotalStreamStats(StreamStatistics& stats,
+                                       uint64_t& uncompressedSize,
+                                       bool includeHidden) const;
+
         StoreId getId() const;
         const std::string& getName() const;
 

@@ -85,7 +85,7 @@ by giving a short introduction on how to start Simutrace.
 
 ### Supported Platforms
 
-Simutrace supports Windows Vista+ and Linux and MacOSX 10.9+. Since trace 
+Simutrace supports Windows Vista+, Linux, and MacOSX 10.9+. Since trace 
 processing is a memory intensive task, we only support 64 bit operating system 
 versions. We tested Simutrace on x86-64 hardware, only.
 

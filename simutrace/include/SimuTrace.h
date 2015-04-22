@@ -374,7 +374,6 @@ extern "C"
      *
      *  \see StSessionCreateStore()
      *  \see StSessionCloseStore()
-     *  \see StSessionEnumerateStores()
      */
     SIMUTRACE_API
     _bool StSessionOpenStore(SessionId session, const char* specifier);

@@ -54,7 +54,7 @@ extern "C"
                                      occurred */
         int code;               /*!< \brief Error code. For platform exceptions
                                      this is the system error code. */
-        uint32_t reserved;      /*!< \internal \brief Internal. Do not use. */
+        uint32_t reserved;      /*!< \brief Reserved. Set to 0 */
 
         const char* message;    /*!< \brief Error message, describing the
                                      exception */

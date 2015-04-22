@@ -41,6 +41,8 @@ foreach(file ${LIBCONFIG++_SOURCES})
     endif()
 endforeach()
 
+set(libconfig++_GUID_CMAKE "b5943ff7-86fd-4bde-9f2f-083b9297978a" CACHE INTERNAL "libconfig++ GUID")
+
 if (WIN32)
     add_library(libconfig++ SHARED ${LIBCONFIG++_SOURCES})
 else()
