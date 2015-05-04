@@ -346,8 +346,9 @@ namespace Simtrace
 
         // Log some stats about the new store contents
         StreamStatistics stats;
-        uint64_t usize;
+        uint64_t usize, usizediv;
         uint32_t nstreams = queryTotalStreamStats(stats, usize, false);
+        usizediv = (usize > 0) ? usize : 1;
 
         std::ostringstream str;
         Timestamp dur = stats.ranges.endTime - stats.ranges.startTime;
@@ -357,7 +358,7 @@ namespace Simtrace
             << " (raw: " << stats.rawEntryCount
             << ")\n Size: " << sizeToString(_header->v3.fileSize)
             << " (uncomp.: " << sizeToString(usize)
-            << " ratio: " << (_header->v3.fileSize * 100) / usize
+            << " ratio: " << (_header->v3.fileSize * 100) / usizediv
             << "%)\n Wall Time"
             << " (start: " << Clock::formatTimeIso8601(stats.ranges.startTime)
             << " end: " << Clock::formatTimeIso8601(stats.ranges.endTime)

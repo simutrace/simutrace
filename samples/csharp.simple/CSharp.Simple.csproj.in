@@ -27,7 +27,6 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>@EXECUTABLE_OUTPUT_PATH@/Release</OutputPath>
@@ -38,7 +37,6 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -49,7 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="@CMAKE_CURRENT_BINARY_DIR@/../../simutrace/bindings/dotnet/SimuTrace.Net.Interop.csproj">
-      <Project>{1984d5bf-4bb4-4ae3-bb4b-34e485ce2c20}</Project>
+      <Project>{5316cc10-f5c3-4606-a269-72a3060e6061}</Project>
       <Name>SimuTrace.Net.Interop</Name>
     </ProjectReference>
   </ItemGroup>

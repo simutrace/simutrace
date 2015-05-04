@@ -570,8 +570,9 @@ namespace SimuTrace
         const StreamSegmentId sqn = handle->control->link.sequenceNumber;
         assert(sqn != INVALID_STREAM_SEGMENT_ID);
 
-        const uint64_t index = (sqn * strm->getStreamBuffer().getSegmentSize()) /
-                               sizeHint + handle->control->rawEntryCount;
+        const uint64_t index =
+            (strm->getStreamBuffer().getSegmentSize() / sizeHint) * sqn +
+            handle->control->rawEntryCount;
 
         do {
             uint32_t count = 0;

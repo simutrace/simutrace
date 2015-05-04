@@ -34,10 +34,54 @@ namespace SimuTrace
         /* SimuBase Types */
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct Guid
+        private struct _Guid
         {
-            UInt64 hdata;
             UInt64 ldata;
+            UInt64 hdata;
+
+            public _Guid(Guid guid)
+            {
+                byte[] bytes = guid.ToByteArray();
+
+                ldata = (ulong)bytes[0] |
+                        ((ulong)bytes[1] << 8) |
+                        ((ulong)bytes[2] << 16) |
+                        ((ulong)bytes[3] << 24) |
+                        ((ulong)bytes[4] << 32) |
+                        ((ulong)bytes[5] << 40) |
+                        ((ulong)bytes[6] << 48) |
+                        ((ulong)bytes[7] << 56);
+                hdata = (ulong)bytes[8] |
+                        ((ulong)bytes[9] << 8) |
+                        ((ulong)bytes[10] << 16) |
+                        ((ulong)bytes[11] << 24) |
+                        ((ulong)bytes[12] << 32) |
+                        ((ulong)bytes[13] << 40) |
+                        ((ulong)bytes[14] << 48) |
+                        ((ulong)bytes[15] << 56);
+            }
+
+            public Guid ToGuid()
+            {
+                return new Guid(new byte[16] {
+                     (byte)(ldata),
+                     (byte)(ldata >> 8),
+                     (byte)(ldata >> 16),
+                     (byte)(ldata >> 24),
+                     (byte)(ldata >> 32),
+                     (byte)(ldata >> 40),
+                     (byte)(ldata >> 48),
+                     (byte)(ldata >> 56),
+                     (byte)(hdata),
+                     (byte)(hdata >> 8),
+                     (byte)(hdata >> 16),
+                     (byte)(hdata >> 24),
+                     (byte)(hdata >> 32),
+                     (byte)(hdata >> 40),
+                     (byte)(hdata >> 48),
+                     (byte)(hdata >> 56),
+                    });
+            }
         }
 
         public enum ExceptionClass : uint
@@ -69,7 +113,7 @@ namespace SimuTrace
         public const uint MAX_STREAM_NAME_LENGTH = 256;
         public const uint MAX_STREAM_TYPE_NAME_LENGTH = 256;
         public const uint TEMPORAL_ORDER_CYCLE_COUNT_BITS = 48;
-        public const ulong TEMPORAL_ORDER_CYCLE_COUNT_MASK = ((1 << 48) - 1);
+        public const ulong TEMPORAL_ORDER_CYCLE_COUNT_MASK = ((1UL << 48) - 1);
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
         public struct StreamTypeDescriptor
@@ -81,9 +125,30 @@ namespace SimuTrace
                 get { return new String(_name, 0, new String(_name).IndexOf('\0')); }
             }
 
-            public Guid id;
+            private _Guid _id;
+            public Guid id
+            {
+                get { return _id.ToGuid(); }
+                set { _id = new _Guid(value); }
+            }
 
             public uint flags;
+
+            public bool temporalOrder
+            {
+                get { return ((flags & 0x01) != 0); }
+            }
+
+            public bool bigEndian
+            {
+                get { return ((flags & 0x02) != 0); }
+            }
+
+            public bool arch32Bit
+            {
+                get { return ((flags & 0x04) != 0); }
+            }
+
             private uint reserved1;
 
             public uint entrySize;
@@ -703,7 +768,7 @@ namespace SimuTrace
         public static bool StStreamQuery(uint session, uint stream,
             out StreamQueryInformation informationOut)
         {
-            return StStreamQuery(session, stream, out informationOut);
+            return NativeMethods.StStreamQuery(session, stream, out informationOut);
         }
 
 
@@ -840,8 +905,8 @@ namespace SimuTrace
         public static IntPtr StWriteVariableData(ref IntPtr handle,
             IntPtr sourceBuffer, IntPtr sourceLength, out ulong referenceOut)
         {
-            return StWriteVariableData(ref handle, sourceBuffer, sourceLength,
-                out referenceOut);
+            return NativeMethods.StWriteVariableData(ref handle, sourceBuffer,
+                sourceLength, out referenceOut);
         }
 
 
@@ -865,8 +930,8 @@ namespace SimuTrace
         {
             ulong reference;
 
-            return StWriteVariableData(ref handle, sourceBuffer, sourceLength,
-                out reference);
+            return NativeMethods.StWriteVariableData(ref handle, sourceBuffer,
+                sourceLength, out reference);
         }
 
 
@@ -887,7 +952,8 @@ namespace SimuTrace
         public static IntPtr StReadVariableData(ref IntPtr handle,
             ulong reference, IntPtr destinationBuffer)
         {
-            return StReadVariableData(ref handle, reference, destinationBuffer);
+            return NativeMethods.StReadVariableData(ref handle, reference,
+                destinationBuffer);
         }
     }
 }

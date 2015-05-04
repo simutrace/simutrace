@@ -29,7 +29,8 @@
 # Base
 
 set(SOURCE_FILES_NATIVE
-    "Native.cs")
+    "Native.cs"
+    "NativeMethods.cs")
 
 # Others
 
