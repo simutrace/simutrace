@@ -1,3 +1,24 @@
+Version 3.2.0 Marc Rittinghaus <rittinghaus@kit.edu>  Fri, 12 Jun 2015 15:00:00 +0100
+
+- Added switch to deactivate colored console output from server
+- Introduced dynamic streams that allow easy implementation of filters
+- Introduced client extensions library (libsimutraceX)
+- Added stream multiplexer and helper function to search for streams by name
+- Added memory replay sample in C#
+
+Incompatible Changes:
+- Modified StreamDescriptor and StreamTypeDescriptor to hold flags (binary compatible)
+- Changed StMakeStreamDescriptor to receive flags (binary compatible)
+- StStreamEnumerate now returns as much stream ids that fit into the supplied buffer
+- StStreamOpen now only accepts read handles
+
+Bug Fixes:
+- Changed Simutrace.Net.Interop project to support in source-tree builds
+- Improved exception handling
+- Added missing thread-safety for client stream operations (open, append, close, ...)
+- Small documentation fixes and clarifications
+
+
 Version 3.1.4 Marc Rittinghaus <rittinghaus@kit.edu>  Mon, 04 May 2015 20:00:00 +0100
 
 Bug Fixes:
@@ -30,7 +51,7 @@ Version 3.1.2 Marc Rittinghaus <rittinghaus@kit.edu>  Sat, 04 Apr 2015 12:00:00 
 - Added strong name for .net binding to allow GAC installation
 
 Incompatible Changes:
-- Renamed csharp binding to generic .net binding (Simutrace.Net.Interop) 
+- Renamed csharp binding to generic .net binding (Simutrace.Net.Interop)
 
 Bug Fixes:
 - Fixed milliseconds output in timestamps (e.g., log)

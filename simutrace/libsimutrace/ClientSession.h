@@ -65,6 +65,7 @@ namespace SimuTrace
         virtual ~ClientSession() override;
 
         StreamId registerStream(StreamDescriptor& desc);
+        StreamId registerDynamicStream(DynamicStreamDescriptor& desc);
 
         const std::string& getAddress() const;
         SessionId getServerSideId() const;

@@ -67,7 +67,7 @@ namespace SimuTrace
 
         virtual void _enumerateStreamBuffers(std::vector<BufferId>& out) const override;
         virtual void _enumerateStreams(std::vector<StreamId>& out,
-                                       bool includeHidden) const override;
+                                       StreamEnumFilter filter) const override;
     public:
         virtual ~ServerStore() override;
 
@@ -76,7 +76,7 @@ namespace SimuTrace
 
         void enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
         void enumerateStreams(std::vector<Stream*>& out,
-                              bool includeHidden) const;
+                              StreamEnumFilter filter) const;
 
         StreamEncoder::FactoryMethod getEncoderFactory(const StreamTypeId& type);
     };

@@ -30,7 +30,9 @@
 
 set(SOURCE_FILES_NATIVE
     "Native.cs"
-    "NativeMethods.cs")
+    "NativeMethods.cs"
+    "NativeX.cs"
+    "NativeMethodsX.cs")
 
 # Others
 
@@ -68,6 +70,7 @@ if(("${CMAKE_GENERATOR}" MATCHES "Visual Studio [^6]") AND (BUILD_DOTNET_INTEROP
 
     add_dependencies(SimuTrace.Net.Interop
                      libsimutrace
+                     libsimutraceX
                      libconfig++)
 
 endif()

@@ -90,6 +90,9 @@ namespace SimuTrace
         StoreId _id;
         std::string _name;
 
+        uint32_t _numRegularStreams;
+        uint32_t _numDynamicStreams;
+
         std::map<BufferId, std::unique_ptr<StreamBuffer>> _buffers;
         std::map<StreamId, std::unique_ptr<Stream>> _streams;
     protected:
@@ -104,7 +107,7 @@ namespace SimuTrace
 
         virtual void _enumerateStreamBuffers(std::vector<BufferId>& out) const = 0;
         virtual void _enumerateStreams(std::vector<StreamId>& out,
-                                       bool includeHidden) const = 0;
+                                       StreamEnumFilter filter) const = 0;
 
         void _lockConfiguration();
         void _freeConfiguration();
@@ -117,7 +120,8 @@ namespace SimuTrace
                                  BufferId buffer);
 
         void _enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
-        void _enumerateStreams(std::vector<Stream*>& out, bool includeHidden) const;
+        void _enumerateStreams(std::vector<Stream*>& out,
+                               StreamEnumFilter filter) const;
 
         virtual StreamBuffer* _getStreamBuffer(BufferId id);
         virtual Stream* _getStream(StreamId id);
@@ -130,11 +134,12 @@ namespace SimuTrace
         StreamId registerStream(StreamDescriptor& desc, BufferId buffer);
 
         void enumerateStreamBuffers(std::vector<BufferId>& out) const;
-        void enumerateStreams(std::vector<StreamId>& out, bool includeHidden) const;
+        void enumerateStreams(std::vector<StreamId>& out,
+                              StreamEnumFilter filter) const;
 
-        uint32_t queryTotalStreamStats(StreamStatistics& stats,
-                                       uint64_t& uncompressedSize,
-                                       bool includeHidden) const;
+        uint32_t summarizeStreamStats(StreamStatistics& stats,
+                                      uint64_t& uncompressedSize,
+                                      StreamEnumFilter filter) const;
 
         StoreId getId() const;
         const std::string& getName() const;

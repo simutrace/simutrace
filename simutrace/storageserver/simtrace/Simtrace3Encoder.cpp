@@ -146,7 +146,7 @@ namespace Simtrace
             context.encoder._decode(storageLocation, context.segment,
                                     ctrl->link.sequenceNumber);
 
-            if ((context.flags & StreamAccessFlags::SafSynchronous) == 0) {
+            if (!IsSet(context.flags, StreamAccessFlags::SafSynchronous)) {
                 // Everything went fine. Report the completion. This will
                 // wake up any waiting clients.
                 stream->completeSegment(ctrl->link.sequenceNumber);
@@ -160,7 +160,7 @@ namespace Simtrace
                         context.segment, context.buffer.getId(), stream->getId(),
                         ctrl->link.sequenceNumber, e.what());
 
-            if ((context.flags & StreamAccessFlags::SafSynchronous) == 0) {
+            if (!IsSet(context.flags, StreamAccessFlags::SafSynchronous)) {
                 stream->completeSegment(ctrl->link.sequenceNumber, nullptr);
             } else {
                 throw;
@@ -190,7 +190,8 @@ namespace Simtrace
         // these gets highest priority before jobs on hidden streams starve
         // because of too many new jobs from the client and eventually livelock
         // the server.
-        WorkQueue::Priority prio = (_getStream()->getDescriptor().hidden) ?
+        WorkQueue::Priority prio =
+            IsSet(_getStream()->getDescriptor().flags, StreamFlags::SfHidden) ?
             WorkQueue::Priority::High :
             WorkQueue::Priority::Normal;
 
@@ -207,7 +208,7 @@ namespace Simtrace
     {
         WorkerContext ctx(*this, buffer, segment, flags, &location);
 
-        if ((flags & StreamAccessFlags::SafSynchronous) != 0) {
+        if (IsSet(flags, StreamAccessFlags::SafSynchronous)) {
             WorkItem<WorkerContext> workItem(_readerMain, ctx);
 
             _readerMain(workItem, workItem.getArgument());
@@ -217,7 +218,8 @@ namespace Simtrace
             std::unique_ptr<WorkItemBase> workItem(
                 new WorkItem<WorkerContext>(_readerMain, ctx));
 
-            WorkQueue::Priority prio = (_getStream()->getDescriptor().hidden) ?
+            WorkQueue::Priority prio =
+                IsSet(_getStream()->getDescriptor().flags, StreamFlags::SfHidden) ?
                 WorkQueue::Priority::High : ((prefetch) ?
                     WorkQueue::Priority::Low :
                     WorkQueue::Priority::Normal);

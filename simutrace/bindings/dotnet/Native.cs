@@ -36,8 +36,8 @@ namespace SimuTrace
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct _Guid
         {
-            UInt64 ldata;
-            UInt64 hdata;
+            public ulong ldata;
+            public ulong hdata;
 
             public _Guid(Guid guid)
             {
@@ -90,7 +90,8 @@ namespace SimuTrace
             EcRuntime = 0x001,
             EcPlatform = 0x002,
             EcPlatformNetwork = 0x003,
-            EcNetwork = 0x004
+            EcNetwork = 0x004,
+            EcUser = 0x005
         }
 
         public enum ExceptionSite : uint
@@ -115,6 +116,15 @@ namespace SimuTrace
         public const uint TEMPORAL_ORDER_CYCLE_COUNT_BITS = 48;
         public const ulong TEMPORAL_ORDER_CYCLE_COUNT_MASK = ((1UL << 48) - 1);
 
+        [Flags]
+        public enum StreamTypeFlags : uint
+        {
+            StfNone = 0x00,
+            StfTemporalOrder = 0x01,
+            StfBigEndian = 0x02,
+            StfArch23Bit = 0x04
+        }
+
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
         public struct StreamTypeDescriptor
         {
@@ -123,6 +133,12 @@ namespace SimuTrace
             public string name
             {
                 get { return new String(_name, 0, new String(_name).IndexOf('\0')); }
+                set
+                {
+                    value = value + '\0';
+                    int l = Math.Min(value.Length, (int)MAX_STREAM_TYPE_NAME_LENGTH);
+                    _name = value.ToCharArray(0, l);
+                }
             }
 
             private _Guid _id;
@@ -132,28 +148,21 @@ namespace SimuTrace
                 set { _id = new _Guid(value); }
             }
 
-            public uint flags;
+            public StreamTypeFlags flags;
 
-            public bool temporalOrder
-            {
-                get { return ((flags & 0x01) != 0); }
-            }
-
-            public bool bigEndian
-            {
-                get { return ((flags & 0x02) != 0); }
-            }
-
-            public bool arch32Bit
-            {
-                get { return ((flags & 0x04) != 0); }
-            }
-
-            private uint reserved1;
+            private uint _reserved1;
 
             public uint entrySize;
 
-            private uint reserved2;
+            private uint _reserved2;
+        }
+
+        [Flags]
+        public enum StreamFlags : uint
+        {
+            SfNone = 0x00,
+            SfHidden = 0x01,
+            SfDynamic = 0x02
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
@@ -161,17 +170,20 @@ namespace SimuTrace
         {
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
             private char[] _name;
-            public string name {
+            public string name
+            {
                 get { return new String(_name, 0, new String(_name).IndexOf('\0')); }
+                set
+                {
+                    value = value + '\0';
+                    int l = Math.Min(value.Length, (int)MAX_STREAM_NAME_LENGTH);
+                    _name = value.ToCharArray(0, l);
+                }
             }
 
-            [MarshalAs(UnmanagedType.I1)]
-            public bool hidden;
+            public StreamFlags flags;
 
-            [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.I1,
-                SizeConst = 3)]
-            private byte[] reserved0;
-            private uint reserved1;
+            private uint _reserved1;
 
             public StreamTypeDescriptor type;
         }
@@ -212,22 +224,31 @@ namespace SimuTrace
             QCycleCount = 0x01,
             QRealTime = 0x02,
 
-            QMaxTree = QRealTime,
+            QSequenceNumber = QRealTime + 0x01,
+            QNextValidSequenceNumber = QRealTime + 0x02,
+            QPreviousValidSequenceNumber = QRealTime + 0x03,
 
-            QSequenceNumber = QMaxTree + 1,
-            QNextValidSequenceNumber = QMaxTree + 2,
-            QPreviousValidSequenceNumber = QMaxTree + 3
+            QUserIndex0 = QRealTime + 0x04,
+            QUserIndex1 = QRealTime + 0x05,
+            QUserIndex2 = QRealTime + 0x06,
+            QUserIndex3 = QRealTime + 0x07,
+            QUserIndex4 = QRealTime + 0x08,
         }
 
         [Flags]
         public enum StreamAccessFlags
         {
-            SafNone = 0x00,
-            SafSequentialScan = 0x01,
-            SafRandomAccess = 0x02,
-            SafSynchronous = 0x04,
-            SafReverseQuery = 0x08,
-            SafReverseRead = 0x10
+            SafNone = 0x000,
+            SafSequentialScan = 0x001,
+            SafRandomAccess = 0x002,
+            SafSynchronous = 0x004,
+            SafReverseQuery = 0x008,
+            SafReverseRead = 0x010,
+
+            SafUserFlag0 = 0x020,
+            SafUserFlag1 = 0x040,
+            SafUserFlag2 = 0x080,
+            SafUserFlag3 = 0x100
         }
 
         private const uint VARIABLE_ENTRY_SIZE_FLAG = 0x80000000;
@@ -296,19 +317,64 @@ namespace SimuTrace
 
             public int code;
 
-            private uint reserved;
+            private uint _reserved;
 
-            private IntPtr messagePtr;
+            private IntPtr _message;
             public string message
             {
-                get { return Marshal.PtrToStringAnsi(messagePtr); }
+                get { return Marshal.PtrToStringAnsi(_message); }
             }
+        }
+
+        public delegate int DynamicStreamInitialize(
+            ref DynamicStreamDescriptor descriptor, uint id,
+            ref IntPtr userData);
+        public delegate void DynamicStreamFinalize(uint id, IntPtr userData);
+
+        public delegate int DynamicStreamOpen(
+            ref DynamicStreamDescriptor descriptor, uint id,
+            QueryIndexType type, ulong value, StreamAccessFlags flags,
+            out IntPtr userDataOut);
+        public delegate void DynamicStreamClose(uint id, ref IntPtr userData);
+
+        public delegate int DynamicStreamGetNextEntry(IntPtr userData,
+            out IntPtr entryOut);
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct DynamicStreamOperations
+        {
+            public DynamicStreamInitialize initialize;
+            public DynamicStreamFinalize findalize;
+
+            public DynamicStreamOpen open;
+            public DynamicStreamClose close;
+
+            public DynamicStreamGetNextEntry getNextEntry;
+
+            private IntPtr _reserved0;
+            private IntPtr _reserved1;
+            private IntPtr _reserved2;
+            private IntPtr _reserved3;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct DynamicStreamDescriptor
+        {
+            public StreamDescriptor @base;
+            public DynamicStreamOperations operations;
+
+            public IntPtr userData;
+
+            private ulong _reserved0;
+            private ulong _reserved1;
+            private ulong _reserved2;
+            private ulong _reserved3;
         }
 
 
         /* SimuTraceEntryTypes Types */
 
-        [StructLayout(LayoutKind.Explicit, Pack=1)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1)]
         public struct Data32
         {
             [FieldOffset(0x00)]
@@ -343,7 +409,7 @@ namespace SimuTrace
             public uint size;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack=1)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1)]
         public struct MemoryAccessMetaData
         {
             [FieldOffset(0x00)]
@@ -353,7 +419,7 @@ namespace SimuTrace
             public ushort flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack=1)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct DataMemoryAccess32
         {
             public MemoryAccessMetaData metadata;
@@ -408,6 +474,7 @@ namespace SimuTrace
             AtLinear   = AtVirtual
         }
 
+
         /* Base API */
 
         /// <summary>
@@ -447,6 +514,24 @@ namespace SimuTrace
         {
             ExceptionInformation info;
             return StGetLastError(out info);
+        }
+
+
+        /// <summary>
+        /// Sets the last error information for the calling thread. The value
+        /// can be retrieved with StGetLastError().
+        /// </summary>
+        /// <param name="type">The type of the exception, which determines how
+        ///     to interpret the error code. Set this to EcUser for
+        ///     user-defined error codes.</param>
+        /// <param name="code">One of the pre-defined error codes or a
+        ///     user-defined one, depending on the exception type.</param>
+        /// <param name="message">Optional pointer to an error message. This
+        ///     parameter can be \c null.</param>
+        public static void StSetLastError(ExceptionClass type, int code,
+            string message)
+        {
+            NativeMethods.StSetLastError(type, code, message);
         }
 
 
@@ -527,7 +612,6 @@ namespace SimuTrace
         {
             return NativeMethods.StSessionCreateStore(session, specifier,
                 alwaysCreate);
-
         }
 
 
@@ -601,20 +685,17 @@ namespace SimuTrace
         /// <param name="entrySize">The size of a single trace entry in bytes.
         ///     To specify a variable-sized entry type, use
         ///     makeVariableEntrySize().</param>
-        /// <param name="temporalOrder">Indicates if the entries in the stream
-        ///     will contain a time stamp. The time stamp must be the first
-        ///     field in each entry and be of type ulong, at least
-        ///     TEMPORAL_ORDER_CYCLE_COUNT_BITS (default 48) bits wide. The
-        ///     time stamp must further be monotonic increasing.</param>
+        /// <param name="flags">Supplies the flags used for the type of the new
+        ///     stream.</param>
         /// <param name="descOut">StreamDescriptor structure that will
         ///     receive the new stream information.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
         public static bool StMakeStreamDescriptor(string name,
-            uint entrySize, bool temporalOrder, out StreamDescriptor descOut)
+            uint entrySize, StreamTypeFlags flags, out StreamDescriptor descOut)
         {
             return NativeMethods.StMakeStreamDescriptor(name, entrySize,
-                temporalOrder, out descOut);
+                flags, out descOut);
         }
 
 
@@ -633,9 +714,8 @@ namespace SimuTrace
         ///     receive the new stream information.</param>
         /// <returns>true if successful, false otherwise. For a more
         ///     detailed error description call StGetLastError().</returns>
-        public static bool StMakeStreamDescriptorFromType(
-            string name, ref StreamTypeDescriptor type,
-            out StreamDescriptor descOut)
+        public static bool StMakeStreamDescriptorFromType(string name,
+            ref StreamTypeDescriptor type, out StreamDescriptor descOut)
         {
             return NativeMethods.StMakeStreamDescriptorFromType(name, ref type,
                 out descOut);
@@ -668,6 +748,66 @@ namespace SimuTrace
 
 
         /// <summary>
+        /// This method is a helper function to quickly create dynamic stream
+        /// descriptions needed to register a new dynamic stream. The
+        /// descriptions contains information about the stream's name, layout,
+        /// and operations.
+        /// </summary>
+        /// <param name="name">A friendly name of the new stream (e.g.,
+        ///     "Filtered memory accesses").</param>
+        /// <param name="entrySize">The size of a single trace entry in bytes.
+        ///     Variable-sized entries are not supported.</param>
+        /// <param name="flags">Supplies the flags used for the type of the
+        ///     new stream.</param>
+        /// <param name="userData">A pointer to optional user-defined data that
+        ///     should be available when the stream is opened. The data must
+        ///     not be freed for the lifetime of the stream.</param>
+        /// <param name="operations">Pointer to a set of operations that
+        ///     implement the logic of the dynamic stream.</param>
+        /// <param name="descOut">Pointer to a DynamicStreamDescriptor
+        ///     structure that will receive the new stream information.</param>
+        /// <returns>true if successful, false otherwise. For a more
+        ///     detailed error description call StGetLastError().</returns>
+        public static bool StMakeStreamDescriptorDynamic(string name,
+            uint entrySize, StreamTypeFlags flags, IntPtr userData,
+            ref DynamicStreamOperations operations,
+            out DynamicStreamDescriptor descOut)
+        {
+            return NativeMethods.StMakeStreamDescriptorDynamic(name,
+                entrySize, flags, userData, ref operations, out descOut);
+        }
+
+
+        /// <summary>
+        /// This method is a helper function to quickly create dynamic stream
+        /// descriptions needed to register a new dynamic stream. The
+        /// descriptions contains information about the stream's name, layout,
+        /// and operations. This method uses the supplied type information.
+        /// </summary>
+        /// <param name="name">A friendly name of the new stream (e.g.,
+        ///     "Filtered memory accesses").</param>
+        /// <param name="userData">Pointer to a valid StreamTypeDescriptor
+        ///     structure, defining the desired type of the new stream.</param>
+        /// <param name="type">A pointer to optional user-defined data that
+        ///     should be available when the stream is opened. The data
+        ///     must not be freed for the lifetime of the stream.</param>
+        /// <param name="operations">Pointer to a set of operations that
+        ///     implement the logic of the dynamic stream.</param>
+        /// <param name="descOut">Pointer to a DynamicStreamDescriptor
+        ///     structure that will</param>
+        /// <returns>true if successful, false otherwise. For a more detailed
+        ///     error description call StGetLastError().</returns>
+        public static bool StMakeStreamDescriptorDynamicFromType(string name,
+            IntPtr userData, ref StreamTypeDescriptor type,
+            ref DynamicStreamOperations operations,
+            out DynamicStreamDescriptor descOut)
+        {
+            return NativeMethods.StMakeStreamDescriptorDynamicFromType(name,
+                userData, ref type, ref operations, out descOut);
+        }
+
+
+        /// <summary>
         /// Streams are the basic interface to write or read data with
         /// Simutrace. Streams always belong to a store. This method registers
         /// a new stream in the session's active store. Before doing so, the
@@ -686,6 +826,34 @@ namespace SimuTrace
             ref StreamDescriptor desc)
         {
             return NativeMethods.StStreamRegister(session, ref desc);
+        }
+
+
+        /// <summary>
+        /// Streams are the basic interface to work with data in Simutrace.
+        /// Dynamic streams differ from regular streams in that entries are
+        /// created dynamically by user-defined handler functions. This way
+        /// multiplexers, filters, etc. can be realized. A filter, for example,
+        /// may connect to a regular static stream and pass only those entries
+        /// that meet certain criteria. Accessing the resulting dynamic stream
+        /// does not differ from regular streams. Dynamic streams therefore may
+        /// be used as input for other dynamic streams, building a cascade of
+        /// stream processors.
+        /// </summary>
+        /// <param name="session">The id of the session, whose store should
+        ///     register the stream.</param>
+        /// <param name="desc">Pointer to a dynamic stream descriptor defining
+        ///     the properties of the new dynamic stream (e.g., the desired
+        ///     type of data entries). To create a dynamic descriptor see
+        ///     StMakeStreamDescriptorDynamic() or
+        ///     StMakeStreamDescriptorDynamicFromType().</param>
+        /// <returns>The id of the new dynamic stream if successful,
+        ///     INVALID_STREAM_ID otherwise. For a more detailed error
+        ///     description call StGetLastError().</returns>
+        public static uint StStreamRegisterDynamic(uint session,
+            ref DynamicStreamDescriptor desc)
+        {
+            return NativeMethods.StStreamRegisterDynamic(session, ref desc);
         }
 
 
@@ -768,7 +936,8 @@ namespace SimuTrace
         public static bool StStreamQuery(uint session, uint stream,
             out StreamQueryInformation informationOut)
         {
-            return NativeMethods.StStreamQuery(session, stream, out informationOut);
+            return NativeMethods.StStreamQuery(session, stream,
+                out informationOut);
         }
 
 
@@ -955,5 +1124,6 @@ namespace SimuTrace
             return NativeMethods.StReadVariableData(ref handle, reference,
                 destinationBuffer);
         }
+
     }
 }

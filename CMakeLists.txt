@@ -57,6 +57,7 @@ include_directories("${PROJECT_SOURCE_DIR}/simutrace/include")
 
 set(BUILD_SAMPLES OFF CACHE BOOL "Build Samples")
 set(BUILD_LIBSIMUTRACE ON CACHE BOOL "Build Client Library")
+set(BUILD_LIBSIMUTRACEX ON CACHE BOOL "Build Extensions Library")
 set(BUILD_SIMUTRACE_SERVER ON CACHE BOOL "Build Storage Server")
 
 if(UNIX)
@@ -155,6 +156,7 @@ endmacro()
 add_subdirectory(simutrace/libsimubase)
 add_subdirectory(simutrace/libsimustor)
 add_subdirectory(simutrace/libsimutrace)
+add_subdirectory(simutrace/libsimutraceX)
 add_subdirectory(simutrace/storageserver)
 
 # Bindings
@@ -165,6 +167,7 @@ add_subdirectory(samples/simple)
 add_subdirectory(samples/parallel)
 add_subdirectory(samples/storemon)
 add_subdirectory(samples/csharp.simple)
+add_subdirectory(samples/csharp.memreplay)
 
 # Documentation
 add_subdirectory(simutrace/documentation)

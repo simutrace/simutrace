@@ -44,7 +44,7 @@ namespace SimuTrace
         virtual void _onFinalize() override { }
 
     public:
-        Thread(ThreadMain main, T& arg) : 
+        Thread(ThreadMain main, T& arg) :
             _main(main),
             _arg(arg) { }
         Thread(ThreadMain main) :

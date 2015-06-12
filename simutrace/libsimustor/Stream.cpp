@@ -33,7 +33,7 @@ namespace SimuTrace
         _desc(desc),
         _buffer(buffer)
     {
-        ThrowOn(id == INVALID_STREAM_ID, ArgumentException);
+        ThrowOn(id == INVALID_STREAM_ID, ArgumentException, "id");
         ThrowOn((getEntrySize(&_desc.type) == 0) ||
                 (getEntrySize(&_desc.type) > buffer.getSegmentSize()),
                 Exception, "Invalid entry size specified.");
@@ -43,7 +43,7 @@ namespace SimuTrace
                 stringFormat("The specified variable entry size exceeds the "
                     "supported maximum of %d bytes.", VARIABLE_ENTRY_MAX_SIZE));
 
-        ThrowOn(_desc.type.temporalOrder &&
+        ThrowOn(IsSet(_desc.type.flags, StreamTypeFlags::StfTemporalOrder) &&
                 (getEntrySize(&_desc.type) < sizeof(CycleCount)),
                 Exception, "The specified type is marked as temporally "
                            "ordered, however, its too small to include "
@@ -51,7 +51,7 @@ namespace SimuTrace
 
         // Automatically reading the cycle count from a segment is only
         // supported for fixed-size entries.
-        ThrowOn(_desc.type.temporalOrder &&
+        ThrowOn(IsSet(_desc.type.flags, StreamTypeFlags::StfTemporalOrder) &&
                 isVariableEntrySize(_desc.type.entrySize),
                 Exception, "Variable-sized entries cannot be temporally "
                            "ordered.");
@@ -80,9 +80,9 @@ namespace SimuTrace
         return _id;
     }
 
-    bool Stream::isHidden() const
+    StreamFlags Stream::getFlags() const
     {
-        return (_desc.hidden == _true);
+        return _desc.flags;
     }
 
     StreamBuffer& Stream::getStreamBuffer() const

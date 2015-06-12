@@ -32,8 +32,8 @@ namespace SimuTrace
     ClientSessionManager* _sessionManager;
 
     __thread std::string* _lastErrorMessage = nullptr;
-    __thread ExceptionSite _lastErrorSite   = EsUnknown;
-    __thread ExceptionClass _lastErrorClass = EcUnknown;
+    __thread ExceptionSite _lastErrorSite   = ExceptionSite::EsUnknown;
+    __thread ExceptionClass _lastErrorClass = ExceptionClass::EcUnknown;
     __thread int _lastError = 0;
 
     void _onProcessExit()
@@ -86,64 +86,49 @@ namespace SimuTrace
         return static_cast<ClientSession&>(manager.getSession(id));
     }
 
-    void _setLastError(ExceptionSite errorSite, ExceptionClass errorClass,
-                       int errorCode)
+    inline void _setLastError(ExceptionSite errorSite, ExceptionClass errorClass,
+                              int errorCode, const char* message)
     {
         _lastErrorSite  = errorSite;
         _lastErrorClass = errorClass;
         _lastError      = errorCode;
-    }
 
-    void _setLastErrorMessage(const std::string* message)
-    {
         if (_lastErrorMessage != nullptr) {
             delete _lastErrorMessage;
             _lastErrorMessage = nullptr;
         }
 
-        if (message == nullptr) {
-            return;
-        }
-
-        _lastErrorMessage = new std::string(*message);
-    }
-
-    void _setLastErrorFromPeerException(const PeerException& e)
-    {
-        std::string msg = e.what();
-
-        _setLastError(EsServer, e.getErrorClass(), e.getErrorCode());
-        _setLastErrorMessage(&msg);
-    }
-
-    void _setLastErrorFromException(const Exception& e)
-    {
-        std::string msg = e.what();
-
-        _setLastError(EsClient, e.getErrorClass(), e.getErrorCode());
-        _setLastErrorMessage(&msg);
-    }
-
-    void _setLastErrorUnknown(const std::exception& e)
-    {
-        std::string msg = e.what();
-
-        _setLastError(EsClient, EcUnknown, std::numeric_limits<int>::min());
-        _setLastErrorMessage(&msg);
-    }
-
-    void _setLastErrorSuccess()
-    {
-        if ((_lastErrorSite != EsUnknown) ||
-            (_lastErrorClass != EcUnknown) ||
-            (_lastError != 0)) {
-
-            _setLastError(EsUnknown, EcUnknown, 0);
-            _setLastErrorMessage(nullptr);
+        if (message != nullptr) {
+            _lastErrorMessage = new std::string(message);
         }
     }
 
-#define API_TRY    try {
+    inline void _setLastErrorFromPeerException(const PeerException& e)
+    {
+        _setLastError(ExceptionSite::EsServer, e.getErrorClass(),
+                      e.getErrorCode(), e.what());
+    }
+
+    inline void _setLastErrorFromException(const Exception& e)
+    {
+        _setLastError(ExceptionSite::EsClient, e.getErrorClass(),
+                      e.getErrorCode(), e.what());
+    }
+
+    inline void _setLastErrorUnknown(const std::exception& e)
+    {
+        _setLastError(ExceptionSite::EsClient, ExceptionClass::EcUnknown,
+                      std::numeric_limits<int>::min(), e.what());
+    }
+
+    inline void _setLastErrorSuccess()
+    {
+        _setLastError(ExceptionSite::EsUnknown, ExceptionClass::EcUnknown,
+                      0, nullptr);
+    }
+
+#define API_TRY                                                               \
+        try {
 #define API_CATCH(resultVar, errorValue)                                      \
             _setLastErrorSuccess();                                           \
         } catch (const PeerException& e) {                                    \
@@ -186,6 +171,12 @@ namespace SimuTrace
         }
 
         return _lastError;
+    }
+
+    SIMUTRACE_API
+    void StSetLastError(ExceptionClass type, int code, const char* message)
+    {
+        _setLastError(ExceptionSite::EsClient, type, code, message);
     }
 
 
@@ -317,44 +308,63 @@ namespace SimuTrace
         //Prior to setting any field, we completely reset the descriptor.
         memset(descOut, 0, sizeof(StreamDescriptor));
 
-        descOut->hidden = _false;
         memcpy(descOut->name, name, len);
+        descOut->flags = StreamFlags::SfNone;
+        descOut->type  = *type;
+    }
 
-        descOut->type = *type;
+    void _makeStreamDescriptor(const char* name, uint32_t entrySize,
+                               StreamTypeFlags flags, StreamDescriptor* descOut)
+    {
+        assert(name != nullptr);
+        assert(descOut != nullptr);
+
+        StreamTypeDescriptor type;
+        memset(&type, 0, sizeof(StreamTypeDescriptor));
+
+        StreamTypeId id;
+        generateGuid(id);
+
+        // Initialize type descriptor
+        type.flags         = flags;
+        type.entrySize     = entrySize;
+        type.id            = id;
+
+        std::string sid = guidToString(id);
+        static_assert(GUID_STRING_LENGTH <= MAX_STREAM_TYPE_NAME_LENGTH,
+                      "The stream type name length is too short.");
+        assert(sid.length() == GUID_STRING_LENGTH);
+
+        memcpy(type.name, sid.c_str(), sid.length());
+
+        _makeStreamDescriptorFromType(name, &type, descOut);
+    }
+
+    void _makeStreamDescriptorDynamic(const void* userData,
+                                      const DynamicStreamOperations* operations,
+                                      DynamicStreamDescriptor* descOut)
+    {
+        assert(operations != nullptr);
+        assert(descOut != nullptr);
+
+        memcpy(&descOut->operations, operations,
+               sizeof(DynamicStreamOperations));
+
+        descOut->base.flags = StreamFlags::SfDynamic;
+        descOut->userData   = (void*)userData;
     }
 
     SIMUTRACE_API
     _bool StMakeStreamDescriptor(const char* name, uint32_t entrySize,
-                                 _bool temporalOrder, StreamDescriptor* descOut)
+                                 StreamTypeFlags flags, StreamDescriptor* descOut)
     {
         _bool result = _true;
 
         API_TRY {
-            ThrowOnNull(name, ArgumentNullException);
-            ThrowOnNull(descOut, ArgumentNullException);
+            ThrowOnNull(name, ArgumentNullException, "name");
+            ThrowOnNull(descOut, ArgumentNullException, "descOut");
 
-            StreamTypeDescriptor type;
-            memset(&type, 0, sizeof(StreamTypeDescriptor));
-
-            StreamTypeId id;
-            generateGuid(id);
-
-            // Initialize type descriptor
-            type.temporalOrder = temporalOrder;
-            type.arch32Bit     = _false;
-            type.bigEndian     = _false;
-
-            type.entrySize     = entrySize;
-            type.id            = id;
-
-            std::string sid = guidToString(id);
-            static_assert(GUID_STRING_LENGTH <= MAX_STREAM_TYPE_NAME_LENGTH,
-                          "The stream type name length is too short.");
-            assert(sid.length() == GUID_STRING_LENGTH);
-
-            memcpy(type.name, sid.c_str(), sid.length());
-
-            _makeStreamDescriptorFromType(name, &type, descOut);
+            _makeStreamDescriptor(name, entrySize, flags, descOut);
         } API_CATCH(result, _false);
 
         return result;
@@ -368,9 +378,9 @@ namespace SimuTrace
         _bool result = _true;
 
         API_TRY {
-            ThrowOnNull(name, ArgumentNullException);
-            ThrowOnNull(type, ArgumentNullException);
-            ThrowOnNull(descOut, ArgumentNullException);
+            ThrowOnNull(name, ArgumentNullException, "name");
+            ThrowOnNull(type, ArgumentNullException, "type");
+            ThrowOnNull(descOut, ArgumentNullException, "descOut");
 
             _makeStreamDescriptorFromType(name, type, descOut);
         } API_CATCH(result, _false);
@@ -378,11 +388,59 @@ namespace SimuTrace
         return result;
     }
 
+    SIMUTRACE_API
     const StreamTypeDescriptor* StStreamFindMemoryType(ArchitectureSize size,
         MemoryAccessType accessType, MemoryAddressType addressType,
         _bool hasData)
     {
         return streamFindMemoryType(size, accessType, addressType, hasData);
+    }
+
+    SIMUTRACE_API
+    _bool StMakeStreamDescriptorDynamic(const char* name, uint32_t entrySize,
+                                        StreamTypeFlags flags, const void* userData,
+                                        const DynamicStreamOperations* operations,
+                                        DynamicStreamDescriptor* descOut)
+    {
+        _bool result = _true;
+
+        API_TRY {
+            ThrowOnNull(name, ArgumentNullException, "name");
+            ThrowOnNull(operations, ArgumentNullException, "operations");
+            ThrowOnNull(descOut, ArgumentNullException, "descOut");
+
+            //Prior to setting any field, we completely reset the descriptor.
+            memset(descOut, 0, sizeof(DynamicStreamDescriptor));
+
+            _makeStreamDescriptor(name, entrySize, flags, &descOut->base);
+            _makeStreamDescriptorDynamic(userData, operations, descOut);
+        } API_CATCH(result, _false);
+
+        return result;
+    }
+
+    SIMUTRACE_API
+    _bool StMakeStreamDescriptorDynamicFromType(const char* name,
+        const void* userData, const StreamTypeDescriptor* type,
+        const DynamicStreamOperations* operations,
+        DynamicStreamDescriptor* descOut)
+    {
+        _bool result = _true;
+
+        API_TRY {
+            ThrowOnNull(name, ArgumentNullException, "name");
+            ThrowOnNull(type, ArgumentNullException, "type");
+            ThrowOnNull(operations, ArgumentNullException, "operations");
+            ThrowOnNull(descOut, ArgumentNullException, "descOut");
+
+            //Prior to setting any field, we completely reset the descriptor.
+            memset(descOut, 0, sizeof(DynamicStreamDescriptor));
+
+            _makeStreamDescriptorFromType(name, type, &descOut->base);
+            _makeStreamDescriptorDynamic(userData, operations, descOut);
+        } API_CATCH(result, _false);
+
+        return result;
     }
 
     SIMUTRACE_API
@@ -400,6 +458,21 @@ namespace SimuTrace
     }
 
     SIMUTRACE_API
+    StreamId StStreamRegisterDynamic(SessionId session,
+                                     DynamicStreamDescriptor* desc)
+    {
+        StreamId id = INVALID_STREAM_ID;
+
+        API_TRY {
+            ClientSession& cs = _getSession(session);
+
+            id = cs.registerDynamicStream(*desc);
+        } API_CATCH(id, INVALID_STREAM_ID);
+
+        return id;
+    }
+
+    SIMUTRACE_API
     int StStreamEnumerate(SessionId session, size_t bufferSize,
                           StreamId* streamIdsOut)
     {
@@ -409,13 +482,13 @@ namespace SimuTrace
             ClientSession& cs = _getSession(session);
 
             std::vector<StreamId> streams;
-            cs.enumerateStreams(streams, false);
+            cs.enumerateStreams(streams, SefRegular | SefDynamic);
 
             if (streamIdsOut != nullptr) {
                 const size_t size = streams.size() * sizeof(StreamId);
-                ThrowOn(bufferSize < size, ArgumentException);
+                const size_t copySize = (size < bufferSize) ? size : bufferSize;
 
-                memcpy(streamIdsOut, streams.data(), size);
+                memcpy(streamIdsOut, streams.data(), copySize);
             }
 
             result = static_cast<int>(streams.size());
@@ -431,7 +504,7 @@ namespace SimuTrace
         _bool result = _true;
 
         API_TRY {
-            ThrowOnNull(informationOut, ArgumentNullException);
+            ThrowOnNull(informationOut, ArgumentNullException, "informationOut");
             ClientSession& cs = _getSession(session);
 
             Stream& cstr = cs.getStream(stream);
@@ -503,7 +576,7 @@ namespace SimuTrace
         _bool result = _false;
 
         API_TRY {
-            ThrowOnNull(handle, ArgumentNullException);
+            ThrowOnNull(handle, ArgumentNullException, "handle");
             assert(handle->stream != nullptr);
 
             ClientStream* cstream;
@@ -544,8 +617,9 @@ namespace SimuTrace
         assert(handlePtr != nullptr);
         StreamHandle handle = *handlePtr;
         assert(handle != nullptr);
-        assert(handle->control != nullptr);
-        assert(!handle->isReadOnly);
+        assert(!IsSet(handle->flags, StreamStateFlags::SsfRead));
+        assert(!IsSet(handle->flags, StreamStateFlags::SsfDynamic));
+        assert(handle->stat.control != nullptr);
         assert(isVariableEntrySize(handle->entrySize));
 
         // If the source buffer is empty, we do not need to store anything
@@ -567,12 +641,12 @@ namespace SimuTrace
 
         assert(sizeHint > 0);
 
-        const StreamSegmentId sqn = handle->control->link.sequenceNumber;
+        const StreamSegmentId sqn = handle->stat.control->link.sequenceNumber;
         assert(sqn != INVALID_STREAM_SEGMENT_ID);
 
         const uint64_t index =
             (strm->getStreamBuffer().getSegmentSize() / sizeHint) * sqn +
-            handle->control->rawEntryCount;
+            handle->stat.control->rawEntryCount;
 
         do {
             uint32_t count = 0;
@@ -593,11 +667,11 @@ namespace SimuTrace
 
                 // Is this the first time, we have written data?
                 if (sourceLength == savedSourceLength) {
-                    handle->control->entryCount++;
+                    handle->stat.control->entryCount++;
                 }
 
                 sourceLength -= bytesWritten;
-                handle->control->rawEntryCount += count;
+                handle->stat.control->rawEntryCount += count;
 
                 if (sourceLength == 0) {
                     handle->entry += count * sizeHint;
@@ -644,6 +718,8 @@ namespace SimuTrace
         assert(handlePtr != nullptr);
         StreamHandle handle = *handlePtr;
         assert(handle != nullptr);
+        assert(IsSet(handle->flags, StreamStateFlags::SsfRead));
+        assert(!IsSet(handle->flags, StreamStateFlags::SsfDynamic));
         assert(isVariableEntrySize(handle->entrySize));
 
         // Handle empty data reference
@@ -666,8 +742,8 @@ namespace SimuTrace
 
         do {
 
-            if ((rsqn != handle->sequenceNumber) ||
-                (handle->control == nullptr)) {
+            if ((rsqn != handle->stat.sequenceNumber) ||
+                (handle->stat.control == nullptr)) {
 
                 // We are not in the required segment. Try to get it from the
                 // server, if it exists
@@ -676,7 +752,7 @@ namespace SimuTrace
                                       handle->accessFlags, handle);
 
                 *handlePtr = handle;
-                if ((handle == nullptr) || (handle->control == nullptr)) {
+                if ((handle == nullptr) || (handle->stat.control == nullptr)) {
                     return -1;
                 }
             }

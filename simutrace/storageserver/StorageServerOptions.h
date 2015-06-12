@@ -94,6 +94,14 @@ namespace Options
                     OPT_SHORT_PREFIX "l",
                     OPT_LONG_PREFIX "server.logfile");
 
+        typeMap["server.logNoColor"] = libconfig::Setting::Type::TypeBoolean;
+        options.add("",
+                    false,
+                    0,
+                    0,
+                    "If set, terminal log output will not be colored.",
+                    OPT_LONG_PREFIX "server.logNoColor");
+
         //
         // Environment
         //

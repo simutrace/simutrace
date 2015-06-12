@@ -64,17 +64,17 @@ namespace SimuTrace
         ReaderWriterLockRegion(ReaderWriterLock& lock, LockMethod method) :
             _lock(lock),
             _method(method)
-        { 
-            if (_method == LmShared) { 
+        {
+            if (_method == LmShared) {
                 _lock.acquireShared();
             } else {
                 _lock.acquireExclusive();
             }
         }
 
-        ~ReaderWriterLockRegion() 
-        { 
-            if (_method == LmShared) { 
+        ~ReaderWriterLockRegion()
+        {
+            if (_method == LmShared) {
                 _lock.releaseShared();
             } else {
                 _lock.releaseExclusive();

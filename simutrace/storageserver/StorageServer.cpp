@@ -239,6 +239,22 @@ namespace SimuTrace
                 _logRoot.enableAppender("terminal", false);
             }
 
+            // Apply --server.logNoColor
+            if (!Configuration::get<bool>("server.logNoColor")) {
+                std::vector<std::shared_ptr<LogAppender>> appenders;
+
+                _logRoot.enumerateAppenders(appenders);
+
+                for (auto appender : appenders) {
+                    TerminalLogAppender* terminalLog =
+                        dynamic_cast<TerminalLogAppender*>(appender.get());
+
+                    if (terminalLog != nullptr) {
+                        terminalLog->setEnableColor(true);
+                    }
+                }
+            }
+
             _logBanner();
         }
     }
@@ -696,13 +712,13 @@ namespace SimuTrace
         }
 
         /* =======  Main Server API  ======= */
-        m[RpcApi::CCV31_Null]              = _handlePeekVersion;
-        m[RpcApi::CCV31_EnumerateSessions] = _handleEnumerateSessions;
+        m[RpcApi::CCV32_Null]              = _handlePeekVersion;
+        m[RpcApi::CCV32_EnumerateSessions] = _handleEnumerateSessions;
 
         /* =======  Session API  ======= */
-        m[RpcApi::CCV31_SessionCreate]     = _handleSessionCreate;
-        m[RpcApi::CCV31_SessionOpen]       = _handleSessionOpen;
-        m[RpcApi::CCV31_SessionQuery]      = _handleSessionQuery;
+        m[RpcApi::CCV32_SessionCreate]     = _handleSessionCreate;
+        m[RpcApi::CCV32_SessionOpen]       = _handleSessionOpen;
+        m[RpcApi::CCV32_SessionQuery]      = _handleSessionQuery;
     }
 
     void StorageServer::_init(int argc, const char* argv[])
@@ -747,7 +763,7 @@ namespace SimuTrace
 
     void StorageServer::_handlePeekVersion(Request& request, Message& msg)
     {
-        TEST_REQUEST_V31(Null, msg);
+        TEST_REQUEST_V32(Null, msg);
         ServerPort& port = request.getServerPort();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
@@ -762,7 +778,7 @@ namespace SimuTrace
 
     void StorageServer::_handleEnumerateSessions(Request& request, Message& msg)
     {
-        TEST_REQUEST_V31(EnumerateSessions, msg);
+        TEST_REQUEST_V32(EnumerateSessions, msg);
         ServerPort& port = request.getServerPort();
         StorageServer& server = request.getStorageServer();
 
@@ -779,7 +795,7 @@ namespace SimuTrace
 
     void StorageServer::_handleSessionCreate(Request& request, Message& msg)
     {
-        TEST_REQUEST_V31(SessionCreate, msg);
+        TEST_REQUEST_V32(SessionCreate, msg);
         StorageServer& server = request.getStorageServer();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
@@ -789,7 +805,7 @@ namespace SimuTrace
 
     void StorageServer::_handleSessionOpen(Request& request, Message& msg)
     {
-        TEST_REQUEST_V31(SessionOpen, msg);
+        TEST_REQUEST_V32(SessionOpen, msg);
         StorageServer& server = request.getStorageServer();
 
         uint16_t ver = static_cast<uint16_t>(msg.parameter0);
@@ -800,7 +816,7 @@ namespace SimuTrace
 
     void StorageServer::_handleSessionQuery(Request& request, Message& msg)
     {
-        TEST_REQUEST_V31(SessionQuery, msg);
+        TEST_REQUEST_V32(SessionQuery, msg);
 
         Throw(NotImplementedException);
     }
@@ -1000,7 +1016,7 @@ namespace SimuTrace
     {
         for (auto const &binding : _bindings) {
               ChannelCapabilities caps = binding->port->getChannelCaps();
-              if ((caps & ChannelCapabilities::CCapHandleTransfer) != 0) {
+              if (IsSet(caps, ChannelCapabilities::CCapHandleTransfer)) {
                 return true;
               }
         }

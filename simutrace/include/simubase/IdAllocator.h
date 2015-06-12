@@ -42,7 +42,7 @@ namespace SimuTrace
 
         T getNextId()
         {
-            ThrowOn(_nextId == std::numeric_limits<T>::max(), 
+            ThrowOn(_nextId == std::numeric_limits<T>::max(),
                     InvalidOperationException);
 
             return _nextId++;

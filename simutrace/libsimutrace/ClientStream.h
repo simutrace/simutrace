@@ -34,39 +34,37 @@ namespace SimuTrace
     private:
         DISABLE_COPY(ClientStream);
 
+        CriticalSection _lock;
+
         std::unique_ptr<StreamStateDescriptor> _writeHandle;
         std::list<std::unique_ptr<StreamStateDescriptor>> _readHandles;
-
-        void _initializeHandle(StreamHandle handle, SegmentId segment,
-                               bool readOnly,
-                               StreamAccessFlags flags = SafNone,
-                               size_t offset = 0);
-        void _closeHandle(StreamHandle handle);
+    protected:
+        void _addHandle(std::unique_ptr<StreamStateDescriptor>& handle);
         void _releaseHandle(StreamHandle handle);
-        void _invalidateHandle(StreamHandle handle);
 
-        byte* _getPayload(SegmentId segment, uint32_t* lengthOut) const;
+        virtual StreamHandle _append(StreamHandle handle) = 0;
+        virtual StreamHandle _open(QueryIndexType type, uint64_t value,
+                                   StreamAccessFlags flags,
+                                   StreamHandle handle) = 0;
 
-        static void _payloadAllocatorWrite(Message& msg, bool free, void* args);
-        static void _payloadAllocatorRead(Message& msg, bool free, void* args);
-
+        virtual void _closeHandle(StreamHandle handle) = 0;
     public:
         ClientStream(StreamId id, const StreamDescriptor& desc,
                      StreamBuffer& buffer, ClientSession& session);
         virtual ~ClientStream() override;
 
         virtual void queryInformation(
-            StreamQueryInformation& informationOut) const override;
+            StreamQueryInformation& informationOut) const = 0;
 
         StreamHandle append(StreamHandle handle);
         StreamHandle open(QueryIndexType type, uint64_t value,
-                          StreamAccessFlags flags, StreamHandle handle);
+                          StreamAccessFlags flags,
+                          StreamHandle handle);
 
         void close(StreamHandle handle);
 
         void flush();
     };
-
 }
 
 #endif

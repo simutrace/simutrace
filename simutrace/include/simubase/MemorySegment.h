@@ -88,5 +88,7 @@ namespace SimuTrace
         bool isMapped() const;
         bool isReadOnly() const;
     };
+
 }
+
 #endif

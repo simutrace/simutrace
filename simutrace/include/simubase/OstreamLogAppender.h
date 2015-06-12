@@ -44,7 +44,6 @@ namespace SimuTrace
         OstreamLogAppender(const std::string& name, std::ostream& stream,
                            std::unique_ptr<LogLayout>& layout, bool inherit);
         virtual ~OstreamLogAppender();
-
     };
 
 }

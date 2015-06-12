@@ -170,4 +170,5 @@ namespace SimuTrace
     };
 
 }
+
 #endif

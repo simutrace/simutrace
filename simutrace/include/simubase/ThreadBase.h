@@ -134,6 +134,7 @@ namespace SimuTrace
         // Returns the current process id
         static unsigned long getCurrentProcessId();
     };
+
 }
 
 #endif

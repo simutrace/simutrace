@@ -32,9 +32,9 @@
 using namespace libconfig;
 
 namespace SimuTrace {
-namespace Configuration 
+namespace Configuration
 {
- 
+
     const char* settingTypeToString(Setting::Type type);
     std::string settingToString(Setting& setting, uint32_t maxElements = 10);
 
@@ -65,7 +65,7 @@ namespace Configuration
         return config->lookup(path);
     }
 
-    template<> 
+    template<>
     inline const char* get<const char*>(const char* path)
     {
         Config* config = Environment::getConfig();
@@ -74,7 +74,7 @@ namespace Configuration
         return config->lookup(path).c_str();
     }
 
-    template<> 
+    template<>
     inline std::string get<std::string>(const char* path)
     {
         return std::string(get<const char*>(path));
@@ -96,13 +96,13 @@ namespace Configuration
         out = config->lookup(path);
     }
 
-    template<> 
+    template<>
     inline void get<const char*>(const char* path, const char*& out)
     {
         out = get<const char*>(path);
     }
 
-    template<> 
+    template<>
     inline void get<std::string>(const char* path, std::string& out)
     {
         out = get<std::string>(path);
@@ -271,7 +271,7 @@ namespace Configuration
     //
 
     template<typename T> struct _typeMap {};
-    template<> struct _typeMap<std::string> { 
+    template<> struct _typeMap<std::string> {
         static const Setting::Type type = Setting::Type::TypeString;
     };
     template<> struct _typeMap<int> {
@@ -286,5 +286,5 @@ namespace Configuration
 
 }
 }
- 
+
 #endif

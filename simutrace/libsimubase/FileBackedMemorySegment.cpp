@@ -74,7 +74,7 @@ namespace SimuTrace
     {
     #if defined(_WIN32)
         if (fileMapping == INVALID_HANDLE_VALUE) {
-            ThrowOn(_name.empty(), ArgumentException);
+            ThrowOn(_name.empty(), ArgumentNullException, "name");
 
             _initFileMapping();
         } else {

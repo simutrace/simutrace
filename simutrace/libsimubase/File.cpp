@@ -85,8 +85,8 @@ namespace SimuTrace
     size_t File::read(void* buffer, size_t size, FileOffset offset)
     {
         ThrowOn(!_file.isValid(), InvalidOperationException);
-        ThrowOnNull(buffer, ArgumentNullException);
-        ThrowOn(size == 0, ArgumentException);
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
+        ThrowOn(size == 0, ArgumentException, "size");
 
     #if defined(_WIN32)
         DWORD bytesRead;
@@ -121,8 +121,8 @@ namespace SimuTrace
     size_t File::write(const void* buffer, size_t size, FileOffset offset)
     {
         ThrowOn(!_file.isValid(), InvalidOperationException);
-        ThrowOnNull(buffer, ArgumentNullException);
-        ThrowOn(size == 0, ArgumentException);
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
+        ThrowOn(size == 0, ArgumentException, "size");
 
     #if defined(_WIN32)
         DWORD result;

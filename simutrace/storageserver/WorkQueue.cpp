@@ -46,7 +46,8 @@ namespace SimuTrace
     {
         LockScope(_lock);
         ThrowOn(_blocked, InvalidOperationException);
-        ThrowOn(priority > Priority::Max, ArgumentOutOfBoundsException);
+        ThrowOn(priority > Priority::Max, ArgumentOutOfBoundsException,
+                "priority");
 
         _queue[priority].push(std::move(item));
         wakeUpWorkers();

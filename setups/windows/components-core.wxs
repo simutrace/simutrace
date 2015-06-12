@@ -4,6 +4,15 @@
   <!-- Simutrace Core Components -->
   <Fragment>
     <ComponentGroup Id="CoreComponents" Directory="DIRINSTALLROOT">
+      <Component Id="CMP_InstallRoot_libsimutraceX_dll"
+                 Guid="E2500511-1458-4DF8-9225-16656017C238">
+        <File Id="FILE_InstallRoot_libsimutraceX_dll"
+              Name="$(var.libsimutraceX.TargetFileName)"
+              Source="$(var.libsimutraceX.TargetPath)"
+              KeyPath="yes"
+              Vital="yes" />
+      </Component>
+
       <Component Id="CMP_InstallRoot_libsimutrace_dll"
                  Guid="2B0468BB-3EEC-4E27-9B8C-EDDCD6BC4277">
         <File Id="FILE_InstallRoot_libsimutrace_dll"

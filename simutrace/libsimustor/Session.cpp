@@ -157,7 +157,7 @@ namespace SimuTrace
     {
         LockScope(_lock);
         ThrowOn(!_isAlive, InvalidOperationException);
-        ThrowOnNull(port, ArgumentNullException);
+        ThrowOnNull(port, ArgumentNullException, "port");
 
         _attach(port);
 
@@ -305,14 +305,14 @@ namespace SimuTrace
     }
 
     void Session::enumerateStreams(std::vector<StreamId>& out,
-                                   bool includeHidden) const
+                                   StreamEnumFilter filter) const
     {
         LockScopeShared(_storeLock);
         ThrowOnNull(_store, InvalidOperationException);
 
         assert(_isAlive);
 
-        _store->enumerateStreams(out, includeHidden);
+        _store->enumerateStreams(out, filter);
     }
 
     void Session::enumerateStores(std::vector<std::string>& out) const

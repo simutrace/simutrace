@@ -48,7 +48,7 @@ namespace SimuTrace
         _initializeHandlerMap();
 
         ThrowOnNull(dynamic_cast<ServerPort*>(port.get()),
-                    ArgumentNullException);
+                    ArgumentNullException, "port");
 
         // Take ownership of port. Do not throw exceptions afterwards!
         _port = std::unique_ptr<ServerPort>(
@@ -65,25 +65,26 @@ namespace SimuTrace
         std::map<int, MessageHandler>& m = _handlers; // short alias
 
         /* =======  Session API  ======= */
-        m[RpcApi::CCV31_SessionClose]            = _handleSessionClose;
-        m[RpcApi::CCV31_SessionSetConfiguration] = _handleSessionSetConfiguration;
+        m[RpcApi::CCV32_SessionClose]            = _handleSessionClose;
+        m[RpcApi::CCV32_SessionSetConfiguration] = _handleSessionSetConfiguration;
 
         /* =======  Store API  ======= */
-        m[RpcApi::CCV31_StoreCreate]            = _handleStoreCreate;
-        m[RpcApi::CCV31_StoreClose]             = _handleStoreClose;
+        m[RpcApi::CCV32_StoreCreate]            = _handleStoreCreate;
+        m[RpcApi::CCV32_StoreClose]             = _handleStoreClose;
 
-        m[RpcApi::CCV31_StreamBufferRegister]   = _handleStreamBufferRegister;
-        m[RpcApi::CCV31_StreamBufferEnumerate]  = _handleStreamBufferEnumerate;
-        m[RpcApi::CCV31_StreamBufferQuery]      = _handleStreamBufferQuery;
+        m[RpcApi::CCV32_StreamBufferRegister]   = _handleStreamBufferRegister;
+        m[RpcApi::CCV32_StreamBufferEnumerate]  = _handleStreamBufferEnumerate;
+        m[RpcApi::CCV32_StreamBufferQuery]      = _handleStreamBufferQuery;
 
         /* =======  Stream API  ======= */
-        m[RpcApi::CCV31_StreamRegister]         = _handleStreamRegister;
+        m[RpcApi::CCV32_StreamRegister]         = _handleStreamRegister;
         m[RpcApi::CCV31_StreamEnumerate]        = _handleStreamEnumerate;
-        m[RpcApi::CCV31_StreamQuery]            = _handleStreamQuery;
-        m[RpcApi::CCV31_StreamAppend]           = _handleStreamAppend;
+        m[RpcApi::CCV32_StreamEnumerate]        = _handleStreamEnumerate;
+        m[RpcApi::CCV32_StreamQuery]            = _handleStreamQuery;
+        m[RpcApi::CCV32_StreamAppend]           = _handleStreamAppend;
         m[RpcApi::CCV30_StreamCloseAndOpen]     = _handleStreamCloseAndOpen;
-        m[RpcApi::CCV31_StreamCloseAndOpen]     = _handleStreamCloseAndOpen;
-        m[RpcApi::CCV31_StreamClose]            = _handleStreamClose;
+        m[RpcApi::CCV32_StreamCloseAndOpen]     = _handleStreamCloseAndOpen;
+        m[RpcApi::CCV32_StreamClose]            = _handleStreamClose;
     }
 
     void ServerSessionWorker::_acknowledgeSessionCreate()
@@ -100,7 +101,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleSessionClose(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(SessionClose, ctx.msg);
+        TEST_REQUEST_V32(SessionClose, ctx.msg);
 
         // We break out of the processing loop and return from the thread
         // function. This will invoke the thread finish handler, which
@@ -112,7 +113,7 @@ namespace SimuTrace
     bool ServerSessionWorker::_handleSessionSetConfiguration(
         MessageContext& ctx)
     {
-        TEST_REQUEST_V31(SessionSetConfiguration, ctx.msg);
+        TEST_REQUEST_V32(SessionSetConfiguration, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
         std::string setting = std::string(
@@ -125,7 +126,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStoreCreate(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StoreCreate, ctx.msg);
+        TEST_REQUEST_V32(StoreCreate, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
         bool alwaysCreate = (ctx.msg.parameter0 == _true);
@@ -146,7 +147,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStoreClose(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StoreClose, ctx.msg);
+        TEST_REQUEST_V32(StoreClose, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
         session.closeStore();
@@ -156,7 +157,7 @@ namespace SimuTrace
     bool ServerSessionWorker::_handleStreamBufferRegister(
         MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamBufferRegister, ctx.msg);
+        TEST_REQUEST_V32(StreamBufferRegister, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -188,7 +189,7 @@ namespace SimuTrace
     bool ServerSessionWorker::_handleStreamBufferEnumerate(
         MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamBufferEnumerate, ctx.msg);
+        TEST_REQUEST_V32(StreamBufferEnumerate, ctx.msg);
         Session& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -204,7 +205,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamBufferQuery(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamBufferQuery, ctx.msg);
+        TEST_REQUEST_V32(StreamBufferQuery, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -230,7 +231,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamRegister(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamRegister, ctx.msg);
+        TEST_REQUEST_V32(StreamRegister, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -238,8 +239,16 @@ namespace SimuTrace
             static_cast<StreamDescriptor*>(ctx.msg.data.payload);
         BufferId buffer = ctx.msg.parameter0;
 
-        // Forbid the client to create hidden streams by always overriding it
-        desc->hidden = false;
+        // Dynamic flag should always be unset, because dynamic streams are
+        // handled solely on the client-side and the library should not
+        // pass the request to the server.
+        assert(!IsSet(desc->flags, SfDynamic));
+
+        // Forbid the client to create hidden streams by always overriding it.
+        // Also dynamic streams are not supported on the server-side. Since
+        // these are the only flags at the moment, we simply clear the whole
+        // flag field.
+        desc->flags = SfNone;
 
         StreamId id = session.registerStream(*desc, buffer);
 
@@ -249,14 +258,14 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamEnumerate(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamBufferEnumerate, ctx.msg);
+        TEST_REQUEST_V32(StreamBufferEnumerate, ctx.msg);
         Session& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
         // In this version, we do not allow any client to receive a list of
         // hidden streams.
         std::vector<StreamId> streams;
-        session.enumerateStreams(streams, false);
+        session.enumerateStreams(streams, StreamEnumFilter::SefRegular);
 
         port->ret(ctx.msg, RpcApi::SC_Success, streams.data(),
                   static_cast<uint32_t>(streams.size() * sizeof(BufferId)),
@@ -267,7 +276,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamQuery(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamQuery, ctx.msg);
+        TEST_REQUEST_V32(StreamQuery, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -285,7 +294,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamAppend(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamAppend, ctx.msg);
+        TEST_REQUEST_V32(StreamAppend, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -327,7 +336,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamCloseAndOpen(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamCloseAndOpen, ctx.msg);
+        TEST_REQUEST_V32(StreamCloseAndOpen, ctx.msg);
         ServerSession& session = ctx.worker._session;
         ServerPort* port = ctx.worker._port.get();
 
@@ -416,7 +425,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::_handleStreamClose(MessageContext& ctx)
     {
-        TEST_REQUEST_V31(StreamClose, ctx.msg);
+        TEST_REQUEST_V32(StreamClose, ctx.msg);
         ServerSession& session = ctx.worker._session;
 
         StreamId id = ctx.msg.parameter0;
@@ -447,9 +456,9 @@ namespace SimuTrace
 
         switch (code)
         {
-            case RpcApi::CCV31_StreamAppend:
-            case RpcApi::CCV31_StreamClose: {
-                TEST_REQUEST_V31(StreamAppend, msg); // Same characteristics
+            case RpcApi::CCV32_StreamAppend:
+            case RpcApi::CCV32_StreamClose: {
+                TEST_REQUEST_V32(StreamAppend, msg); // Same characteristics
 
                 StreamId id = msg.parameter0;
                 ServerStream& stream = dynamic_cast<ServerStream&>(
@@ -461,7 +470,7 @@ namespace SimuTrace
                 // the buffer), if the segment has already been submitted.
                 StreamBuffer& buffer = stream.getStreamBuffer();
 
-                StreamSegmentId sqn = (code == RpcApi::CCV31_StreamAppend) ?
+                StreamSegmentId sqn = (code == RpcApi::CCV32_StreamAppend) ?
                     stream.getCurrentSegmentId() :
                     msg.data.parameter1;
 
@@ -631,7 +640,7 @@ namespace SimuTrace
 
     bool ServerSessionWorker::channelSupportsSharedMemory() const
     {
-        return ((_port->getChannelCaps() & CCapHandleTransfer) != 0);
+        return IsSet(_port->getChannelCaps(), CCapHandleTransfer);
     }
 
 }

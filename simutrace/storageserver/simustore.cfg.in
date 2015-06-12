@@ -1,5 +1,5 @@
 /*
- * Sample configuration file for Simutrace 3.1
+ * Sample configuration file for Simutrace @SIMUTRACE_VERSION_MAJOR@.@SIMUTRACE_VERSION_MINOR@
  *
  * This is the server configuration file. It contains all options that the
  * server understands. Simutrace utilizes the libconfig library to read
@@ -48,6 +48,9 @@ server: {
        0 = Fatal, 1 = Error, 2 = Warning, 3 = Information, 4 = Debug,
        5 = Memory Debug, 6 = Rpc Debug. Levels 4+ require a debug build. */
     loglevel = @CFG_SERVER_LOGLEVEL@;
+
+    /* If set, terminal log output will not be colored. */
+    logNoColor = @_CFG_SERVER_LOGNOCOLOR@
 
     /* If set, the server won't print output to stdout (-q). */
     quiet = @_CFG_SERVER_QUIET@;

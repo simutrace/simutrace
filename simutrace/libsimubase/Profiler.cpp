@@ -54,7 +54,7 @@ namespace SimuTrace
         _context(&context),
         _contextOwner(false)
     {
-        ThrowOn(_writeInterval == 0, ArgumentException);
+        ThrowOn(_writeInterval == 0, ArgumentException, "_writeInterval");
     }
 
     Profiler::~Profiler()

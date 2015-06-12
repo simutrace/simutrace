@@ -31,6 +31,7 @@ namespace SimuTrace
                                ClientSession& session) :
         Stream(id, desc, buffer),
         ClientObject(session),
+        _lock(),
         _writeHandle(),
         _readHandles()
     {
@@ -42,98 +43,41 @@ namespace SimuTrace
         // We do not explicitly close read handles on exit, but instead let
         // the server automatically clean up for us. However, the write handle
         // should be closed by now. If we are using a socket connection, we
-        // would loose data otherwise.
+        // would lose data otherwise.
         assert(_writeHandle == nullptr);
     }
 
-    byte* ClientStream::_getPayload(SegmentId segment, uint32_t* lengthOut) const
-    {
-        byte* payload;
-        assert(lengthOut != nullptr);
-
-        StreamBuffer& buffer = getStreamBuffer();
-        if (buffer.isMaster()) {
-            size_t size;
-
-            payload = buffer.getSegmentAsPayload(segment, size);
-            *lengthOut = static_cast<uint32_t>(size);
-        } else {
-            payload = nullptr;
-            *lengthOut = 0;
-        }
-
-        return payload;
-    }
-
-    void ClientStream::_initializeHandle(StreamHandle handle, SegmentId segment,
-                                         bool readOnly, StreamAccessFlags flags,
-                                         size_t offset)
-    {
-        StreamBuffer& buffer   = getStreamBuffer();
-
-        handle->isReadOnly     = (readOnly) ? _true : _false;
-        handle->accessFlags    = flags;
-
-        handle->stream         = this;
-        handle->entrySize      = getType().entrySize;
-
-        handle->segment        = segment;
-        handle->control        = buffer.getControlElement(segment);
-
-        handle->sequenceNumber = handle->control->link.sequenceNumber;
-
-        handle->segmentStart   = buffer.getSegment(segment);
-
-        // If this segment is read-only, we move the segmentEnd pointer right
-        // behind the last valid entry.
-        handle->segmentEnd     = (readOnly) ?
-            buffer.getSegmentEnd(segment, handle->entrySize) :
-            handle->segmentStart + buffer.getSegmentSize();
-
-        assert(handle->segmentEnd > handle->segmentStart);
-
-        // Position the handle at the offset that the server determined for
-        // the query.
-        handle->entry = handle->segmentStart + offset;
-
-        assert((handle->entry != nullptr) &&
-               (handle->entry >= handle->segmentStart) &&
-               (handle->entry <= handle->segmentEnd -
-                (isVariableEntrySize(handle->entrySize) ?
-                getSizeHint(handle->entrySize) : handle->entrySize)));
-        assert(handle->control != nullptr);
-    }
-
-    void ClientStream::_closeHandle(StreamHandle handle)
+    void ClientStream::_addHandle(
+        std::unique_ptr<StreamStateDescriptor>& handle)
     {
         assert(handle != nullptr);
         assert(handle->stream == this);
-        assert(handle->segment != INVALID_SEGMENT_ID);
-        assert(handle->control != nullptr);
-        assert(handle->control->link.sequenceNumber != INVALID_STREAM_SEGMENT_ID);
 
-        uint32_t payloadLength = 0;
-        void *payload = nullptr;
+        if (!IsSet(handle->flags, StreamStateFlags::SsfRead)) {
+            assert(_writeHandle == nullptr);
 
-        if (handle == _writeHandle.get()) {
-            payload = _getPayload(handle->segment, &payloadLength);
+            _writeHandle = std::move(handle);
+        } else {
+            _readHandles.push_back(std::move(handle));
         }
-
-        _getPort().call(nullptr, RpcApi::CCV31_StreamClose, payload,
-                        payloadLength, getId(),
-                        handle->control->link.sequenceNumber);
     }
 
     void ClientStream::_releaseHandle(StreamHandle handle)
     {
         assert(handle != nullptr);
+        assert(handle->stream == this);
         StreamId id = reinterpret_cast<ClientStream*>(handle->stream)->getId();
 
         if (handle == _writeHandle.get()) {
+            assert(!IsSet(handle->flags, StreamStateFlags::SsfRead));
+            assert(!IsSet(handle->flags, StreamStateFlags::SsfDynamic));
+
             LogDebug("Closing write handle for stream %d.", id);
 
             _writeHandle = nullptr;
         } else {
+            assert(IsSet(handle->flags, StreamStateFlags::SsfRead));
+
             bool found = false;
             for (auto it = _readHandles.begin();
                  it != _readHandles.end(); ++it) {
@@ -155,244 +99,45 @@ namespace SimuTrace
         }
     }
 
-    void ClientStream::_invalidateHandle(StreamHandle handle)
-    {
-        assert(handle != nullptr);
-        assert(handle->isReadOnly == 1);
-
-        handle->segment = INVALID_SEGMENT_ID;
-        handle->control = nullptr;
-
-        handle->entry = nullptr;
-        handle->segmentStart = nullptr;
-        handle->segmentEnd = nullptr;
-    }
-
-    void ClientStream::_payloadAllocatorWrite(Message& msg, bool free, void* args)
-    {
-        // Since we directly write into the stream buffer, we do not need to
-        // free anything.
-        if (free) {
-            return;
-        }
-
-        ClientStream* stream = reinterpret_cast<ClientStream*>(args);
-        StreamBuffer& buffer = stream->getStreamBuffer();
-
-        assert(msg.response.status == RpcApi::SC_Success);
-
-        // The server should send only the segment control element to us, not
-        // the entire segment as we have to do on submit.
-        ThrowOn(msg.data.payloadLength != sizeof(SegmentControlElement),
-                RpcMessageMalformedException);
-
-        SegmentId id = static_cast<SegmentId>(msg.data.parameter1);
-        msg.data.payload = buffer.getControlElement(id);
-    }
-
-    void ClientStream::_payloadAllocatorRead(Message& msg, bool free, void* args)
-    {
-        // Since we directly write into the stream buffer, we do not need to
-        // free anything.
-        if (free) {
-            return;
-        }
-
-        ClientStream* stream = reinterpret_cast<ClientStream*>(args);
-        StreamBuffer& buffer = stream->getStreamBuffer();
-
-        assert(msg.response.status == RpcApi::SC_Success);
-
-        SegmentId id = static_cast<SegmentId>(msg.parameter0);
-
-        size_t size;
-        void* segment = buffer.getSegmentAsPayload(id, size);
-
-        // The server should send us the whole segment.
-        ThrowOn(msg.data.payloadLength != size,
-                RpcMessageMalformedException);
-
-        msg.data.payload = segment;
-    }
-
-    void ClientStream::queryInformation(StreamQueryInformation& informationOut) const
-    {
-        Message response = {0};
-
-        _getPort().call(&response, RpcApi::CCV31_StreamQuery, getId());
-
-        ThrowOn((response.payloadType != MessagePayloadType::MptData) ||
-                (response.data.payloadLength != sizeof(StreamQueryInformation)),
-                RpcMessageMalformedException);
-
-        assert(response.data.payload != nullptr);
-
-        StreamQueryInformation* desc =
-            reinterpret_cast<StreamQueryInformation*>(response.data.payload);
-
-        informationOut = *desc;
-    }
-
     StreamHandle ClientStream::append(StreamHandle handle)
     {
-        uint32_t payloadLength = 0;
-        void* payload = nullptr;
+        LockScope(_lock);
 
-        if (_writeHandle != nullptr) {
-            ThrowOn(handle != _writeHandle.get(), InvalidOperationException);
-            assert(_writeHandle->segment != INVALID_SEGMENT_ID);
-            assert(!_writeHandle->isReadOnly);
-
-            payload = _getPayload(_writeHandle->segment, &payloadLength);
-        } else {
-            ThrowOn(handle != nullptr, InvalidOperationException);
+        if (handle != nullptr) {
+            ThrowOn(handle->stream != this, InvalidOperationException);
+            ThrowOn(IsSet(handle->flags, StreamStateFlags::SsfRead),
+                    InvalidOperationException);
         }
 
-        // Set the payload allocator so we accept segment control elements in
-        // remote connections.
-        Message response = {0};
-        response.allocator = _payloadAllocatorWrite;
-        response.allocatorArgs = this;
-
-        try {
-            _getPort().call(&response, RpcApi::CCV31_StreamAppend, payload,
-                            payloadLength, getId());
-
-        } catch (...) {
-            if (handle != nullptr) {
-                _releaseHandle(handle);
-            }
-
-            throw;
-        }
-
-        SegmentId id = response.data.parameter1;
-        if (id == INVALID_SEGMENT_ID) {
-            if (handle != nullptr) {
-                _releaseHandle(handle);
-            }
-
-            return nullptr;
-        }
-
-        if (_writeHandle == nullptr) {
-            std::unique_ptr<StreamStateDescriptor> desc(
-                new StreamStateDescriptor());
-
-            _initializeHandle(desc.get(), id, false);
-
-            // Set the handle only after we could successfully initialize
-            // it. Otherwise, we might throw and would need to manually
-            // release it again.
-            _writeHandle = std::move(desc);
-
-            LogDebug("Created new write handle for stream %d.", getId());
-        } else {
-            _initializeHandle(_writeHandle.get(), id, false);
-        }
-
-        return _writeHandle.get();
+        return _append(handle);
     }
 
     StreamHandle ClientStream::open(QueryIndexType type, uint64_t value,
                                     StreamAccessFlags flags, StreamHandle handle)
     {
+        LockScope(_lock);
+
         // We do not check here, if the supplied handle is in our list or if
         // it is a manually crafted one by the caller. However, we do not need
         // to care.
         if (handle != nullptr) {
             ThrowOn(handle->stream != this, InvalidOperationException);
-
-            // We need to release the handle if the caller specified the
-            // write handle. Otherwise, we have a stale reference to the write
-            // handle.
-
-            if (handle == _writeHandle.get()) {
-                _closeHandle(handle);
-                _releaseHandle(handle);
-                handle = nullptr;
-            }
+            ThrowOn(!IsSet(handle->flags, StreamStateFlags::SsfRead),
+                    InvalidOperationException);
         }
 
-        // Set the payload allocator so we accept segment data in remote
-        // connections.
-        Message response = {0};
-        response.allocator = _payloadAllocatorRead;
-        response.allocatorArgs = this;
-
-        StreamOpenQuery query;
-        query.type  = type;
-        query.value = value;
-
-        // Specifying no flags and a handle will lead us to copy the
-        // handle's flags. Otherwise, we use the specified flags.
-        if ((handle != nullptr) && (flags == StreamAccessFlags::SafNone)) {
-            query.flags = handle->accessFlags;
-        } else {
-            query.flags = flags;
-            if (handle != nullptr) {
-                handle->accessFlags = flags;
-            }
-        }
-
-        StreamSegmentId closeSqn =
-            ((handle != nullptr) && (handle->control != nullptr)) ?
-                handle->control->link.sequenceNumber :
-                INVALID_STREAM_SEGMENT_ID;
-
-        try {
-            _getPort().call(&response, RpcApi::CCV31_StreamCloseAndOpen, &query,
-                            sizeof(StreamOpenQuery), getId(), closeSqn);
-
-        } catch (...) {
-            // If the client requests a segment that is still in progress or
-            // does not yet exists (e.g., in a producer/consumer scenario) the
-            // server will throw according exceptions. In these cases we do not
-            // want the handle to be deleted, to facilitate retrying the
-            // operation at a later time.
-
-            if (handle != nullptr) {
-                _invalidateHandle(handle);
-            }
-
-            throw;
-        }
-
-        SegmentId id = response.parameter0;
-        if (id == INVALID_SEGMENT_ID) {
-            if (handle != nullptr) {
-                _invalidateHandle(handle);
-            }
-            return handle;
-        }
-
-        size_t offset = response.data.parameter1;
-        if (handle == nullptr) {
-            std::unique_ptr<StreamStateDescriptor> desc(
-                new StreamStateDescriptor());
-
-            _initializeHandle(desc.get(), id, true, flags, offset);
-
-            handle = desc.get();
-
-            // Add the handle only after we could successfully initialize
-            // it. Otherwise, we might throw and would need to manually
-            // remove it from the handle list again.
-            _readHandles.push_back(std::move(desc));
-
-            LogDebug("Created new read handle for stream %d.", getId());
-        } else {
-            _initializeHandle(handle, id, true, flags, offset);
-        }
-
-        return handle;
+        return _open(type, value, flags, handle);
     }
 
     void ClientStream::close(StreamHandle handle)
     {
-        ThrowOnNull(handle, ArgumentNullException);
+        LockScope(_lock);
 
-        if (handle->control != nullptr) {
+        ThrowOnNull(handle, ArgumentNullException, "handle");
+        ThrowOn(handle->stream != this, InvalidOperationException);
+
+        if (IsSet(handle->flags, StreamStateFlags::SsfDynamic) ||
+            (handle->stat.control != nullptr)) {
             _closeHandle(handle);
         }
 
@@ -401,6 +146,8 @@ namespace SimuTrace
 
     void ClientStream::flush()
     {
+        LockScope(_lock);
+
         if (_writeHandle == nullptr) {
             return;
         }

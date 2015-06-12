@@ -97,12 +97,39 @@ extern "C"
      *
      *  \remarks The exception information is thread local. StGetLastError()
      *           thus always returns error information on API calls from the
-     *           same thread only.
+     *           calling thread only.
      *
      *  \since 3.0
      */
     SIMUTRACE_API
     int StGetLastError(ExceptionInformation* informationOut);
+
+
+    /*! \brief Sets the last exception.
+     *
+     *  Sets the last error information for the calling thread. The value
+     *  can be retrieved with StGetLastError().
+     *
+     *  \param type The type of the exception, which determines how to
+     *              interpret the error code. Set this to EcUser for
+     *              user-defined error codes.
+     *
+     *  \param code One of the pre-defined error codes or a user-defined one,
+     *              depending on the exception type.
+     *
+     *  \param message Optional pointer to an error message. This parameter
+     *                 can be \c NULL.
+     *
+     *  \remarks The exception information is thread local. StSetLastError()
+     *           thus always sets error information for the calling thread only.
+     *
+     *  \since 3.2
+     *
+     *  \see #RuntimeException
+     *  \see #NetworkException
+     */
+    SIMUTRACE_API
+    void StSetLastError(ExceptionClass type, int code, const char* message);
 
 
     /* Session API */
@@ -448,7 +475,7 @@ extern "C"
 
     /*! \brief Creates a new stream descriptor.
      *
-     *  This method is a helper function to quickly create a new stream
+     *  This method is a helper function to quickly create a stream
      *  description needed to register a new stream. The description contains
      *  information about the stream's name and layout of trace entries,
      *  that is records written to or read from a stream.
@@ -460,13 +487,7 @@ extern "C"
      *                   a variable-sized entry type, use
      *                   makeVariableEntrySize().
      *
-     *  \param temporalOrder Indicates if the entries in the stream will
-     *                       contain a time stamp. The time stamp must be the
-     *                       first field in each entry and be of type
-     *                       \c CycleCount, at least
-     *                       \c TEMPORAL_ORDER_CYCLE_COUNT_BITS (default 48)
-     *                       bits wide. The time stamp must further be
-     *                       monotonic increasing.
+     *  \param flags Supplies the flags used for the type of the new stream.
      *
      *  \param descOut Pointer to a #StreamDescriptor structure that will
      *                 receive the new stream information.
@@ -487,6 +508,9 @@ extern "C"
      *           utilize the built-in memory trace encoder use
      *           StStreamFindMemoryType() and StMakeStreamDescriptorFromType().
      *
+     *  \deprecated <b>Before 3.2:</b> temporalOrder was the only flag that
+     *              could be specified. The parameter has been replaced.
+     *
      *  \since 3.0
      *
      *  \see StMakeStreamDescriptorFromType()
@@ -494,12 +518,12 @@ extern "C"
      */
     SIMUTRACE_API
     _bool StMakeStreamDescriptor(const char* name, uint32_t entrySize,
-                                 _bool temporalOrder, StreamDescriptor* descOut);
+                                 StreamTypeFlags flags, StreamDescriptor* descOut);
 
 
     /*! \brief Creates a new stream descriptor from existing type information.
      *
-     *  This method is a helper function to quickly create a new stream
+     *  This method is a helper function to quickly create a stream
      *  description needed to register a new stream. The description contains
      *  information about the stream's name and layout of trace entries,
      *  that is records written to or read from a stream. This method uses
@@ -574,6 +598,84 @@ extern "C"
         _bool hasData);
 
 
+    /*! \brief Creates a new stream descriptor for a dynamic stream
+     *
+     *  This method is a helper function to quickly create dynamic stream
+     *  descriptions needed to register a new dynamic stream. The descriptions
+     *  contains information about the stream's name, layout, and operations.
+     *
+     *  \param name A friendly name of the new stream (e.g.,
+     *              "Filtered memory accesses").
+     *
+     *  \param entrySize The size of a single trace entry in bytes.
+     *                   Variable-sized entries are not supported.
+     *
+     *  \param flags Supplies the flags used for the type of the new stream.
+     *
+     *  \param userData A pointer to optional user-defined data that should
+     *                  be available when the stream is opened. The data
+     *                  must not be freed for the lifetime of the stream.
+     *
+     *  \param operations Pointer to a set of operations that implement the
+     *                    logic of the dynamic stream.
+     *
+     *  \param descOut Pointer to a #DynamicStreamDescriptor structure that will
+     *                 receive the new stream information.
+     *
+     *  \returns \c _true if successful, \c _false otherwise. For a more
+     *           detailed error description call StGetLastError().
+     *
+     *  \since 3.2
+     *
+     *  \see StMakeStreamDescriptorDynamicFromType()
+     *  \see StStreamRegisterDynamic()
+     */
+    SIMUTRACE_API
+    _bool StMakeStreamDescriptorDynamic(const char* name, uint32_t entrySize,
+                                        StreamTypeFlags flags, const void* userData,
+                                        const DynamicStreamOperations* operations,
+                                        DynamicStreamDescriptor* descOut);
+
+
+    /*! \brief Creates a new stream descriptor for a dynamic stream from
+     *         exisiting type information
+     *
+     *  This method is a helper function to quickly create dynamic stream
+     *  descriptions needed to register a new dynamic stream. The descriptions
+     *  contains information about the stream's name, layout, and operations.
+     *  This method uses the supplied type information.
+     *
+     *  \param name A friendly name of the new stream (e.g.,
+     *              "Filtered memory accesses").
+     *
+     *  \param type Pointer to a valid #StreamTypeDescriptor structure,
+     *              defining the desired type of the new stream.
+     *
+     *  \param userData A pointer to optional user-defined data that should
+     *                  be available when the stream is opened. The data
+     *                  must not be freed for the lifetime of the stream.
+     *
+     *  \param operations Pointer to a set of operations that implement the
+     *                    logic of the dynamic stream.
+     *
+     *  \param descOut Pointer to a #DynamicStreamDescriptor structure that will
+     *                 receive the new stream information.
+     *
+     *  \returns \c _true if successful, \c _false otherwise. For a more
+     *           detailed error description call StGetLastError().
+     *
+     *  \since 3.2
+     *
+     *  \see StMakeStreamDescriptorDynamic()
+     *  \see StStreamRegisterDynamic()
+     */
+    SIMUTRACE_API
+    _bool StMakeStreamDescriptorDynamicFromType(const char* name,
+        const void* userData, const StreamTypeDescriptor* type,
+        const DynamicStreamOperations* operations,
+        DynamicStreamDescriptor* descOut);
+
+
     /*! \brief Registers a new stream.
      *
      *  Streams are the basic interface to write or read data with Simutrace.
@@ -614,6 +716,52 @@ extern "C"
     StreamId StStreamRegister(SessionId session, StreamDescriptor* desc);
 
 
+    /*! \brief Registers a new dynamic stream.
+     *
+     *  Streams are the basic interface to work with data in Simutrace.
+     *  Dynamic streams differ from regular streams in that entries are
+     *  created dynamically by user-defined handler functions. This way
+     *  multiplexers, filters, etc. can be realized. A filter, for example, may
+     *  connect to a regular static stream and pass only those entries that
+     *  meet certain criteria. Accessing the resulting dynamic stream does not
+     *  differ from regular streams. Dynamic streams therefore may be used as
+     *  input for other dynamic streams, building a cascade of stream
+     *  processors.
+     *
+     *  \param session The id of the session, whose store should register the
+     *                 stream.
+     *
+     *  \param desc Pointer to a dynamic stream descriptor defining the
+     *              properties of the new dynamic stream (e.g., the desired
+     *              type of data entries). To create a dynamic descriptor see
+     *              StMakeStreamDescriptorDynamic() or
+     *              StMakeStreamDescriptorDynamicFromType().
+     *
+     *  \returns The id of the new dynamic stream if successful,
+     *           \c INVALID_STREAM_ID otherwise. For a more detailed error
+     *           description call StGetLastError().
+     *
+     *  \remarks Dynamic streams are <b>not</b> persistent. They are lost when
+     *           the session is closed.
+     *
+     *  \remarks Dynamic streams are visible only within the same <b>local</b>
+     *           session.
+     *
+     *  \warning Once a stream is registered, it cannot be removed. The
+     *           operation is irreversible.
+     *
+     *  \since 3.2
+     *
+     *  \see StMakeStreamDescriptorDynamic()
+     *  \see StMakeStreamDescriptorDynamicFromType()
+     *  \see StStreamEnumerate()
+     *  \see StStreamQuery()
+     */
+    SIMUTRACE_API
+    StreamId StStreamRegisterDynamic(SessionId session,
+                                     DynamicStreamDescriptor* desc);
+
+
     /*! \brief Returns a list of all registered streams.
      *
      *  After registering streams or opening an existing store, all streams
@@ -624,8 +772,8 @@ extern "C"
      *  \param session The id of the session to enumerate all streams from.
      *
      *  \param bufferSize Total size in bytes of the buffer supplied to receive
-     *                    the stream ids. The function fails when the buffer is
-     *                    too small.
+     *                    the stream ids. If the buffer is too small, it will
+     *                    receive as many ids as fit.
      *
      *  \param streamIdsOut Supplies the destination buffer, which receives the
      *                      list of stream ids. Each element in the buffer will
@@ -641,6 +789,12 @@ extern "C"
      *           \c 0 and \c NULL respectively. The return value indicates the
      *           number of stream ids (#StreamId) the buffer must be able to
      *           accommodate.
+     *
+     *  \remarks The return value is always the number of registered streams,
+     *           <b>not</b> the number of ids copied to the buffer.
+     *
+     *  \deprecated <b>Before 3.2:</b> The method fails if the given buffer is
+     *              too small to receive all stream ids.
      *
      *  \since 3.0
      *
@@ -691,7 +845,8 @@ extern "C"
      *  \param stream The id of the stream to open a handle for. Must be
      *                \c INVALID_STREAM_ID, when supplying \p handle.
      *
-     *  \param handle Existing write handle or \c NULL.
+     *  \param handle Existing write handle to the same stream, which will be
+     *                used for the request. Leave this parameter \c NULL.
      *
      *  \returns A write handle to the specified stream if successful,
      *           \c NULL otherwise. For a more detailed error description call
@@ -755,10 +910,8 @@ extern "C"
      *               \p flags is set to \c StreamAccessFlags::SafNone, the
      *               flags are taken from the handle.
      *
-     *  \param handle An existing handle to the same stream, which will be
-     *                closed or reused for the request. The handle may be a
-     *                write handle or a read handle. Leave this parameter
-     *                \c NULL.
+     *  \param handle An existing read handle to the same stream, which will be
+     *                reused for the request. Leave this parameter \c NULL.
      *
      *  \returns A read handle to the specified stream if successful,
      *           \c NULL otherwise (if \p handle has been specified, an
@@ -797,13 +950,16 @@ extern "C"
      *           StGetNextEntryFast() on the returned handle and scan over the
      *           entries manually.
      *
+     *  \deprecated <b>Before 3.2:</b> \p handle may also be a write handle
+     *           to the stream.
+     *
      *  \since 3.0
      *
      *  \see StStreamRegister()
      *  \see StStreamAppend()
      *  \see StStreamClose()
-     *  \see StGetNextEntryFast()
-     *  \see StGetPreviousEntryFast()
+     *  \see StGetNextEntry()
+     *  \see StGetPreviousEntry()
      */
     SIMUTRACE_API
     StreamHandle StStreamOpen(SessionId session, StreamId stream,
@@ -899,10 +1055,11 @@ extern "C"
      *  \see StGetNextEntry()
      *  \see StStreamAppend()
      *  \see StStreamOpen()
-     *  \see StSubmitEntryFast()
+     *  \see StSubmitEntry()
      *  \see StWriteVariableData()
      *  \see StReadVariableData()
      */
+#pragma check_stack(off)
     static inline void* StGetNextEntryFast(StreamHandle* handlePtr)
     {
         STASSERT(handlePtr != NULL);
@@ -916,13 +1073,31 @@ extern "C"
            have enough space left for another entry. In that case, request
            a new segment from the server                                     */
         if (entry + handle->entrySize > handle->segmentEnd) {
-            if (handle->isReadOnly) {
+            /* Dynamic stream handling */
+            if ((handle->flags & SsfDynamic) != 0) {
+                STASSERT(handle->dyn.operations != NULL);
+                STASSERT(handle->dyn.operations->getNextEntry != NULL);
+
+                int result = handle->dyn.operations->getNextEntry(
+                                handle->dyn.userData, (void**)&entry);
+                if (result != 0) {
+                    STASSERT(entry == NULL);
+                    StSetLastError(EcUser, result, NULL);
+
+                    return NULL;
+                }
+
+                return entry;
+            }
+
+            /* Static stream handling */
+            if ((handle->flags & SsfRead) != 0) {
                 handle->accessFlags = handle->accessFlags &
                     (StreamAccessFlags)(~SafReverseRead);
 
                 handle = StStreamOpen(INVALID_SESSION_ID, INVALID_STREAM_ID,
                                       QNextValidSequenceNumber,
-                                      handle->sequenceNumber,
+                                      handle->stat.sequenceNumber,
                                       handle->accessFlags, handle);
             } else {
                 handle = StStreamAppend(INVALID_SESSION_ID, INVALID_STREAM_ID,
@@ -930,7 +1105,7 @@ extern "C"
             }
 
             *handlePtr = handle;
-            if ((handle == NULL) || (handle->control == NULL)) {
+            if ((handle == NULL) || (handle->stat.control == NULL)) {
                 return NULL;
             }
             entry = handle->entry;
@@ -942,7 +1117,6 @@ extern "C"
         handle->entry = entry + handle->entrySize;
         return entry;
     }
-
 
     /*! \brief Returns a pointer to the next entry in a stream.
      *
@@ -966,6 +1140,8 @@ extern "C"
      *
      *  \param handlePtr A pointer to the stream read handle. The method may
      *                   allocate a new handle and update the supplied pointer.
+     *                   Calling the function with a handle to a dynamic stream
+     *                   is not supported.
      *
      *  \returns A pointer to the previous trace entry if successful, \c NULL
      *           otherwise. For a more detailed error description call
@@ -1011,7 +1187,7 @@ extern "C"
         StreamHandle handle = *handlePtr;
         STASSERT(handle != NULL);
         STASSERT(!isVariableEntrySize(handle->entrySize));
-        STASSERT(handle->isReadOnly == _true);
+        STASSERT((handle->flags & SsfRead) != 0);
 
         byte* entry = handle->entry;
 
@@ -1019,15 +1195,21 @@ extern "C"
            do not have enough space left for another entry. In that case,
            request a new segment from the server                             */
         if (entry < handle->segmentStart) {
+             /* Dynamic stream handling */
+            if ((handle->flags & SsfDynamic) != 0) {
+                return NULL;
+            }
+
+            /* Static stream handling */
             handle->accessFlags = handle->accessFlags | SafReverseRead;
 
             handle = StStreamOpen(INVALID_SESSION_ID, INVALID_STREAM_ID,
                                   QPreviousValidSequenceNumber,
-                                  handle->sequenceNumber,
+                                  handle->stat.sequenceNumber,
                                   handle->accessFlags, handle);
 
             *handlePtr = handle;
-            if ((handle == NULL) || (handle->control == NULL)) {
+            if ((handle == NULL) || (handle->stat.control == NULL)) {
                 return NULL;
             }
             entry = handle->entry;
@@ -1062,22 +1244,25 @@ extern "C"
      *  is valid.
      *
      *  \param handle The write handle of the stream, which has been used in
-     *                matching call to StGetNextEntryFast().
+     *                the matching call to StGetNextEntryFast().
      *
      *  \remarks When \b writing a new entry, call StSubmitEntryFast()
      *           afterwards. Each call to StGetNextEntryFast() must be paired
      *           with a matching call to StSubmitEntryFast(). When \b reading
      *           entries from the stream the caller must not invoke
-     *           StSubmitEntryFast().
+     *           StSubmitEntryFast(). This is undefined behavior.
      *
      *  \since 3.0
      *
      *  \see StSubmitEntry()
-     *  \see StGetNextEntryFast()
+     *  \see StGetNextEntry()
      */
     static inline void StSubmitEntryFast(StreamHandle handle)
     {
-        handle->control->rawEntryCount++;
+        STASSERT((handle->flags & SsfRead) == 0);
+        STASSERT((handle->flags & SsfDynamic) == 0);
+
+        handle->stat.control->rawEntryCount++;
     }
 
 

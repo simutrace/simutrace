@@ -30,7 +30,7 @@ namespace SimuTrace
 
     class LogCategory;
 
-    struct Environment 
+    struct Environment
     {
         LogCategory* log;
         libconfig::Config* config;

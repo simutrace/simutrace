@@ -107,7 +107,8 @@ namespace SimuTrace
         StreamId registerStream(StreamDescriptor& desc, BufferId buffer);
 
         void enumerateStreamBuffers(std::vector<BufferId>& out) const;
-        void enumerateStreams(std::vector<StreamId>& out, bool includeHidden) const;
+        void enumerateStreams(std::vector<StreamId>& out,
+                              StreamEnumFilter filter) const;
         void enumerateStores(std::vector<std::string>& out) const;
 
         StreamBuffer& getStreamBuffer(BufferId id) const;

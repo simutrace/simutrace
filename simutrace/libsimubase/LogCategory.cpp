@@ -104,7 +104,7 @@ namespace SimuTrace
     void LogCategory::registerAppender(std::shared_ptr<LogAppender>& appender)
     {
         LockScopeExclusive(_lock);
-        ThrowOnNull(appender, ArgumentNullException);
+        ThrowOnNull(appender, ArgumentNullException, "appender");
 
         _appenders.push_back(appender);
         _enabled.push_back(true);
@@ -113,7 +113,7 @@ namespace SimuTrace
     void LogCategory::enableAppender(const std::string& name, bool enable)
     {
         LockScopeShared(_lock);
-        ThrowOn(name.empty(), ArgumentNullException);
+        ThrowOn(name.empty(), ArgumentNullException, "name");
 
         for (auto i = 0; i < _appenders.size(); ++i) {
             if (_appenders[i]->getName().compare(name) == 0) {

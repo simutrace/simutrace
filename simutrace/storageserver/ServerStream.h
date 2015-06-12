@@ -64,7 +64,7 @@ namespace SimuTrace
 
         std::vector<SegmentLocation*> _segments;
         std::list<SegmentLocation*> _openList;
-        std::set<Range*, RangeCompare> _trees[QueryIndexType::QMaxTree + 1];
+        std::set<Range*, RangeCompare> _trees[QueryIndexType::_QMaxTree + 1];
 
         StreamSegmentId _lastSequenceNumber;
         StreamSegmentId _lastAppendSequenceNumber;

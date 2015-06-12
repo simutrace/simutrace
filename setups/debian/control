@@ -23,7 +23,7 @@ Package: libsimutrace-dev
 Architecture: amd64
 Depends: libsimutrace
 Homepage: http://simutrace.org
-Description: Simutrace Client - Development Headers
+Description: Simutrace Client Library - Development Headers
  Simutrace is a tracing framework for full system simulators and has been conceived with full length, no-loss tracing of high-frequency events such as executed CPU instructions and main memory references in mind.
  .
  The framework places no restriction on the type and number of captured events and employs a scalable storage format, which easily handles traces of hundreds of gigabytes in size. Simutrace has been particularly extended to facilitate efficient memory tracing by incorporating aggressive, but fast memory trace compression.
@@ -32,10 +32,37 @@ Description: Simutrace Client - Development Headers
  .
  This package provides the development headers to build applications that use the Simutrace client library.
 
+Package: libsimutraceX
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsimutrace
+Suggests: simutrace-server
+Homepage: http://simutrace.org
+Description: Simutrace Client Extensions Library
+ Simutrace is a tracing framework for full system simulators and has been conceived with full length, no-loss tracing of high-frequency events such as executed CPU instructions and main memory references in mind.
+ .
+ The framework places no restriction on the type and number of captured events and employs a scalable storage format, which easily handles traces of hundreds of gigabytes in size. Simutrace has been particularly extended to facilitate efficient memory tracing by incorporating aggressive, but fast memory trace compression.
+ .
+ Simutrace is a research project of the operating systems group at Karlsruhe Institute of Technology (KIT).
+ .
+ This package provides the client extensions library that provides useful additions to the standard Simutrace client API such as a stream multiplexer and various helper functions.
+
+Package: libsimutraceX-dev
+Architecture: amd64
+Depends: libsimutraceX
+Homepage: http://simutrace.org
+Description: Simutrace Client Extensions Library - Development Headers
+ Simutrace is a tracing framework for full system simulators and has been conceived with full length, no-loss tracing of high-frequency events such as executed CPU instructions and main memory references in mind.
+ .
+ The framework places no restriction on the type and number of captured events and employs a scalable storage format, which easily handles traces of hundreds of gigabytes in size. Simutrace has been particularly extended to facilitate efficient memory tracing by incorporating aggressive, but fast memory trace compression.
+ .
+ Simutrace is a research project of the operating systems group at Karlsruhe Institute of Technology (KIT).
+ .
+ This package provides the development headers to build applications that use the Simutrace client extensions library.
+
 Package: simutrace-server
 Architecture: amd64
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: libsimutrace
+Suggests: libsimutrace, libsimutraceX
 Homepage: http://simutrace.org
 Description: Simutrace Storage Server
  Simutrace is a tracing framework for full system simulators and has been conceived with full length, no-loss tracing of high-frequency events such as executed CPU instructions and main memory references in mind.

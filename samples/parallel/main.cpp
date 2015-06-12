@@ -193,7 +193,7 @@ int customWriterThreadMain(SessionId session)
         StreamDescriptor desc;
 
         _bool success = StMakeStreamDescriptor("My Data Stream", sizeof(MyEntry),
-                                               _false, &desc);
+                                               StreamTypeFlags::StfNone, &desc);
         if (!success) {
             printLastError();
             break;
@@ -207,7 +207,7 @@ int customWriterThreadMain(SessionId session)
 
         success = StMakeStreamDescriptor("String Stream",
                                          makeVariableEntrySize(16),
-                                         _false, &desc);
+                                         StreamTypeFlags::StfNone, &desc);
         if (!success) {
             printLastError();
             break;

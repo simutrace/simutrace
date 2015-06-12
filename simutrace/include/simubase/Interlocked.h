@@ -34,11 +34,11 @@ namespace SimuTrace
         uint32_t interlockedSub(volatile uint32_t* dst, uint32_t value);
         uint64_t interlockedSub(volatile uint64_t* dst, uint64_t value);
 
-        uint32_t interlockedCompareExchange(volatile uint32_t* dst, 
-                                            uint32_t exchange, 
+        uint32_t interlockedCompareExchange(volatile uint32_t* dst,
+                                            uint32_t exchange,
                                             uint32_t comperand);
-        uint64_t interlockedCompareExchange(volatile uint64_t* dst, 
-                                            uint64_t exchange, 
+        uint64_t interlockedCompareExchange(volatile uint64_t* dst,
+                                            uint64_t exchange,
                                             uint64_t comperand);
 
         uint32_t interlockedAnd(volatile uint32_t* dst, uint32_t value);

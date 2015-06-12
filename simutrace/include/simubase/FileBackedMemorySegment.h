@@ -68,5 +68,7 @@ namespace SimuTrace
 
         const SafeHandle& getHandle() const;
     };
+
 }
+
 #endif

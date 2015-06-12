@@ -133,7 +133,7 @@ namespace SimuTrace
     {
         assert(_openList.empty());
 
-        for (int i = 0; i <= QueryIndexType::QMaxTree; ++i) {
+        for (int i = 0; i <= QueryIndexType::_QMaxTree; ++i) {
             _trees[i].clear();
         }
 
@@ -234,7 +234,7 @@ namespace SimuTrace
         StorageLocation* ploc = (pseg != nullptr) ? pseg->location.get() : nullptr;
         SegmentLocation* nseg = _getNextSegment(sequenceNumber);
         StorageLocation* nloc = (nseg != nullptr) ? nseg->location.get() : nullptr;
-        for (int i = 0; i <= QueryIndexType::QMaxTree; ++i) {
+        for (int i = 0; i <= QueryIndexType::_QMaxTree; ++i) {
             Range* range = &location->ranges.ranges[i];
 
             if ((range->start != INVALID_LARGE_OBJECT_ID) &&
@@ -301,7 +301,7 @@ namespace SimuTrace
         assert(location == nullptr);
 
         // Insert each index into the corresponding tree
-        for (int i = 0; i <= QueryIndexType::QMaxTree; ++i) {
+        for (int i = 0; i <= QueryIndexType::_QMaxTree; ++i) {
             Range* range = &loc->location->ranges.ranges[i];
             if ((range->start != INVALID_LARGE_OBJECT_ID) &&
                 (range->end   != INVALID_LARGE_OBJECT_ID)) {
@@ -742,7 +742,7 @@ namespace SimuTrace
     StreamSegmentId ServerStream::_findSequenceNumber(QueryIndexType type,
                                                       uint64_t value) const
     {
-        if (type <= QueryIndexType::QMaxTree) {
+        if (type <= QueryIndexType::_QMaxTree) {
             const std::set<Range*, RangeCompare>& tree = _trees[type];
 
             Range range;
@@ -839,10 +839,10 @@ namespace SimuTrace
         // and make it look like the user specified the query relative from
         // the start of the stream. Sequence numbers are NOT adjusted and
         // can only be specified from the beginning.
-        if ((flags & StreamAccessFlags::SafReverseQuery) != 0) {
+        if (IsSet(flags, StreamAccessFlags::SafReverseQuery)) {
 
             // We ignore the reverse flag for sequence number queries
-            if (type <= QueryIndexType::QMaxTree) {
+            if (type <= QueryIndexType::_QMaxTree) {
 
                 // The stream stats (_stats) are updated under the lock. We
                 // therefore can use them to calculate the reverse value. Only
@@ -872,7 +872,7 @@ namespace SimuTrace
         const StreamTypeDescriptor& stype = getType();
         const byte* segmentStart = buffer.getSegment(bufferSegment);
 
-        assert(stype.temporalOrder != 0);
+        assert(IsSet(stype.flags, StreamTypeFlags::StfTemporalOrder));
         assert((cycle >= ctrl->startCycle) && (cycle <= ctrl->endCycle));
         assert(ctrl->entryCount == ctrl->rawEntryCount);
 
@@ -926,10 +926,9 @@ namespace SimuTrace
         const size_t endOffset = segmentEnd - segmentStart;
 
         // The query must already be adjusted
-        assert((flags & StreamAccessFlags::SafReverseQuery) == 0);
+        assert(!IsSet(flags, StreamAccessFlags::SafReverseQuery));
 
-        const bool reverseRead =
-            ((flags & StreamAccessFlags::SafReverseRead) != 0);
+        bool reverseRead = IsSet(flags, StreamAccessFlags::SafReverseRead);
 
         size_t offset;
         switch (type)
@@ -956,7 +955,8 @@ namespace SimuTrace
             }
 
             case QueryIndexType::QCycleCount: {
-                ThrowOn(stype.temporalOrder == 0, NotSupportedException);
+                ThrowOn(!IsSet(stype.flags, StreamTypeFlags::StfTemporalOrder),
+                        NotSupportedException);
 
                 offset = _findCycleCountBinarySearch(bufferSegment, value,
                                                      reverseRead);
@@ -984,7 +984,7 @@ namespace SimuTrace
             }
 
             default: {
-                Throw(ArgumentException);
+                Throw(ArgumentException, "type");
             }
         }
 
@@ -1019,9 +1019,9 @@ namespace SimuTrace
         LockScope(_appendLock);
         LockScopeExclusive(_lock);
 
-        ThrowOnNull(location, ArgumentNullException);
+        ThrowOnNull(location, ArgumentNullException, "location");
         ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID,
-                ArgumentOutOfBoundsException);
+                ArgumentOutOfBoundsException, "sequenceNumber");
         ThrowOn(_segmentIsAllocated(sequenceNumber),
                 InvalidOperationException);
 
@@ -1034,9 +1034,9 @@ namespace SimuTrace
     {
         LockScope(_appendLock);
 
-        ThrowOnNull(bufferSegmentOut, ArgumentNullException);
+        ThrowOnNull(bufferSegmentOut, ArgumentNullException, "bufferSegmentOut");
         ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID,
-                ArgumentOutOfBoundsException);
+                ArgumentOutOfBoundsException, "sequenceNumber");
         ThrowOn(_segmentIsAllocated(sequenceNumber),
                 InvalidOperationException);
 
@@ -1243,12 +1243,12 @@ namespace SimuTrace
             // read ahead before performing the requested open. While we are
             // holding the lock, we just find the right sequence numbers to
             // prefetch.
-            if ((nflags & StreamAccessFlags::SafSequentialScan) != 0) {
+            if (IsSet(nflags, StreamAccessFlags::SafSequentialScan)) {
                 QueryIndexType ratype;
 
                 // We first have to determine in which direction we have to
                 // perform read ahead.
-                ratype = ((flags & StreamAccessFlags::SafReverseRead) != 0) ?
+                ratype = IsSet(flags, StreamAccessFlags::SafReverseRead) ?
                     QueryIndexType::QPreviousValidSequenceNumber :
                     QueryIndexType::QNextValidSequenceNumber;
 
@@ -1275,7 +1275,7 @@ namespace SimuTrace
 
         // Do the actual read ahead. Since we cannot delete finished segments
         // the collected sequence numbers must still be valid for read ahead!
-        if ((nflags & StreamAccessFlags::SafSequentialScan) != 0) {
+        if (IsSet(nflags, StreamAccessFlags::SafSequentialScan)) {
             uint32_t readAhead = _readAheadAmount;
 
             StreamAccessFlags raFlags = static_cast<StreamAccessFlags>(

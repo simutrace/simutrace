@@ -41,17 +41,10 @@ namespace SimuTrace
         _consoleHandle(),
     #else
     #endif
-        _enableColor(false)
+        _enableColor(false) // Console color is off by default
     {
     #if defined(_WIN32)
         _consoleHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-
-        // If the application does not possess a console, we deactivate color
-        _enableColor = _consoleHandle.isValid();
-    #else
-        if (::isatty(STDOUT_FILENO)) {
-            _enableColor = true;
-        }
     #endif
 
         // Create default color palette
@@ -101,7 +94,7 @@ namespace SimuTrace
         uint32_t cvalue = (color & mask) + 30;
 
         std::cout << stringFormat("\x1b[%d%sm", cvalue,
-                                  ((color & Color::Intensity) != 0) ?
+                                  IsSet(color, Color::Intensity) ?
                                   ";1" : "");
     #endif
     }
@@ -118,7 +111,7 @@ namespace SimuTrace
     void TerminalLogAppender::setColor(LogPriority::Value priority,
                                        uint16_t color)
     {
-        ThrowOn(color > Color::White, ArgumentOutOfBoundsException);
+        ThrowOn(color > Color::White, ArgumentOutOfBoundsException, "color");
 
         _colorMap[priority] = color;
     }
@@ -130,6 +123,14 @@ namespace SimuTrace
 
     void TerminalLogAppender::setEnableColor(bool enable)
     {
+#if defined(_WIN32)
+        if (!_consoleHandle.isValid()) {
+#else
+        if (!::isatty(STDOUT_FILENO)) {
+#endif
+            return;
+        }
+
         _enableColor = enable;
     }
 

@@ -150,7 +150,7 @@ namespace SimuTrace
                     // use it if this is a response and the status indicates a
                     // failure. In that case the payload may be the error text.
                     if ((msg.allocator != nullptr) &&
-                        (((msg.flags & MessageFlags::MfResponse) == 0) ||
+                        ((!IsSet(msg.flags, MessageFlags::MfResponse)) ||
                          (msg.response.status != RpcApi::SC_Failed))) {
 
                         msg.allocator(msg, false, msg.allocatorArgs);

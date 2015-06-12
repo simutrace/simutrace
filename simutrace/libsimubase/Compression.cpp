@@ -38,9 +38,9 @@ namespace Compression
         const size_t totalHeaderSize = 5 + sizeof(size_t);
         size_t propSize = 5;
 
-        ThrowOn((sourceLength == 0) ||
-                (destinationLength <= totalHeaderSize),
-                ArgumentException);
+        ThrowOn(sourceLength == 0, ArgumentException, "sourceLength");
+        ThrowOn(destinationLength <= totalHeaderSize, ArgumentException,
+                "destinationLength");
 
         // We write the header in front of the compressed data. The header
         // is prepended by the uncompressed size, so we can decompress the
@@ -75,9 +75,8 @@ namespace Compression
         const size_t totalHeaderSize = 5 + sizeof(size_t);
         const size_t propSize = 5;
 
-        ThrowOn((sourceLength <= totalHeaderSize) ||
-                (destinationLength == 0),
-                ArgumentException);
+        ThrowOn(sourceLength <= totalHeaderSize, ArgumentException, "sourceLength");
+        ThrowOn(destinationLength == 0, ArgumentException, "destinationLength");
 
         // We expect the header in front of the compressed data. The header
         // is prepended by the uncompressed size, so we can decompress the

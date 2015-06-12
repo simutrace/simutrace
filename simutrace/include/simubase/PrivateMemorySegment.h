@@ -39,7 +39,7 @@ namespace SimuTrace
     public:
         PrivateMemorySegment(size_t size);
         PrivateMemorySegment(const PrivateMemorySegment& instance);
-        virtual ~PrivateMemorySegment();    
+        virtual ~PrivateMemorySegment();
 
         PrivateMemorySegment& operator=(PrivateMemorySegment instance) = delete;
     };

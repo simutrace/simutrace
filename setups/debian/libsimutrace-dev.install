@@ -1,1 +1,6 @@
-usr/include/*
+usr/include/SimuTrace.h
+usr/include/SimuTraceTypes.h
+usr/include/SimuTraceEntryTypes.h
+usr/include/SimuStorTypes.h
+usr/include/SimuBaseTypes.h
+usr/include/SimuPlatform.h

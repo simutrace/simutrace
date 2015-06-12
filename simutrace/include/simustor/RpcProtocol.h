@@ -35,23 +35,37 @@ namespace SimuTrace
 
 #define RPC_VERSION RPC_VER(RPC_VERSION_MAJOR, RPC_VERSION_MINOR)
 
-// Incompatible v3.1 function
+// Incompatible functions
+#define RPC_CALL_V30(code, name, payloadType, expectedLength) \
+    RPC_CALL(3, 0, code, name, payloadType, expectedLength)
+
 #define RPC_CALL_V31(code, name, payloadType, expectedLength) \
     RPC_CALL(3, 1, code, name, payloadType, expectedLength)
 
+#define RPC_CALL_V32(code, name, payloadType, expectedLength) \
+    RPC_DEF_CALL(3, 2, code, name) \
+    RPC_CALL(3, 2, code, name, payloadType, expectedLength)
+
+
 // Compatible function
 #define RPC_CALL_V31C(code, name, payloadType, expectedLength) \
-    RPC_CALL(3, 1, code, name, payloadType, expectedLength) \
-    RPC_CALL(3, 0, code, name, payloadType, expectedLength)
+    RPC_CALL_V30(code, name, payloadType, expectedLength) \
+    RPC_CALL_V31(code, name, payloadType, expectedLength)
+
+#define RPC_CALL_V32C(code, name, payloadType, expectedLength) \
+    RPC_CALL_V31C(code, name, payloadType, expectedLength) \
+    RPC_CALL_V32( code, name, payloadType, expectedLength)
+
+
+// Test functions
+#define TEST_REQUEST_V30(rpcname, msg) \
+    TEST_REQUEST(3, 0, rpcname, msg)
 
 #define TEST_REQUEST_V31(rpcname, msg) \
     TEST_REQUEST(3, 1, rpcname, msg)
 
-#define RPC_CALL_V30(code, name, payloadType, expectedLength) \
-    RPC_CALL(3, 0, code, name, payloadType, expectedLength)
-
-#define TEST_REQUEST_V30(rpcname, msg) \
-    TEST_REQUEST(3, 0, rpcname, msg)
+#define TEST_REQUEST_V32(rpcname, msg) \
+    TEST_REQUEST(3, 2, rpcname, msg)
 
 
     /* ==========  Simutrace Storage Server - Main API  ========== */
@@ -69,7 +83,7 @@ namespace SimuTrace
     /// Return Value:
     ///        Parameter0: Server API version
     ///
-    RPC_CALL_V31C(0x0000, Null, Embedded, 0)
+    RPC_CALL_V32C(0x0000, Null, Embedded, 0)
 
 
     ///
@@ -89,7 +103,7 @@ namespace SimuTrace
     ///        Parameter1<uint32_t>: Number of sessions
     ///        Payload<data>: Array of SessionId
     ///
-    RPC_CALL_V31C(0x0001, EnumerateSessions, Embedded, 0)
+    RPC_CALL_V32C(0x0001, EnumerateSessions, Embedded, 0)
 
 
     /* ==========  Simutrace Storage Server - Session API  ========== */
@@ -108,7 +122,7 @@ namespace SimuTrace
     ///
     ///        Parameter0<SessionId> Server Side Session Id
     ///
-    RPC_CALL_V31C(0x0010, SessionCreate, Embedded, 0)
+    RPC_CALL_V32C(0x0010, SessionCreate, Embedded, 0)
 
 
     ///
@@ -124,7 +138,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V31C(0x0011, SessionOpen, Embedded, 0)
+    RPC_CALL_V32C(0x0011, SessionOpen, Embedded, 0)
 
 
     ///
@@ -148,7 +162,7 @@ namespace SimuTrace
         int dummy;
     };
 
-    RPC_CALL_V31C(0x0012, SessionQuery, Embedded, 0)
+    RPC_CALL_V32C(0x0012, SessionQuery, Embedded, 0)
 
 
     ///
@@ -163,7 +177,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V31C(0x0013, SessionClose, Embedded, 0)
+    RPC_CALL_V32C(0x0013, SessionClose, Embedded, 0)
 
 
     ///
@@ -180,7 +194,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V31C(0x0014, SessionSetConfiguration, Data, 0)
+    RPC_CALL_V32C(0x0014, SessionSetConfiguration, Data, 0)
 
 
     /* ==========  Simutrace Storage Server - Store API  ========== */
@@ -199,7 +213,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V31C(0x0020, StoreCreate, Data, 0)
+    RPC_CALL_V32C(0x0020, StoreCreate, Data, 0)
 
 
     ///
@@ -214,7 +228,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V31C(0x0021, StoreClose, Embedded, 0)
+    RPC_CALL_V32C(0x0021, StoreClose, Embedded, 0)
 
 
     ///
@@ -237,7 +251,7 @@ namespace SimuTrace
     ///      Only for local connections:
     ///        Payload<Handles>: [0] Stream Buffer
     ///
-    RPC_CALL_V31C(0x0022, StreamBufferRegister, Embedded, 0)
+    RPC_CALL_V32C(0x0022, StreamBufferRegister, Embedded, 0)
 
 
     ///
@@ -256,7 +270,7 @@ namespace SimuTrace
     ///        Parameter0<uint32_t>: Number of stream buffers
     ///        Payload<data>: Array of BufferIds
     ///
-    RPC_CALL_V31C(0x0023, StreamBufferEnumerate, Embedded, 0)
+    RPC_CALL_V32C(0x0023, StreamBufferEnumerate, Embedded, 0)
 
 
     ///
@@ -280,7 +294,7 @@ namespace SimuTrace
     ///      Only for local connections:
     ///        Payload<Handles>:  [0] Stream Buffer
     ///
-    RPC_CALL_V31C(0x0024, StreamBufferQuery, Embedded, 0)
+    RPC_CALL_V32C(0x0024, StreamBufferQuery, Embedded, 0)
 
 
     /* ==========  Simutrace Storage Server - Stream RPC  ========== */
@@ -302,7 +316,7 @@ namespace SimuTrace
     ///
     ///        Parameter0<StreamId>: Id of the newly created stream.
     ///
-    RPC_CALL_V31C(0x0030, StreamRegister, Data, sizeof(StreamDescriptor))
+    RPC_CALL_V32C(0x0030, StreamRegister, Data, sizeof(StreamDescriptor))
 
 
     ///
@@ -313,8 +327,15 @@ namespace SimuTrace
     ///        current store.
     ///
     /// Arguments:
+    ///
+    ///        Version 3.0:
     ///        Parameter<bool>: Specifies, if hidden streams should be
     ///                         included in the results.
+    ///
+    ///        Version 3.2:
+    ///        Parameter<StreamEnumFilter>: Specifies, what types of streams
+    ///                                     should be included in the
+    ///                                     enumeration
     ///
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
@@ -323,6 +344,7 @@ namespace SimuTrace
     ///        Payload<data>: Array of StreamIds
     ///
     RPC_CALL_V31C(0x0031, StreamEnumerate, Embedded, 0)
+    RPC_CALL_V32( 0x0131, StreamEnumerate, Embedded, 0)
 
 
     ///
@@ -344,7 +366,7 @@ namespace SimuTrace
     ///                              the entries that are to be stored in the
     ///                              stream.
     ///
-    RPC_CALL_V31C(0x0032, StreamQuery, Embedded, 0)
+    RPC_CALL_V32C(0x0032, StreamQuery, Embedded, 0)
 
 
     ///
@@ -376,7 +398,7 @@ namespace SimuTrace
     ///
     ///      Local connections send a data packet with zero payload size.
     ///
-    RPC_CALL_V31C(0x0033, StreamAppend, Data, 0)
+    RPC_CALL_V32C(0x0033, StreamAppend, Data, 0)
 
 
     ///
@@ -421,8 +443,9 @@ namespace SimuTrace
         StreamAccessFlags flags;
     };
 
-    RPC_CALL_V31(0x0134, StreamCloseAndOpen, Data, sizeof(StreamOpenQuery))
     RPC_CALL_V30(0x0034, StreamCloseAndOpen, Data, sizeof(StreamOpenQuery))
+    RPC_CALL_V31(0x0134, StreamCloseAndOpen, Data, sizeof(StreamOpenQuery))
+    RPC_CALL_V32(0x0134, StreamCloseAndOpen, Data, sizeof(StreamOpenQuery))
 
 
     ///
@@ -447,7 +470,7 @@ namespace SimuTrace
     /// Return Value:
     ///        SC_Success on success, SC_Failed otherwise.
     ///
-    RPC_CALL_V31C(0x0035, StreamClose, Data, 0)
+    RPC_CALL_V32C(0x0035, StreamClose, Data, 0)
 
 }
 

@@ -43,7 +43,7 @@ namespace SimuTrace
         _address(),
         _serverSideId(serverSideId)
     {
-        ThrowOnNull(port, ArgumentNullException);
+        ThrowOnNull(port, ArgumentNullException, "port");
 
         _address = port->getSpecifier();
 
@@ -202,10 +202,10 @@ namespace SimuTrace
 
         // Ensure we were given a client port
         ClientPort* cp = dynamic_cast<ClientPort*>(port.get());
-        ThrowOnNull(cp, ArgumentException);
+        ThrowOnNull(cp, ArgumentException, "port");
 
         if (_clients.size() > 0) {
-            cp->call(nullptr, RpcApi::CCV31_SessionOpen, RPC_VERSION,
+            cp->call(nullptr, RpcApi::CCV_SessionOpen, RPC_VERSION,
                      getServerSideId());
         }
 
@@ -246,7 +246,7 @@ namespace SimuTrace
         }
 
         ClientPort* port = it->second.get();
-        port->call(nullptr, RpcApi::CCV31_SessionClose);
+        port->call(nullptr, RpcApi::CCV_SessionClose);
 
         _detachFromContext(context);
 
@@ -314,12 +314,29 @@ namespace SimuTrace
     {
         this->Session::_applySetting(setting);
 
-        getPort().call(nullptr, RpcApi::CCV31_SessionSetConfiguration, setting);
+        getPort().call(nullptr, RpcApi::CCV_SessionSetConfiguration, setting);
     }
 
     StreamId ClientSession::registerStream(StreamDescriptor& desc)
     {
+        ThrowOn(IsSet(desc.flags, StreamFlags::SfDynamic),
+                Exception, "Stream descriptor marked as dynamic.");
+
         return this->Session::registerStream(desc, 0);
+    }
+
+    StreamId ClientSession::registerDynamicStream(DynamicStreamDescriptor& desc)
+    {
+        ThrowOn(!IsSet(desc.base.flags, StreamFlags::SfDynamic),
+                Exception, "Stream descriptor not marked as dynamic.");
+
+        // The dynamic stream descriptor starts with a regular stream descriptor
+        // and extends it with further fields. We can therefore safely cast
+        // the dynamic stream descriptor to a regular descriptor. This
+        // operation will eventually surface in the stream creation handler
+        // in ClientStore.
+        return this->Session::registerStream(
+            reinterpret_cast<StreamDescriptor&>(desc), 0);
     }
 
     const std::string& ClientSession::getAddress() const

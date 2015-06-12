@@ -31,11 +31,13 @@ namespace Hash
 {
 
     void murmur3_32(const void* buffer, size_t length, void* hashBuffer,
-                    size_t hashBufferLength, uint32_t seed)
+                     size_t hashBufferLength, uint32_t seed)
     {
-        ThrowOn((hashBufferLength < 4) ||
-                (length > std::numeric_limits<int>::max()),
-                ArgumentException);
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
+        ThrowOnNull(hashBuffer, ArgumentNullException, "hashBuffer");
+        ThrowOn(hashBufferLength < 4, ArgumentException, "hashBufferLength");
+        ThrowOn(length > std::numeric_limits<int>::max(),
+                ArgumentOutOfBoundsException, "length");
 
         MurmurHash3_x86_32(buffer, static_cast<int>(length), seed, hashBuffer);
     }
@@ -43,25 +45,30 @@ namespace Hash
     void murmur3_128(const void* buffer, size_t length, void* hashBuffer,
                      size_t hashBufferLength, uint32_t seed)
     {
-        ThrowOn((hashBufferLength < 16) ||
-                (length > std::numeric_limits<int>::max()),
-                ArgumentException);
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
+        ThrowOnNull(hashBuffer, ArgumentNullException, "hashBuffer");
+        ThrowOn(hashBufferLength < 16, ArgumentException, "hashBufferLength");
+        ThrowOn(length > std::numeric_limits<int>::max(),
+                ArgumentOutOfBoundsException, "length");
 
         MurmurHash3_x64_128(buffer, static_cast<int>(length), seed, hashBuffer);
     }
 
     uint32_t farmhash_32(const void* buffer, size_t length)
     {
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
         return util::Hash32((const char*)buffer, length);
     }
 
     uint64_t farmhash_64(const void* buffer, size_t length)
     {
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
         return util::Hash64((const char*)buffer, length);
     }
 
     uint64_t farmhash_64(const void* buffer, size_t length, uint64_t seed)
     {
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
         return util::Hash64WithSeed((const char*)buffer, length, seed);
     }
 

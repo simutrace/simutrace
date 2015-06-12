@@ -124,9 +124,9 @@ namespace SimuTrace
             case MessagePayloadType::MptData: {
                 if ((data.payloadLength > 0) &&
                     (data.payload != nullptr) &&
-                    ((localFlags & LocalMessageFlags::LmfAllocationOwner) != 0)) {
+                    (IsSet(localFlags, LocalMessageFlags::LmfAllocationOwner))) {
 
-                    if ((localFlags & LocalMessageFlags::LmfCustomAllocation) != 0) {
+                    if (IsSet(localFlags, LocalMessageFlags::LmfCustomAllocation)) {
                         assert(allocator != nullptr);
                         allocator(*this, true, allocatorArgs);
 
@@ -146,7 +146,7 @@ namespace SimuTrace
             case MessagePayloadType::MptHandles: {
                 if ((handles.handleCount > 0) &&
                     (handles.handles!= nullptr) &&
-                    ((localFlags & LocalMessageFlags::LmfAllocationOwner) != 0)) {
+                    (IsSet(localFlags, LocalMessageFlags::LmfAllocationOwner))) {
 
                     for (auto i = 0; i < handles.handles->size(); ++i) {
                         Handle& handle = handles.handles->at(i);

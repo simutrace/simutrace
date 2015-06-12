@@ -169,6 +169,12 @@ extern "C"
      *  \returns The encoded entry size value, which can be used to register
      *           a new stream.
      *
+     *  \remarks Variable-sized entries are not supported for dynamic streams.
+     *           If the stream should return entries of different size, consider
+     *           to use a fixed-size meta entry that contains information on
+     *           the size, type, and location of the real entry and return this
+     *           instead.
+     *
      *  \since 3.0
      *
      *  \see StStreamRegister()
@@ -360,11 +366,38 @@ extern "C"
 #define TEMPORAL_ORDER_CYCLE_COUNT_MASK \
     ((1ULL << TEMPORAL_ORDER_CYCLE_COUNT_BITS) - 1)
 
+    /*! \brief Stream type flags
+     *
+     *  Describes specific properties of a stream and its entries.
+     *
+     *  \since 3.2
+     */
+    typedef enum _StreamTypeFlags {
+        StfNone           = 0x00,
+
+        /*! \brief Temporally ordered stream
+
+            Indicates if the entries in the stream are temporally ordered, that
+            is if the entries contain a time stamp. The first member in each
+            entry must be a 48 bit (\c TEMPORAL_ORDER_CYCLE_COUNT_BITS)
+            monotonically increasing (cycle) counter field. */
+        StfTemporalOrder  = 0x01,
+        StfBigEndian      = 0x02,  /*!< \brief Value endianess.
+                                       Not supported, yet */
+        StfArch32Bit      = 0x04   /*!< \brief Indicates if type is meant for
+                                       32 bit architectures */
+    } StreamTypeFlags;
+
+
     /*! \brief Describes the type of entries in a stream.
      *
      *  Each stream must have a type that describes the size and properties of
      *  the entries in a stream. The #StreamTypeDescriptor encapsulates this
      *  information.
+     *
+     *  \deprecated <b>Before 3.2:</b> A set of bit fields was used to
+     *              represent the stream properties. The fields have been
+     *              replaced with the flags field to improve interoperability.
      *
      *  \since 3.0
      */
@@ -373,22 +406,12 @@ extern "C"
                                                      the type */
         StreamTypeId id;                        /*!< \brief Unique id of the
                                                      type */
+        StreamTypeFlags flags;                  /*!< \brief Stream type flags.
+                                                     \remarks Replaces set of
+                                                     bit fields in a binary
+                                                     compatible way.
+                                                     \since 3.2 */
 
-        /* Properties */
-
-        /*! \brief Temporally ordered stream
-
-            Indicates if the entries in the stream are temporally ordered. If
-            \c temporalOrder is set, the first member in each entry must be a
-            48 bit monotonically increasing (cycle) counter field. */
-        uint32_t temporalOrder : 1;
-
-        uint32_t bigEndian : 1;   /*!< \brief Value endianess.
-                                       Not supported, yet*/
-        uint32_t arch32Bit : 1;   /*!< \brief Indicates if type is meant for
-                                       32 bit architectures */
-
-        uint32_t reserved0 : 29;  /*!< \brief Reserved. Set to 0 */
         uint32_t reserved1;       /*!< \brief Reserved. Set to 0 */
 
         /*! \brief Entry size
@@ -425,9 +448,43 @@ extern "C"
     }
 
 
+#ifdef SIMUTRACE
+    /*! \internal \brief Filters for stream enumeration */
+    typedef enum _StreamEnumFilter {
+        SefRegular  = 0x01,
+        SefHidden   = 0x02,
+        SefDynamic  = 0x04,
+
+        SefAll      = SefRegular | SefHidden | SefDynamic
+    } StreamEnumFilter;
+#endif
+
+
+    /*! \brief Basic stream flags
+     *
+     *  Describes general properties of the stream that are independent of the
+     *  specified entry type.
+     *
+     *  \since 3.2
+     */
+    typedef enum _StreamFlags {
+        SfNone    = 0x00,    /*!< Regular stream for recording events */
+        SfHidden  = 0x01,    /*!< Hidden stream. Internal, do not set */
+        SfDynamic = 0x02     /*!< Dynamic stream. Entries are generated
+                                  dynamically. Stream descriptor must be of
+                                  type #DynamicStreamDescriptor.
+                                  \see StStreamRegisterDynamic() */
+    } StreamFlags;
+
+
     /*! \brief Describes a stream.
      *
-     *  Contains all information necessary to register a new stream.
+     *  Contains all information necessary to register a new regular stream.
+     *  For dynamic streams see #DynamicStreamDescriptor.
+     *
+     *  \deprecated <b>Before 3.2:</b> The <i>hidden</i> field was the only
+     *              possible flag. The field has been replaced to add further
+     *              flags.
      *
      *  \since 3.0
      */
@@ -435,11 +492,11 @@ extern "C"
         char name[MAX_STREAM_NAME_LENGTH]; /*!< \brief Friendly name of the
                                                 stream */
 
-        /* Hidden is only allowed on the server-side */
-        _bool hidden;                      /*!< \brief Internal, set to
-                                                \c _false */
-
-        _bool reserved0[3];                /*!< \brief Reserved. Set to 0 */
+        StreamFlags flags;                 /*!< \brief Stream flags
+                                                \remarks Replaces solitary
+                                                <i>hidden</i> flag in a binary
+                                                compatible way.
+                                                \since 3.2 */
         uint32_t reserved1;                /*!< \brief Reserved. Set to 0 */
 
         StreamTypeDescriptor type;         /*!< \brief Type of the stream */
@@ -574,6 +631,10 @@ extern "C"
      *  call to StStreamOpen(). Depending on the type, the supplied query value
      *  is interpreted differently.
      *
+     *  \remarks Dynamic streams are technically not forced to adhere to the
+     *           semantic. See the dynamic stream's documentation for
+     *           more information.
+     *
      *  \since 3.0
      *
      *  \see StStreamOpen()
@@ -583,37 +644,52 @@ extern "C"
            for the following index types   */
         QIndex          = 0x00,      /*!< Index of an entry. The first entry
                                           in a stream has index 0, the second
-                                          one has index 1 and so on.         */
-        QCycleCount     = 0x01,      /*!< Cycle count of an entry. */
+                                          one has index 1 and so on          */
+        QCycleCount     = 0x01,      /*!< Cycle count of an entry            */
         QRealTime       = 0x02,      /*!< Wall clock time. Simutrace
                                           automatically records the wall clock
                                           time for each segment (e.g., 64 MiB)
-                                          of trace data in a stream.         */
+                                          of trace data in a stream          */
 
-        QMaxTree        = QRealTime, /*!< Internal, do not use */
+        _QMaxTree       = QRealTime, /*!< Internal, do not use               */
 
         /* Not tree-based index types */
-        QSequenceNumber              = QMaxTree + 0x01, /*!< The sequence
+        QSequenceNumber              = _QMaxTree + 0x01, /*!< The sequence
                                                              number of a stream
                                                              segment         */
-        QNextValidSequenceNumber     = QMaxTree + 0x02, /*!< Points to the next
+        QNextValidSequenceNumber     = _QMaxTree + 0x02, /*!< Points to the next
                                                              valid sequence
                                                              number          */
 
         /* Since 3.1 */
-        QPreviousValidSequenceNumber = QMaxTree + 0x03, /*!< Points to the
+        QPreviousValidSequenceNumber = _QMaxTree + 0x03, /*!< Points to the
                                                              previous sequence
                                                              number
                                                              \since 3.1      */
 
-        QMax                        /*!< Internal, do not use */
+        /* Since 3.2 - User-defined query types for dynamic streams */
+        QUserIndex0 = _QMaxTree + 0x04,  /*!< Available for free use with
+                                              dynamic streams \since 3.2     */
+
+        QUserIndex1 = _QMaxTree + 0x05,  /*!< Available for free use with
+                                              dynamic streams \since 3.2     */
+
+        QUserIndex2 = _QMaxTree + 0x06,  /*!< Available for free use with
+                                              dynamic streams \since 3.2     */
+
+        QUserIndex3 = _QMaxTree + 0x07,  /*!< Available for free use with
+                                              dynamic streams \since 3.2     */
     } QueryIndexType;
 
 
     /*! \brief Stream access behavior
      *
      *  Describes the intended stream access behavior. Simutrace uses this as
-     *  hint to adapt caching and read-ahead policies.
+     *  hint to adapt caching, read-ahead policies and interpret query values.
+     *
+     *  \remarks Dynamic streams are technically not forced to adhere to the
+     *           semantic. See the dynamic stream's documentation for
+     *           more information.
      *
      *  \since 3.0
      *
@@ -640,17 +716,25 @@ extern "C"
         /* Since 3.1 */
         SafReverseQuery     = 0x08, /*!< The query information specified in the
                                          call to StStreamOpen() are relative to
-                                         the end of the stream.
+                                         the end of the stream
                                          \since 3.1                          */
 
         SafReverseRead      = 0x10, /*!< The caller intends to read the stream
                                          in reverse order. In a call to
                                          StStreamOpen(), this flag prepares the
                                          new read handle for use with
-                                         StGetPreviousEntryFast().
+                                         StGetPreviousEntryFast()
                                          \since 3.1                          */
 
-        SafMax                      /*!< Internal, do not use */
+        /* Since 3.2 - User-defined flags for dynamic streams */
+        SafUserFlag0        = 0x20, /*!< Available for free use with dynamic
+                                         streams \since 3.2                  */
+        SafUserFlag1        = 0x40, /*!< Available for free use with dynamic
+                                         streams \since 3.2                  */
+        SafUserFlag2        = 0x80, /*!< Available for free use with dynamic
+                                         streams \since 3.2                  */
+        SafUserFlag3        = 0x100 /*!< Available for free use with dynamic
+                                         streams \since 3.2                  */
     } StreamAccessFlags;
 
 #ifdef __cplusplus
@@ -665,6 +749,65 @@ extern "C"
     inline bool operator==(const StreamSegmentLink& l1, const StreamSegmentLink& l2)
     {
         return (memcmp(&l1, &l2, sizeof(StreamSegmentLink)) == 0);
+    }
+
+#ifdef SIMUTRACE
+    /* StreamEnumFilter */
+    inline StreamEnumFilter operator^(StreamEnumFilter a, StreamEnumFilter b)
+    {
+        return static_cast<StreamEnumFilter>(
+            static_cast<int>(a) ^ static_cast<int>(b));
+    }
+
+    inline StreamEnumFilter operator|(StreamEnumFilter a, StreamEnumFilter b)
+    {
+        return static_cast<StreamEnumFilter>(
+            static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline StreamEnumFilter operator&(StreamEnumFilter a, StreamEnumFilter b)
+    {
+        return static_cast<StreamEnumFilter>(
+            static_cast<int>(a) & static_cast<int>(b));
+    }
+#endif
+
+    /* StreamTypeFlags */
+    inline StreamTypeFlags operator^(StreamTypeFlags a, StreamTypeFlags b)
+    {
+        return static_cast<StreamTypeFlags>(
+            static_cast<int>(a) ^ static_cast<int>(b));
+    }
+
+    inline StreamTypeFlags operator|(StreamTypeFlags a, StreamTypeFlags b)
+    {
+        return static_cast<StreamTypeFlags>(
+            static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline StreamTypeFlags operator&(StreamTypeFlags a, StreamTypeFlags b)
+    {
+        return static_cast<StreamTypeFlags>(
+            static_cast<int>(a) & static_cast<int>(b));
+    }
+
+    /* StreamFlags */
+    inline StreamFlags operator^(StreamFlags a, StreamFlags b)
+    {
+        return static_cast<StreamFlags>(
+            static_cast<int>(a) ^ static_cast<int>(b));
+    }
+
+    inline StreamFlags operator|(StreamFlags a, StreamFlags b)
+    {
+        return static_cast<StreamFlags>(
+            static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline StreamFlags operator&(StreamFlags a, StreamFlags b)
+    {
+        return static_cast<StreamFlags>(
+            static_cast<int>(a) & static_cast<int>(b));
     }
 
     /* StreamAccessFlags */
@@ -685,6 +828,7 @@ extern "C"
         return static_cast<StreamAccessFlags>(
             static_cast<int>(a) & static_cast<int>(b));
     }
+
 }
 #endif
 

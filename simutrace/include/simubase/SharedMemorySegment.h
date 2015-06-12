@@ -28,16 +28,16 @@
 
 namespace SimuTrace
 {
-    
+
     class SharedMemorySegment :
         public FileBackedMemorySegment
     {
     private:
-        Handle _getSharedMemoryHandle(const std::string& name, bool writeable, 
+        Handle _getSharedMemoryHandle(const std::string& name, bool writeable,
                                       size_t size);
 
     public:
-        SharedMemorySegment(const std::string& name, bool writeable, 
+        SharedMemorySegment(const std::string& name, bool writeable,
                             size_t size);
         SharedMemorySegment(Handle shmHandle, bool writeable, size_t size);
         SharedMemorySegment(const SharedMemorySegment& instance);

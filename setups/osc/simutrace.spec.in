@@ -30,26 +30,26 @@
 Name:           simutrace
 Version:        @SIMUTRACE_VERSION@
 Release:        1
-Summary:        Tracing framework for full system simulators 
+Summary:        Tracing framework for full system simulators
 License:        LGPL-3.0+
-Group:          Development/Tools/Other 
+Group:          Development/Tools/Other
 Url:            http://simutrace.org
 Source0:        http://simutrace.org/downloads_simutrace/simutrace-@SIMUTRACE_VERSION@.tar.gz
 BuildRequires:  cmake gcc-c++
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
-Simutrace is a tracing framework for full system simulators and has been 
-conceived with full length, no-loss tracing of high-frequency events such as 
+Simutrace is a tracing framework for full system simulators and has been
+conceived with full length, no-loss tracing of high-frequency events such as
 executed CPU instructions and main memory references in mind.
- 
-The framework places no restriction on the type and number of captured events 
-and employs a scalable storage format, which easily handles traces of hundreds 
-of gigabytes in size. Simutrace has been particularly extended to facilitate 
-efficient memory tracing by incorporating aggressive, but fast memory trace 
+
+The framework places no restriction on the type and number of captured events
+and employs a scalable storage format, which easily handles traces of hundreds
+of gigabytes in size. Simutrace has been particularly extended to facilitate
+efficient memory tracing by incorporating aggressive, but fast memory trace
 compression.
- 
-Simutrace is a research project of the operating systems group at 
+
+Simutrace is a research project of the operating systems group at
 Karlsruhe Institute of Technology (KIT).
 
 
@@ -59,20 +59,20 @@ Group:          System/Libraries
 License:        LGPL-3.0+
 
 %description -n libsimutrace3
-Simutrace is a tracing framework for full system simulators and has been 
-conceived with full length, no-loss tracing of high-frequency events such as 
+Simutrace is a tracing framework for full system simulators and has been
+conceived with full length, no-loss tracing of high-frequency events such as
 executed CPU instructions and main memory references in mind.
- 
-The framework places no restriction on the type and number of captured events 
-and employs a scalable storage format, which easily handles traces of hundreds 
-of gigabytes in size. Simutrace has been particularly extended to facilitate 
-efficient memory tracing by incorporating aggressive, but fast memory trace 
+
+The framework places no restriction on the type and number of captured events
+and employs a scalable storage format, which easily handles traces of hundreds
+of gigabytes in size. Simutrace has been particularly extended to facilitate
+efficient memory tracing by incorporating aggressive, but fast memory trace
 compression.
- 
-Simutrace is a research project of the operating systems group at 
+
+Simutrace is a research project of the operating systems group at
 Karlsruhe Institute of Technology (KIT).
 
-This package provides the client library that allows applications to 
+This package provides the client library that allows applications to
 communicate with the Simutrace server.
 
 
@@ -83,21 +83,69 @@ Requires:       libsimutrace3 = %{version}
 License:        LGPL-3.0+
 
 %description -n libsimutrace3-devel
-Simutrace is a tracing framework for full system simulators and has been 
-conceived with full length, no-loss tracing of high-frequency events such as 
+Simutrace is a tracing framework for full system simulators and has been
+conceived with full length, no-loss tracing of high-frequency events such as
 executed CPU instructions and main memory references in mind.
- 
-The framework places no restriction on the type and number of captured events 
-and employs a scalable storage format, which easily handles traces of hundreds 
-of gigabytes in size. Simutrace has been particularly extended to facilitate 
-efficient memory tracing by incorporating aggressive, but fast memory trace 
+
+The framework places no restriction on the type and number of captured events
+and employs a scalable storage format, which easily handles traces of hundreds
+of gigabytes in size. Simutrace has been particularly extended to facilitate
+efficient memory tracing by incorporating aggressive, but fast memory trace
 compression.
- 
-Simutrace is a research project of the operating systems group at 
+
+Simutrace is a research project of the operating systems group at
 Karlsruhe Institute of Technology (KIT).
- 
-This package provides the development headers to build applications that use 
+
+This package provides the development headers to build applications that use
 the Simutrace client library.
+
+
+%package -n libsimutraceX1
+Summary:        Simutrace client extensions library
+Group:          System/Libraries
+License:        LGPL-3.0+
+
+%description -n libsimutraceX1
+Simutrace is a tracing framework for full system simulators and has been
+conceived with full length, no-loss tracing of high-frequency events such as
+executed CPU instructions and main memory references in mind.
+
+The framework places no restriction on the type and number of captured events
+and employs a scalable storage format, which easily handles traces of hundreds
+of gigabytes in size. Simutrace has been particularly extended to facilitate
+efficient memory tracing by incorporating aggressive, but fast memory trace
+compression.
+
+Simutrace is a research project of the operating systems group at
+Karlsruhe Institute of Technology (KIT).
+
+This package provides the Simutrace client extensions library that
+provides useful additions to the standard Simutrace client API such as
+a stream multiplexer and various helper functions.
+
+
+%package -n libsimutraceX1-devel
+Summary:        Development files for Simutrace client extensions library
+Group:          Development/Libraries/C and C++
+Requires:       libsimutraceX1 = %{version}
+License:        LGPL-3.0+
+
+%description -n libsimutraceX1-devel
+Simutrace is a tracing framework for full system simulators and has been
+conceived with full length, no-loss tracing of high-frequency events such as
+executed CPU instructions and main memory references in mind.
+
+The framework places no restriction on the type and number of captured events
+and employs a scalable storage format, which easily handles traces of hundreds
+of gigabytes in size. Simutrace has been particularly extended to facilitate
+efficient memory tracing by incorporating aggressive, but fast memory trace
+compression.
+
+Simutrace is a research project of the operating systems group at
+Karlsruhe Institute of Technology (KIT).
+
+This package provides the development headers to build applications that use
+the Simutrace client extensions library.
 
 
 %package -n simutrace-server
@@ -106,17 +154,17 @@ Group:          Development/Tools/Other
 License:        GPL-3.0+
 
 %description -n simutrace-server
-Simutrace is a tracing framework for full system simulators and has been 
-conceived with full length, no-loss tracing of high-frequency events such as 
+Simutrace is a tracing framework for full system simulators and has been
+conceived with full length, no-loss tracing of high-frequency events such as
 executed CPU instructions and main memory references in mind.
- 
-The framework places no restriction on the type and number of captured events 
-and employs a scalable storage format, which easily handles traces of hundreds 
-of gigabytes in size. Simutrace has been particularly extended to facilitate 
-efficient memory tracing by incorporating aggressive, but fast memory trace 
+
+The framework places no restriction on the type and number of captured events
+and employs a scalable storage format, which easily handles traces of hundreds
+of gigabytes in size. Simutrace has been particularly extended to facilitate
+efficient memory tracing by incorporating aggressive, but fast memory trace
 compression.
- 
-Simutrace is a research project of the operating systems group at 
+
+Simutrace is a research project of the operating systems group at
 Karlsruhe Institute of Technology (KIT).
 
 This package provides the Simutrace storage server.
@@ -140,12 +188,33 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 
 %files -n libsimutrace3
 %defattr(644,root,root)
-%{_libdir}/*.so.*
+%{_libdir}/libsimutrace.so.*
 
 %files -n libsimutrace3-devel
 %defattr(644,root,root)
-%{_includedir}/*
-%{_libdir}/*.so
+%{_includedir}/SimuTrace.h
+%{_includedir}/SimuTraceTypes.h
+%{_includedir}/SimuTraceEntryTypes.h
+%{_includedir}/SimuStorTypes.h
+%{_includedir}/SimuBaseTypes.h
+%{_includedir}/SimuPlatform.h
+%{_libdir}/libsimutrace.so
+
+%post -n libsimutraceX1
+/sbin/ldconfig
+
+%postun -n libsimutraceX1
+/sbin/ldconfig
+
+%files -n libsimutraceX1
+%defattr(644,root,root)
+%{_libdir}/libsimutraceX.so.*
+
+%files -n libsimutraceX1-devel
+%defattr(644,root,root)
+%{_includedir}/SimuTraceX.h
+%{_includedir}/SimuTraceXTypes.h
+%{_libdir}/libsimutraceX.so
 
 %files -n simutrace-server
 %attr(755,root,root) %{_bindir}/simustore

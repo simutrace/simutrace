@@ -41,7 +41,7 @@ namespace SimuTrace
     MemorySegment::MemorySegment(bool writeable, size_t size) :
         MemorySegment(writeable)
     {
-        ThrowOn(size == 0, ArgumentException);
+        ThrowOn(size == 0, ArgumentException, "size");
 
         _size = size;
     }
@@ -187,7 +187,7 @@ namespace SimuTrace
 
     void MemorySegment::copy(const byte* source, size_t size, size_t offset)
     {
-        ThrowOnNull(source, ArgumentNullException);
+        ThrowOnNull(source, ArgumentNullException, "source");
         ThrowOn(!isMapped() || isReadOnly(), InvalidOperationException);
         ThrowOn(offset + size >= _mapSize, ArgumentOutOfBoundsException);
 

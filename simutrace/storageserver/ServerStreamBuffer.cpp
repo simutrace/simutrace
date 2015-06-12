@@ -31,22 +31,22 @@ namespace SimuTrace
 {
 
     enum SegmentFlags {
-        SfNone        = 0,
-        SfFree        = 0,      // Segment is not in use and holds no data
+        SgfNone        = 0,
+        SgfFree        = 0,      // Segment is not in use and holds no data
 
-        SfInUse       = 1 << 0, // Segment is in use or in the cache
-        SfReadOnly    = 1 << 1, // Segment should not be written to
-        SfScratch     = 1 << 2, // Segment is not associated with a stream
-                                // Caching disallowed.
+        SgfInUse       = 1 << 0, // Segment is in use or in the cache
+        SgfReadOnly    = 1 << 1, // Segment should not be written to
+        SgfScratch     = 1 << 2, // Segment is not associated with a stream
+                                 // Caching disallowed.
 
-        SfCacheable   = 1 << 3, // Segment is eligible to caching, when freed
-        SfLowPriority = 1 << 4, // Segment may be reused early. For pre-fetched
-                                // or random-access data
+        SgfCacheable   = 1 << 3, // Segment is eligible to caching, when freed
+        SgfLowPriority = 1 << 4, // Segment may be reused early. For
+                                 // pre-fetched or random-access data
 
-        SfPrefetch    = 1 << 5, // Segment will be placed at the head of the
-                                // standby list at first free
+        SgfPrefetch    = 1 << 5, // Segment will be placed at the head of the
+                                 // standby list at first free
 
-        SfMax
+        SgfMax
     };
 
     inline SegmentFlags operator|(SegmentFlags a, SegmentFlags b)
@@ -72,14 +72,14 @@ namespace SimuTrace
                     (location->link.stream == stream->getId())));
 
             return stringFormat("stream: %d, sqn: %d%s%s%s%s", stream->getId(),
-                                sequenceNumber, (location == nullptr) ?
-                                    "" : ", read-only",
-                                ((flags & StreamAccessFlags::SafRandomAccess) == 0) ?
-                                    "" : ", random-access",
-                                ((flags & StreamAccessFlags::SafSequentialScan) == 0) ?
-                                    "" : ", sequential-scan",
-                                ((flags & StreamAccessFlags::SafSynchronous) == 0) ?
-                                    "" : ", synchronous");
+                                sequenceNumber, (location != nullptr) ?
+                                    ", read-only" : "",
+                                IsSet(flags, StreamAccessFlags::SafRandomAccess) ?
+                                    ", random-access" : "",
+                                IsSet(flags, StreamAccessFlags::SafSequentialScan) ?
+                                    ", sequential-scan" : "",
+                                IsSet(flags, StreamAccessFlags::SafSynchronous) ?
+                                    ", synchronous" : "");
         }
     }
 #endif
@@ -145,7 +145,7 @@ namespace SimuTrace
             Segment& seg = _segments[i];
 
             // Check that the segment is free and not in the standby list
-            assert(seg.flags == SegmentFlags::SfFree);
+            assert(seg.flags == SegmentFlags::SgfFree);
             assert(seg.prev == nullptr);
         }
     #endif
@@ -176,7 +176,7 @@ namespace SimuTrace
             seg.prev = nullptr;
 
             seg.id = static_cast<SegmentId>(i);
-            seg.flags = SegmentFlags::SfFree;
+            seg.flags = SegmentFlags::SgfFree;
 
             seg.stream = nullptr;
             seg.sequenceNumber = INVALID_STREAM_SEGMENT_ID;
@@ -198,7 +198,7 @@ namespace SimuTrace
         cookie ^= control.link.sequenceNumber;
         cookie ^= control.startTime;
 
-        if ((segment.flags & SegmentFlags::SfReadOnly) != 0) {
+        if (IsSet(segment.flags, SegmentFlags::SgfReadOnly)) {
             // Control elements that are read-only should not be modified at
             // all. We therefore hash the whole control element.
             uint32_t seed = cookie & 0xFFFFFFFF;
@@ -243,13 +243,13 @@ namespace SimuTrace
 
         } while (!_freeHead.compare_exchange_strong(seg, seg->next));
 
-        assert(seg->flags == SegmentFlags::SfFree);
+        assert(seg->flags == SegmentFlags::SgfFree);
         assert(seg->prev == nullptr);
         assert(seg->stream == nullptr);
         assert(seg->sequenceNumber == INVALID_STREAM_SEGMENT_ID);
 
         seg->isSubmitted = false;
-        seg->flags = SegmentFlags::SfInUse;
+        seg->flags = SegmentFlags::SgfInUse;
         seg->next  = nullptr;
 
         return seg;
@@ -257,14 +257,14 @@ namespace SimuTrace
 
     void ServerStreamBuffer::_enqueueToFreeList(Segment& segment)
     {
-        assert((segment.flags & SegmentFlags::SfInUse) != 0);
+        assert(IsSet(segment.flags, SegmentFlags::SgfInUse));
         assert(segment.next == nullptr);
         assert(segment.prev == nullptr);
 
         segment.stream = nullptr;
         segment.sequenceNumber = INVALID_STREAM_SEGMENT_ID;
 
-        segment.flags = SegmentFlags::SfFree;
+        segment.flags = SegmentFlags::SgfFree;
         segment.next  = _freeHead;
 
         // Make segment the new head. If the head is no longer what's stored
@@ -280,7 +280,7 @@ namespace SimuTrace
         assert(segment < getNumSegments());
         Segment* seg = &_segments[segment];
 
-        assert((seg->flags & SegmentFlags::SfReadOnly) == 0);
+        assert(!IsSet(seg->flags, SegmentFlags::SgfReadOnly));
         assert(!seg->isSubmitted);
 
         // We use the base class version so we get the underlying buffer's
@@ -375,9 +375,9 @@ namespace SimuTrace
     void ServerStreamBuffer::_dequeueFromStandbyList(Segment& segment)
     {
         assert(_testControlCookie(segment.control, segment));
-        assert((segment.flags & SegmentFlags::SfInUse) != 0);
-        assert((segment.flags & SegmentFlags::SfReadOnly) != 0);
-        assert((segment.flags & SegmentFlags::SfCacheable) != 0);
+        assert(IsSet(segment.flags, SegmentFlags::SgfInUse));
+        assert(IsSet(segment.flags, SegmentFlags::SgfReadOnly));
+        assert(IsSet(segment.flags, SegmentFlags::SgfCacheable));
         assert(segment.next != nullptr);
         assert(segment.prev != nullptr);
         assert(_standbyHead != nullptr);
@@ -402,9 +402,9 @@ namespace SimuTrace
     void ServerStreamBuffer::_enqueueToStandbyList(Segment& segment)
     {
         assert(_testControlCookie(segment.control, segment));
-        assert((segment.flags & SegmentFlags::SfInUse) != 0);
-        assert((segment.flags & SegmentFlags::SfReadOnly) != 0);
-        assert((segment.flags & SegmentFlags::SfCacheable) != 0);
+        assert(IsSet(segment.flags, SegmentFlags::SgfInUse));
+        assert(IsSet(segment.flags, SegmentFlags::SgfReadOnly));
+        assert(IsSet(segment.flags, SegmentFlags::SgfCacheable));
         assert(segment.next == nullptr);
         assert(segment.prev == nullptr);
 
@@ -420,15 +420,15 @@ namespace SimuTrace
             _standbyHead->prev->next = &segment;
             _standbyHead->prev = &segment;
 
-            if (((segment.flags & SegmentFlags::SfLowPriority) == 0) ||
-                ((segment.flags & SegmentFlags::SfPrefetch) != 0)) {
+            if ((!IsSet(segment.flags, SegmentFlags::SgfLowPriority)) ||
+                (IsSet(segment.flags, SegmentFlags::SgfPrefetch))) {
 
                 // Set the segment to be the head of the list. This way it
                 // won't be chosen as victim the next time.
                 _standbyHead = &segment;
 
                 segment.flags = static_cast<SegmentFlags>(
-                    segment.flags & ~SegmentFlags::SfPrefetch);
+                    segment.flags & ~SegmentFlags::SgfPrefetch);
             }
         }
     }
@@ -482,7 +482,7 @@ namespace SimuTrace
             _dequeueFromStandbyList(*seg);
 
             // Reset segment flags
-            seg->flags = SegmentFlags::SfInUse;
+            seg->flags = SegmentFlags::SgfInUse;
         }
 
         return seg;
@@ -534,7 +534,7 @@ namespace SimuTrace
         // writeable segments this should already be true.
         seg.isSubmitted = true;
 
-        if (((seg.flags & SegmentFlags::SfCacheable) != 0) && _enableCache) {
+        if (IsSet(seg.flags, SegmentFlags::SgfCacheable) && _enableCache) {
 
             if (prefetch) {
                 // If this is a prefetch free, we add the corresponding flag to
@@ -546,15 +546,15 @@ namespace SimuTrace
                 // being recycled before it had the chance to be used at least
                 // once. Otherwise, we would not be able to prefetch multiple
                 // low priority segments.
-                seg.flags = seg.flags | SegmentFlags::SfPrefetch;
+                seg.flags = seg.flags | SegmentFlags::SgfPrefetch;
             }
 
-            if ((seg.flags & SegmentFlags::SfReadOnly) == 0) {
+            if (!IsSet(seg.flags, SegmentFlags::SgfReadOnly)) {
                 // If this is a new segment, we change it to read-only here, so
                 // we only have read-only segments in the cache. Since we use a
                 // different hash for read-only segments, we have to update the
                 // hash.
-                seg.flags = seg.flags | SegmentFlags::SfReadOnly;
+                seg.flags = seg.flags | SegmentFlags::SgfReadOnly;
 
                 seg.control.cookie = _computeControlCookie(seg.control, seg);
 
@@ -599,8 +599,8 @@ namespace SimuTrace
         Segment& seg = _segments[segment];
 
         // Scratch segments should not be submitted.
-        assert((seg.flags & SegmentFlags::SfScratch) == 0);
-        assert((seg.flags & SegmentFlags::SfInUse) != 0);
+        assert(!IsSet(seg.flags, SegmentFlags::SgfScratch));
+        assert(IsSet(seg.flags, SegmentFlags::SgfInUse));
         assert(seg.next == nullptr);
         assert(seg.prev == nullptr);
 
@@ -609,7 +609,7 @@ namespace SimuTrace
 
         assert(!seg.isSubmitted);
 
-        if ((seg.flags & SegmentFlags::SfReadOnly) == 0) {
+        if (!IsSet(seg.flags, SegmentFlags::SgfReadOnly)) {
             // Make a copy of the control element, so the client cannot change
             // any control information while we are processing the data.
             seg.control = *control;
@@ -657,7 +657,7 @@ namespace SimuTrace
 
         // We only need to process writable segments. If a segment is read-only
         // we can free it, potentially adding it to the standby list.
-        if ((seg.flags & SegmentFlags::SfReadOnly) != 0) {
+        if (IsSet(seg.flags, SegmentFlags::SgfReadOnly)) {
             _freeSegment(segment);
 
             return true;
@@ -694,7 +694,7 @@ namespace SimuTrace
 
             // Update end timing information. Note, the original control
             // element is NOT updated.
-            if (desc.temporalOrder) {
+            if (IsSet(desc.flags, StreamTypeFlags::StfTemporalOrder)) {
                 assert(!isVariableEntrySize(desc.entrySize));
 
                 // The cycle count is only 48 bits wide. We therefore use a
@@ -829,10 +829,10 @@ namespace SimuTrace
             assert(sequenceNumber != INVALID_STREAM_SEGMENT_ID);
             assert(seg->control.link == location->link);
 
-            seg->flags = seg->flags | SegmentFlags::SfReadOnly;
+            seg->flags = seg->flags | SegmentFlags::SgfReadOnly;
 
             if (_enableCache) {
-                seg->flags = seg->flags | SegmentFlags::SfCacheable;
+                seg->flags = seg->flags | SegmentFlags::SgfCacheable;
 
                 // If the caller specified random access, we set low priority
                 // for it. That will lead the cache to add the segment to the
@@ -841,9 +841,9 @@ namespace SimuTrace
                 // pollution of the cache. For true sequential access, the
                 // caller will not access a closed segment again. We therefore,
                 // can also reuse it as soon as possible.
-                if (((flags & StreamAccessFlags::SafRandomAccess) != 0) ||
-                    ((flags & StreamAccessFlags::SafSequentialScan) != 0)) {
-                    seg->flags = seg->flags | SegmentFlags::SfLowPriority;
+                if (IsSet(flags, StreamAccessFlags::SafRandomAccess) ||
+                    IsSet(flags, StreamAccessFlags::SafSequentialScan)) {
+                    seg->flags = seg->flags | SegmentFlags::SgfLowPriority;
                 }
 
             }
@@ -900,7 +900,7 @@ namespace SimuTrace
                 // If the encoder should perform a synchronous read, we expect
                 // the operation to be completed.
                 assert(completed ||
-                       ((flags & StreamAccessFlags::SafSynchronous) == 0));
+                       !IsSet(flags, StreamAccessFlags::SafSynchronous));
 
             } catch (const std::exception& e) {
                 segment = INVALID_SEGMENT_ID;
@@ -920,14 +920,14 @@ namespace SimuTrace
                 assert(sequenceNumber == INVALID_STREAM_SEGMENT_ID);
                 assert(!prefetch);
 
-                seg->flags = seg->flags | SegmentFlags::SfScratch;
+                seg->flags = seg->flags | SegmentFlags::SgfScratch;
             } else if (_enableCache) { // This is a new write segment
                 assert(!prefetch);
 
                 // Although we activate caching, we mark the segment to be low
                 // priority. We assume writes to be performed sequentially.
-                seg->flags = seg->flags | SegmentFlags::SfCacheable |
-                                          SegmentFlags::SfLowPriority;
+                seg->flags = seg->flags | SegmentFlags::SgfCacheable |
+                                          SegmentFlags::SgfLowPriority;
             }
 
             segment = seg->id;
@@ -940,7 +940,7 @@ namespace SimuTrace
                                                  StreamSegmentId sequenceNumber)
     {
         ThrowOn(sequenceNumber == INVALID_STREAM_SEGMENT_ID,
-                ArgumentException);
+                ArgumentException, "sequenceNumber");
 
         SegmentId id;
         bool completed = _requestSegment(id, &stream, sequenceNumber);
@@ -962,7 +962,8 @@ namespace SimuTrace
 
     void ServerStreamBuffer::freeSegment(SegmentId segment, bool prefetch)
     {
-        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException);
+        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException,
+                "segment");
         Segment& seg = _segments[segment];
 
         // Lock the segment
@@ -971,9 +972,9 @@ namespace SimuTrace
         // Freeing free and standby segments is forbidden. We also do not allow
         // freeing un-submitted, writable segments. For these the control
         // element is not up-to-date.
-        ThrowOn(((seg.flags & SegmentFlags::SfInUse) == 0) ||
+        ThrowOn((!IsSet(seg.flags, SegmentFlags::SgfInUse)) ||
                 (seg.next != nullptr) ||
-                (((seg.flags & SegmentFlags::SfReadOnly) == 0) &&
+                ((!IsSet(seg.flags, SegmentFlags::SgfReadOnly)) &&
                  (!seg.isSubmitted)), InvalidOperationException);
 
     #ifdef _DEBUG
@@ -993,14 +994,15 @@ namespace SimuTrace
 
     void ServerStreamBuffer::purgeSegment(SegmentId segment)
     {
-        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException);
+        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException,
+                "segment");
         Segment& seg = _segments[segment];
 
         // Lock the segment
         LockScope(seg.lock);
 
         // Purging free and standby segments is forbidden.
-        ThrowOn(((seg.flags & SegmentFlags::SfInUse) == 0) ||
+        ThrowOn((!IsSet(seg.flags, SegmentFlags::SgfInUse)) ||
                 (seg.next != nullptr), InvalidOperationException);
 
     #ifdef _DEBUG
@@ -1021,7 +1023,8 @@ namespace SimuTrace
     bool ServerStreamBuffer::submitSegment(SegmentId segment,
         std::unique_ptr<StorageLocation>& locationOut)
     {
-        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException);
+        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException,
+                "segment");
 
         Segment& seg = _segments[segment];
         ThrowOnNull(seg.stream, InvalidOperationException);
@@ -1032,7 +1035,7 @@ namespace SimuTrace
 
         // Submitting free and standby segments is forbidden. We also do not
         // allow submitting the same segment multiple times.
-        ThrowOn(((seg.flags & SegmentFlags::SfInUse) == 0) ||
+        ThrowOn((!IsSet(seg.flags, SegmentFlags::SgfInUse)) ||
                 (seg.next != nullptr) ||
                 (seg.isSubmitted), InvalidOperationException);
 
@@ -1114,11 +1117,12 @@ namespace SimuTrace
     SegmentControlElement* ServerStreamBuffer::getControlElement(
         SegmentId segment) const
     {
-        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException);
+        ThrowOn(segment >= getNumSegments(), ArgumentOutOfBoundsException,
+                "segment");
         Segment* seg = &_segments[segment];
 
         return ((seg->isSubmitted) ||
-                ((seg->flags & SegmentFlags::SfReadOnly) != 0)) ?
+                IsSet(seg->flags, SegmentFlags::SgfReadOnly)) ?
             &seg->control : this->StreamBuffer::getControlElement(segment);
     }
 

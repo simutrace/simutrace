@@ -58,7 +58,7 @@ namespace SimuTrace
 
         void enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
         void enumerateStreams(std::vector<Stream*>& out,
-                              bool includeHidden) const;
+                              StreamEnumFilter filter) const;
 
         const Environment& getWorkerEnvironment() const;
     };

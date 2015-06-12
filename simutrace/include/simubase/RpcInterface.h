@@ -25,6 +25,7 @@
 #include "SimuBaseTypes.h"
 
 #include "Version.h"
+#include "Utils.h"
 
 namespace SimuTrace
 {
@@ -96,7 +97,7 @@ namespace SimuTrace
             }
 
             assert(i < sizeof(flagChars) / sizeof(char*));
-            str << (((flags && flag) != 0) ? flagChars[i] : "-");
+            str << (IsSet(flags, flag) ? flagChars[i] : "-");
         }
 
         return str.str();
@@ -118,7 +119,7 @@ namespace SimuTrace
             }
 
             assert(i < sizeof(flagChars) / sizeof(char*));
-            str << (((flags && flag) != 0) ? flagChars[i] : "-");
+            str << (IsSet(flags, flag) ? flagChars[i] : "-");
         }
 
         return str.str();
@@ -218,6 +219,14 @@ namespace SimuTrace
         {                                                                     \
             return msg.test(MessagePayloadType::Mpt##payloadType, (expectedLength)); \
         }                                                                     \
+    }
+
+#define RPC_DEF_CALL(vmajor, vminor, code, name)                              \
+    namespace RpcApi {                                                        \
+        enum {                                                                \
+            CCV_##name =                                                      \
+                RPC_VER_AND_CODE(RPC_VER(vmajor, vminor), code)               \
+        };                                                                    \
     }
 
 #define TEST_REQUEST(vmajor, vminor, rpcname, msg)                            \

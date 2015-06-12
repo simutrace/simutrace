@@ -53,4 +53,5 @@ namespace SimuTrace
     };
 
 }
+
 #endif

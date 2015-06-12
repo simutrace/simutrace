@@ -42,8 +42,8 @@ namespace simple
 
                 // Register a stream into which we can feed our data
                 Native.StreamDescriptor desc;
-                success = Native.StMakeStreamDescriptor("My Stream", 16, true,
-                    out desc);
+                success = Native.StMakeStreamDescriptor("My Stream", 16,
+                    Native.StreamTypeFlags.StfTemporalOrder, out desc);
                 if (!success) {
                     throw new Exception();
                 }

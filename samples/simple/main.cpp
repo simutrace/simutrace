@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
         StreamDescriptor desc;
 
         success = StMakeStreamDescriptor("My Data Stream", sizeof(MyEntry),
-                                         _false, &desc);
+                                         StreamTypeFlags::StfNone, &desc);
         ThrowOn(!success);
 
         StreamId stream = StStreamRegister(session, &desc);

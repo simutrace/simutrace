@@ -24,6 +24,8 @@
 #include "SimuPlatform.h"
 #include "SimuBaseTypes.h"
 
+#include "Utils.h"
+
 namespace SimuTrace
 {
 
@@ -268,7 +270,14 @@ namespace SimuTrace
 
         ArgumentException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "One or more arguments are invalid.",
+                      "One or more arguments are invalid. See the "
+                      "function's documentation for valid parameter values.",
+                      EcRuntime, code) {}
+        ArgumentException(LOC_PARAM const std::string& argument) :
+            Exception(LOC_ARG
+                      stringFormat("Argument '%s' is not valid. See the "
+                        "function's documentation for valid parameter values.",
+                        argument.c_str()),
                       EcRuntime, code) {}
 
         ~ArgumentException() throw() {}
@@ -281,7 +290,17 @@ namespace SimuTrace
 
         ArgumentNullException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "One or more arguments are null.",
+                      "One or more pointer arguments passed to a function "
+                      "were NULL or empty, but are expected to point to valid "
+                      "data or buffer space. See the function's documentation "
+                      "for more information.",
+                      EcRuntime, code) {}
+        ArgumentNullException(LOC_PARAM const std::string& argument) :
+            Exception(LOC_ARG
+                      stringFormat("Argument '%s' was NULL or empty, but is "
+                        "expected to point to valid data or buffer space. See the "
+                        "function's documentation for valid parameter values.",
+                        argument.c_str()),
                       EcRuntime, code) {}
 
         ~ArgumentNullException() throw() {}
@@ -294,7 +313,15 @@ namespace SimuTrace
 
         ArgumentOutOfBoundsException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "One or more arguments are out of bounds.",
+                      "The values for one or more arguments passed to a "
+                      "function were out of bounds. See the functions "
+                      "documentation for valid values.",
+                      EcRuntime, code) {}
+        ArgumentOutOfBoundsException(LOC_PARAM  const std::string& argument) :
+            Exception(LOC_ARG
+                      stringFormat("The value for argument '%s' was out of "
+                        "bounds. See the function's documentation for valid "
+                        "parameter values.", argument.c_str()),
                       EcRuntime, code) {}
 
         ~ArgumentOutOfBoundsException() throw() {}
@@ -307,7 +334,7 @@ namespace SimuTrace
 
         OptionException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "One or more options are invalid.",
+                      "One or more command line options are not valid.",
                       EcRuntime, 0x009) {}
         OptionException(LOC_PARAM const std::string& message) :
             Exception(LOC_ARG message, EcRuntime, code) {}
@@ -322,7 +349,10 @@ namespace SimuTrace
 
         ConfigurationException(LOC_PARAM0) :
             Exception(LOC_ARG
-                      "The specified configuration is invalid.",
+                      "The supplied configuration is not valid. See the "
+                      "documentation of libconfig for more information on the "
+                      "configuration format. See the sample configuration for "
+                      "a list of all valid options and their default values.",
                       EcRuntime, code) {}
         ConfigurationException(LOC_PARAM const std::string& message) :
             Exception(LOC_ARG message, EcRuntime, code) {}
@@ -330,6 +360,18 @@ namespace SimuTrace
         ~ConfigurationException() throw() {}
     };
 
+    class UserCallbackException : public Exception
+    {
+    public:
+        UserCallbackException(LOC_PARAM int code) :
+            Exception(LOC_ARG
+                      stringFormat("A user-supplied callback raised return "
+                        "an error (code: %i).", code),
+                      EcUser, code) {}
+
+        ~UserCallbackException() throw() {}
+    };
+
 }
 
-#endif // EXCEPTIONS_H
+#endif

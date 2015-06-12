@@ -33,37 +33,48 @@ namespace SimuTrace
     {
         static private class NativeMethods
         {
+            private const string libsimutrace = "libsimutrace";
+
             /* Base API */
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern uint StGetClientVersion();
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern int StGetLastError(
                 out ExceptionInformation informationOut);
 
-            /* Session API */
-
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi,
-                BestFitMapping=false,
-                ThrowOnUnmappableChar=true)]
+                BestFitMapping = false,
+                ThrowOnUnmappableChar = true)]
+            public static extern int StSetLastError(
+                ExceptionClass type, int code, string message);
+
+
+            /* Session API */
+
+            [DllImport(libsimutrace,
+                CallingConvention = CallingConvention.Cdecl,
+                CharSet = CharSet.Ansi,
+                BestFitMapping = false,
+                ThrowOnUnmappableChar = true)]
             public static extern uint StSessionCreate(string server);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.I1)]
             public static extern bool StSessionOpen(uint session);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.I1)]
             public static extern bool StSessionClose(uint session);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi,
                 BestFitMapping = false,
@@ -72,7 +83,7 @@ namespace SimuTrace
             public static extern bool StSessionCreateStore(uint session,
                 string specifier, [MarshalAs(UnmanagedType.I1)] bool alwaysCreate);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi,
                 BestFitMapping = false,
@@ -81,13 +92,13 @@ namespace SimuTrace
             public static extern bool StSessionOpenStore(uint session,
                 string specifier);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi)]
             [return: MarshalAs(UnmanagedType.I1)]
             public static extern bool StSessionCloseStore(uint session);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi,
                 BestFitMapping = false,
@@ -96,19 +107,20 @@ namespace SimuTrace
             public static extern bool StSessionSetConfiguration(uint session,
                 string configuration);
 
+
             /* Stream API */
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi,
                 BestFitMapping = false,
                 ThrowOnUnmappableChar = true)]
             [return: MarshalAs(UnmanagedType.I1)]
             public static extern bool StMakeStreamDescriptor(string name,
-                uint entrySize, [MarshalAs(UnmanagedType.I1)] bool temporalOrder,
+                uint entrySize, StreamTypeFlags flags,
                 out StreamDescriptor descOut);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl,
                 CharSet = CharSet.Ansi,
                 BestFitMapping = false,
@@ -118,7 +130,7 @@ namespace SimuTrace
                 string name, ref StreamTypeDescriptor type,
                 out StreamDescriptor descOut);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.LPStruct)]
             public static extern StreamTypeDescriptor StStreamFindMemoryType(
@@ -126,58 +138,86 @@ namespace SimuTrace
                 MemoryAddressType addressType,
                 [MarshalAs(UnmanagedType.I1)] bool hasData);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
+               CallingConvention = CallingConvention.Cdecl,
+               CharSet = CharSet.Ansi,
+               BestFitMapping = false,
+               ThrowOnUnmappableChar = true)]
+            [return: MarshalAs(UnmanagedType.I1)]
+            public static extern bool StMakeStreamDescriptorDynamic(string name,
+                uint entrySize, StreamTypeFlags flags, IntPtr userData,
+                ref DynamicStreamOperations operations,
+                out DynamicStreamDescriptor descOut);
+
+            [DllImport(libsimutrace,
+               CallingConvention = CallingConvention.Cdecl,
+               CharSet = CharSet.Ansi,
+               BestFitMapping = false,
+               ThrowOnUnmappableChar = true)]
+            [return: MarshalAs(UnmanagedType.I1)]
+            public static extern bool StMakeStreamDescriptorDynamicFromType(
+                string name, IntPtr userData, ref StreamTypeDescriptor type,
+                ref DynamicStreamOperations operations,
+                out DynamicStreamDescriptor descOut);
+
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern uint StStreamRegister(uint session,
                 ref StreamDescriptor desc);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
+                CallingConvention = CallingConvention.Cdecl)]
+            public static extern uint StStreamRegisterDynamic(uint session,
+                ref DynamicStreamDescriptor desc);
+
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern int StStreamEnumerate(uint session,
                 IntPtr bufferSize, IntPtr streamIdsOut);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.I1)]
             public static extern bool StStreamQuery(uint session, uint stream,
                 out StreamQueryInformation informationOut);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern IntPtr StStreamAppend(uint session,
                 uint stream, IntPtr handle);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern IntPtr StStreamOpen(uint session, uint stream,
                 QueryIndexType type, ulong value, StreamAccessFlags flags,
                 IntPtr handle);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.I1)]
             public static extern bool StStreamClose(IntPtr handle);
 
+
             /* Tracing API */
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern IntPtr StGetNextEntry(ref IntPtr handle);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern IntPtr StGetPreviousEntry(ref IntPtr handle);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern void StSubmitEntry(IntPtr handle);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern IntPtr StWriteVariableData(ref IntPtr handle,
                 IntPtr sourceBuffer, IntPtr sourceLength, out ulong referenceOut);
 
-            [DllImport("libsimutrace",
+            [DllImport(libsimutrace,
                 CallingConvention = CallingConvention.Cdecl)]
             public static extern IntPtr StReadVariableData(ref IntPtr handle,
                 ulong reference, IntPtr destinationBuffer);

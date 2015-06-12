@@ -50,6 +50,9 @@ set(HEADER_FILES_API
 
 set(HEADER_FILES_API ${HEADER_FILES_API} PARENT_SCOPE)
 
+set(HEADER_FILES_API_INTERNAL
+    "../include/SimuTraceInternal.h")
+
 
 # Session
 
@@ -74,10 +77,14 @@ set(HEADER_FILES_STORAGE
 # Stream
 
 set(SOURCE_FILES_STREAMS
-    "ClientStream.cpp")
+    "ClientStream.cpp"
+    "StaticStream.cpp"
+    "DynamicStream.cpp")
 
 set(HEADER_FILES_STREAMS
-    "ClientStream.h")
+    "ClientStream.h"
+    "StaticStream.h"
+    "DynamicStream.h")
 
 
 # Others
@@ -107,6 +114,7 @@ set(SOURCE_FILES_PRECOMPILED
 
 set(HEADER_FILES
     ${HEADER_FILES_API}
+    ${HEADER_FILES_API_INTERNAL}
     ${HEADER_FILES_PRIVATE}
     ${HEADER_FILES_SESSION}
     ${HEADER_FILES_NETWORK}
@@ -118,7 +126,7 @@ source_group("Source files\\Session" FILES ${SOURCE_FILES_SESSION})
 source_group("Source files\\Storage" FILES ${SOURCE_FILES_STORAGE})
 source_group("Source files\\Streams" FILES ${SOURCE_FILES_STREAMS})
 
-source_group("Header files" FILES ${HEADER_FILES_API} ${HEADER_FILES_PRIVATE})
+source_group("Header files" FILES ${HEADER_FILES_PRIVATE} ${HEADER_FILES_API_INTERNAL})
 source_group("Header files\\Public" FILES ${HEADER_FILES_API})
 source_group("Header files\\Network" FILES ${HEADER_FILES_NETWORK})
 source_group("Header files\\Session" FILES ${HEADER_FILES_SESSION})

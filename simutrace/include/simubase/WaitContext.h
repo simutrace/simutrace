@@ -45,13 +45,13 @@ namespace SimuTrace
     public:
         WaitContext() :
             _count(0) {}
-        ~WaitContext() 
+        ~WaitContext()
         {
             // Wait for any worker who uses this context to finish
             try {
                 wait();
             } catch (...) {
-            
+
             }
         }
 
@@ -60,7 +60,7 @@ namespace SimuTrace
             assert(_count < std::numeric_limits<uint32_t>::max());
             return Interlocked::interlockedAdd(&_count, 1) + 1;
         }
-        
+
         uint32_t decrement()
         {
             assert(_count > 0);
@@ -72,7 +72,7 @@ namespace SimuTrace
             return v;
         }
 
-        virtual bool wait() 
+        virtual bool wait()
         {
             Lock(_cv); {
                 while (_count > 0) {

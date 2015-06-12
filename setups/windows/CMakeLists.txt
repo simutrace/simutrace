@@ -50,6 +50,7 @@ if(("${CMAKE_GENERATOR}" MATCHES "Visual Studio [^6]") AND (BUILD_WINDOWS_SETUP)
                          simutrace-doc
                          SimuTrace.Net.Interop
                          libsimutrace
+                         libsimutraceX
                          libconfig++
                          simustore)
 

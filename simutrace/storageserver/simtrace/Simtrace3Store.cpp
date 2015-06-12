@@ -181,7 +181,9 @@ namespace Simtrace
 
                         // We are using the server's memory pool for hidden
                         // streams and the shared memory pool for public ones.
-                        BufferId bufId = (desc->hidden) ? SERVER_BUFFER_ID : 0;
+                        BufferId bufId =
+                            IsSet(desc->flags, StreamFlags::SfHidden) ?
+                            SERVER_BUFFER_ID : 0;
 
                         std::unique_ptr<Stream> stream =
                             this->ServerStore::_createStream(fheader.streamId,
@@ -347,7 +349,7 @@ namespace Simtrace
         // Log some stats about the new store contents
         StreamStatistics stats;
         uint64_t usize, usizediv;
-        uint32_t nstreams = queryTotalStreamStats(stats, usize, false);
+        uint32_t nstreams = summarizeStreamStats(stats, usize, SefRegular);
         usizediv = (usize > 0) ? usize : 1;
 
         std::ostringstream str;
@@ -622,7 +624,7 @@ namespace Simtrace
         frame.updateHash();
 
         ThrowOn(frame.getHeader().streamId == INVALID_STREAM_ID,
-                ArgumentException);
+                ArgumentException, "frame");
 
         _markDirty();
 
@@ -667,8 +669,8 @@ namespace Simtrace
         ThrowOn(_loading, InvalidOperationException);
 
         AttributeList& list = frame.getAttributeList();
-        ThrowOn(index >= list.size(), ArgumentOutOfBoundsException);
-        ThrowOnNull(buffer, ArgumentNullException);
+        ThrowOn(index >= list.size(), ArgumentOutOfBoundsException, "index");
+        ThrowOnNull(buffer, ArgumentNullException, "buffer");
 
         assert(index < SIMTRACE_V3_ATTRIBUTE_TABLE_SIZE);
 

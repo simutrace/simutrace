@@ -39,13 +39,17 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="@SOURCE_DIR@\**\*.cs" />
+    <Compile Include="@SOURCE_DIR@\Native.cs" />
+    <Compile Include="@SOURCE_DIR@\NativeMethods.cs" />
+    <Compile Include="@SOURCE_DIR@\NativeX.cs" />
+    <Compile Include="@SOURCE_DIR@\NativeMethodsX.cs" />
     <Compile Include="@BINARY_DIR@\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="@SOURCE_DIR@\SimuTrace.Net.Interop.snk" />
   </ItemGroup>
   <ItemGroup>
+    <LinkResource Include="@EOUTPUT_PATH@\$(Configuration)\libsimutraceX.dll" />
     <LinkResource Include="@EOUTPUT_PATH@\$(Configuration)\libsimutrace.dll" />
     <LinkResource Include="@EOUTPUT_PATH@\$(Configuration)\libconfig++.dll" />
   </ItemGroup>

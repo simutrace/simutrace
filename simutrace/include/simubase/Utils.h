@@ -99,8 +99,11 @@ namespace SimuTrace
     struct NullDeleter
     {
         void operator()(T*) const { }
-        static void deleter(T*) { } 
+        static void deleter(T*) { }
     };
+
+#define IsSet(var, flag) \
+    (((var) & (flag)) != 0)
 
 }
 #endif // UTILS_H

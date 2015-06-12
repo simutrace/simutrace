@@ -74,7 +74,7 @@ namespace SimuTrace
         ClientPort& port = dynamic_cast<ClientPort&>(*sessionPort);
 
         // Create the server session
-        port.call(&response, RpcApi::CCV31_SessionCreate, RPC_VERSION);
+        port.call(&response, RpcApi::CCV_SessionCreate, RPC_VERSION);
 
         ThrowOn((response.payloadType != MessagePayloadType::MptEmbedded) ||
                 (response.parameter0 == INVALID_SESSION_ID),
@@ -93,7 +93,7 @@ namespace SimuTrace
         Message response = {0};
         ClientPort port(specifier);
 
-        port.call(&response, RpcApi::CCV31_Null, RPC_VERSION);
+        port.call(&response, RpcApi::CCV_Null, RPC_VERSION);
 
         ThrowOn(response.payloadType != MessagePayloadType::MptEmbedded,
                 RpcMessageMalformedException);

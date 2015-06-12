@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{66B8B063-B3B9-441A-ABEE-946F84E3734E}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>csharp.memreplay</RootNamespace>
+    <AssemblyName>csharp.memreplay</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>@EXECUTABLE_OUTPUT_PATH@/Debug</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>@EXECUTABLE_OUTPUT_PATH@/Release</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="@SOURCE_DIR@\Replay.cs" />
+    <Compile Include="@SOURCE_DIR@\Program.cs" />
+    <Compile Include="@SOURCE_DIR@\AssemblyInfo.cs" />
+    <Compile Include="@SOURCE_DIR@\RamBitmap.cs" />
+    <Compile Include="@SOURCE_DIR@\RamMap.cs" />
+    <Compile Include="@SOURCE_DIR@\Gui\RamBrowser.cs">
+      <SubType>Component</SubType>
+      <Link>Gui/RamBrowser.cs</Link>
+    </Compile>
+    <Compile Include="@SOURCE_DIR@\Gui\MainForm.cs">
+      <SubType>Form</SubType>
+      <Link>Gui/MainForm.cs</Link>
+    </Compile>
+    <Compile Include="@SOURCE_DIR@\Gui\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+      <Link>Gui/MainForm.Designer.cs</Link>
+    </Compile>
+    <Compile Include="@SOURCE_DIR@\Gui\ReplayForm.cs">
+      <SubType>Form</SubType>
+      <Link>Gui/ReplayForm.cs</Link>
+    </Compile>
+    <Compile Include="@SOURCE_DIR@\Gui\ReplayForm.Designer.cs">
+      <DependentUpon>ReplayForm.cs</DependentUpon>
+      <Link>Gui/ReplayForm.Designer.cs</Link>
+    </Compile>
+    <Compile Include="@SOURCE_DIR@\Gui\ScreenForm.cs">
+      <SubType>Form</SubType>
+      <Link>Gui/ScreenForm.cs</Link>
+    </Compile>
+    <Compile Include="@SOURCE_DIR@\Gui\ScreenForm.Designer.cs">
+      <DependentUpon>ScreenForm.cs</DependentUpon>
+      <Link>Gui/ScreenForm.Designer.cs</Link>
+    </Compile>
+    <EmbeddedResource Include="@SOURCE_DIR@\Gui\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+      <Link>Gui/MainForm.resx</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="@SOURCE_DIR@\Gui\ReplayForm.resx">
+      <DependentUpon>ReplayForm.cs</DependentUpon>
+      <Link>Gui/ReplayForm.resx</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="@SOURCE_DIR@\Gui\ScreenForm.resx">
+      <DependentUpon>ScreenForm.cs</DependentUpon>
+      <Link>Gui/ScreenForm.resx</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="@CMAKE_CURRENT_BINARY_DIR@/../../simutrace/bindings/dotnet/SimuTrace.Net.Interop.csproj">
+      <Project>{5316cc10-f5c3-4606-a269-72a3060e6061}</Project>
+      <Name>SimuTrace.Net.Interop</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

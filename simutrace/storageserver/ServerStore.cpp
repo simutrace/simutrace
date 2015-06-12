@@ -203,26 +203,30 @@ namespace SimuTrace
     void ServerStore::_enumerateStreamBuffers(std::vector<BufferId>& out) const
     {
         std::vector<StreamBuffer*> buffers;
+        std::vector<BufferId> ids;
         this->Store::_enumerateStreamBuffers(buffers);
 
-        out.clear();
-        out.reserve(buffers.size());
+        ids.reserve(buffers.size());
         for (auto buffer : buffers) {
-            out.push_back(buffer->getId());
+            ids.push_back(buffer->getId());
         }
+
+        std::swap(ids, out);
     }
 
     void ServerStore::_enumerateStreams(std::vector<StreamId>& out,
-                                        bool includeHidden) const
+                                        StreamEnumFilter filter) const
     {
         std::vector<Stream*> streams;
-        this->Store::_enumerateStreams(streams, includeHidden);
+        std::vector<StreamId> ids;
+        this->Store::_enumerateStreams(streams, filter);
 
-        out.clear();
-        out.reserve(streams.size());
+        ids.reserve(streams.size());
         for (auto stream : streams) {
-            out.push_back(stream->getId());
+            ids.push_back(stream->getId());
         }
+
+        std::swap(ids, out);
     }
 
     void ServerStore::_registerEncoder(const StreamTypeId& type,
@@ -281,7 +285,7 @@ namespace SimuTrace
                 // because the new streams cannot contain references from this
                 // session.
                 std::vector<Stream*> streams;
-                this->Store::_enumerateStreams(streams, false);
+                this->Store::_enumerateStreams(streams, SefRegular);
 
                 for (auto stream : streams) {
                     ServerStream* sstream = dynamic_cast<ServerStream*>(stream);
@@ -326,7 +330,7 @@ namespace SimuTrace
                 _lockConfiguration();
 
                 std::vector<Stream*> streams;
-                this->Store::_enumerateStreams(streams, true);
+                this->Store::_enumerateStreams(streams, SefAll);
 
                 for (auto stream : streams) {
                     ServerStream* sstream = dynamic_cast<ServerStream*>(stream);
@@ -364,10 +368,10 @@ namespace SimuTrace
     }
 
     void ServerStore::enumerateStreams(std::vector<Stream*>& out,
-                                       bool includeHidden) const
+                                       StreamEnumFilter filter) const
     {
         LockScopeShared(_lock);
-        this->Store::_enumerateStreams(out, includeHidden);
+        this->Store::_enumerateStreams(out, filter);
     }
 
     StreamEncoder::FactoryMethod ServerStore::getEncoderFactory(

@@ -53,7 +53,7 @@ namespace SimuTrace
         const std::string& getName() const;
         StreamId getId() const;
 
-        bool isHidden() const;
+        StreamFlags getFlags() const;
 
         StreamBuffer& getStreamBuffer() const;
 

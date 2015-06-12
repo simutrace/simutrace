@@ -47,7 +47,7 @@ namespace Simtrace
             _header.typeId   = type.id;
         } else {
             // It is not valid to supply a control element without the stream!
-            ThrowOn(control != nullptr, ArgumentException);
+            ThrowOn(control != nullptr, ArgumentException, "control");
 
             _header.streamId = INVALID_STREAM_ID;
         }

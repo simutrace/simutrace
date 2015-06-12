@@ -215,6 +215,7 @@ endif()
 # Defaults
 set(CFG_SERVER_LOGFILE "" CACHE PATH "server.logfile")
 set(CFG_SERVER_LOGLEVEL "5" CACHE STRING "server.loglevel")
+set(CFG_SERVER_LOGNOCOLOR OFF CACHE BOOL "server.logNoColor")
 set(CFG_SERVER_QUIET OFF CACHE BOOL "server.quiet")
 set(CFG_SERVER_WORKSPACE "" CACHE PATH "server.workspace")
 set(CFG_SERVER_BINDINGS "local:/tmp/.simutrace" CACHE STRING "server.bindings")
@@ -226,6 +227,12 @@ set(CFG_SERVER_MEMMGMT_READAHEAD "4" CACHE STRING "server.memmgmt.readAhead")
 set(CFG_CLIENT_MEMMGMT_POOLSIZE "" CACHE STRING "client.memmgmt.poolSize")
 
 if(BUILD_SIMUTRACE_SERVER)
+
+    if(CFG_SERVER_LOGNOCOLOR)
+        set(_CFG_SERVER_LOGNOCOLOR "true")
+    else()
+        set(_CFG_SERVER_LOGNOCOLOR "false")
+    endif()
 
     if(CFG_SERVER_QUIET)
         set(_CFG_SERVER_QUIET "true")

@@ -37,7 +37,7 @@ namespace SimuTrace
         _lineSize(_computeLineSize(segmentSize)),
         _numSegments(numSegments)
     {
-        ThrowOn(id == INVALID_BUFFER_ID, ArgumentException);
+        ThrowOn(id == INVALID_BUFFER_ID, ArgumentException, "id");
         ThrowOn((segmentSize != SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB) ||
                 (numSegments == 0) ||
                 (numSegments > SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER),
@@ -77,7 +77,7 @@ namespace SimuTrace
         _lineSize(_computeLineSize(segmentSize)),
         _numSegments(numSegments)
     {
-        ThrowOn(id == INVALID_BUFFER_ID, ArgumentException);
+        ThrowOn(id == INVALID_BUFFER_ID, ArgumentException, "id");
         ThrowOn((segmentSize != SIMUTRACE_MEMMGMT_SEGMENT_SIZE MiB) ||
                 (numSegments == 0) ||
                 (numSegments > SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER),
@@ -131,7 +131,7 @@ namespace SimuTrace
 
     byte* StreamBuffer::getSegment(SegmentId segment) const
     {
-        ThrowOn(segment >= _numSegments, ArgumentOutOfBoundsException);
+        ThrowOn(segment >= _numSegments, ArgumentOutOfBoundsException, "segment");
 
         // The segment starts with the data and ends with the control element.
         // This way, half transferred segment in a socket-based session are
@@ -159,7 +159,7 @@ namespace SimuTrace
     SegmentControlElement* StreamBuffer::getControlElement(
         SegmentId segment) const
     {
-        ThrowOn(segment >= _numSegments, ArgumentOutOfBoundsException);
+        ThrowOn(segment >= _numSegments, ArgumentOutOfBoundsException, "segment");
 
         // The segment starts with the data and ends with the control element.
         // This way, half transferred segment in a socket-based session are

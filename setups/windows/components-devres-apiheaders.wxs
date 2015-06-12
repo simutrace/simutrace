@@ -5,6 +5,20 @@
   <!-- Simutrace Development API Headers -->
   <Fragment>
     <ComponentGroup Id="DevRes_ApiHeaders" Directory="DIR_include">
+      <Component Id="CMP_InstallRoot_include_SimuTraceXTypes_h"
+                 Guid="061BEB13-873C-4F9F-8302-5B5520A78CF9">
+        <File Id="FILE_InstallRoot_include_SimuTraceXTypes_h"
+              Source="$(var.project_directory)/simutrace/include/SimuTraceXTypes.h"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="CMP_InstallRoot_include_SimuTraceX_h"
+                 Guid="026FA099-7D0B-4B3C-A6AC-DC40A6B90B1A">
+        <File Id="FILE_InstallRoot_include_SimuTraceX_h"
+              Source="$(var.project_directory)/simutrace/include/SimuTraceX.h"
+              KeyPath="yes" />
+      </Component>
+
       <Component Id="CMP_InstallRoot_include_SimuTrace_h"
                  Guid="387FEFD0-EC2D-4CE7-AED0-67652AD9FB5D">
         <File Id="FILE_InstallRoot_include_SimuTrace_h"
@@ -48,7 +62,15 @@
       </Component>
     </ComponentGroup>
 
+
     <ComponentGroup Id="DevRes_ApiLibs" Directory="DIR_lib">
+      <Component Id="CMP_InstallRoot_lib_libsimutraceX_lib"
+                 Guid="B535B3F6-75AA-4B63-BC67-87A9EDA9A2D2">
+        <File Id="FILE_InstallRoot_lib_libsimutraceX_lib"
+              Source="$(var.libsimutraceX.TargetDir)/libsimutraceX.lib"
+              KeyPath="yes" />
+      </Component>
+
       <Component Id="CMP_InstallRoot_lib_libsimutrace_lib"
                  Guid="4391F718-28BB-428D-AF90-7DEB493CDACE">
         <File Id="FILE_InstallRoot_lib_libsimutrace_lib"
@@ -56,6 +78,7 @@
               KeyPath="yes" />
       </Component>
     </ComponentGroup>
+
   </Fragment>
 
 </Wix>

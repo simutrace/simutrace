@@ -71,6 +71,14 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\simutrace\libsimutraceX\libsimutraceX.vcxproj">
+      <Name>libsimutraceX</Name>
+      <Project>{B27D9ADD-8085-4D7A-80CE-A0A6F4B401E4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>DIRINSTALLROOT</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\simutrace\storageserver\simustore.vcxproj">
       <Name>simustore</Name>
       <Project>{392e9eae-e39d-45cc-975f-44e620318465}</Project>

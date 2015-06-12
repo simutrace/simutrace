@@ -23,7 +23,8 @@
 
 #include "ClientObject.h"
 #include "ClientSession.h"
-#include "ClientStream.h"
+#include "StaticStream.h"
+#include "DynamicStream.h"
 
 namespace SimuTrace
 {
@@ -31,21 +32,22 @@ namespace SimuTrace
     ClientStore::ClientStore(ClientSession& session, const std::string& name,
                              bool alwaysCreate, bool open) :
         Store(CLIENT_STORE_ID, name),
-        ClientObject(session)
+        ClientObject(session),
+        _dynamicStreamIdBoundary(INVALID_STREAM_ID)
     {
         Message response = {0};
         ClientPort& port = _getPort();
 
         // Send the request to open the store
-        port.call(&response, RpcApi::CCV31_StoreCreate, name,
+        port.call(&response, RpcApi::CCV_StoreCreate, name,
                   (alwaysCreate && !open) ? _true : _false,
                   (open) ? _true : _false);
 
         try {
-            _replicateConfiguration(false);
+            _replicateConfiguration();
 
         } catch (...) {
-            port.call(nullptr, RpcApi::CCV31_StoreClose);
+            port.call(nullptr, RpcApi::CCV_StoreClose);
 
             throw;
         }
@@ -62,7 +64,7 @@ namespace SimuTrace
         ClientPort& port = _getPort();
         std::unique_ptr<StreamBuffer> buf;
 
-        port.call(&response, RpcApi::CCV31_StreamBufferQuery, buffer, _true);
+        port.call(&response, RpcApi::CCV_StreamBufferQuery, buffer, _true);
 
         uint32_t numSegments = response.parameter0;
         size_t segmentSize   = response.handles.parameter1;
@@ -95,10 +97,12 @@ namespace SimuTrace
 
     Stream* ClientStore::_replicateStream(StreamId stream)
     {
+        assert(stream < _dynamicStreamIdBoundary);
+
         Message response = {0};
         ClientPort& port = _getPort();
 
-        port.call(&response, RpcApi::CCV31_StreamQuery, stream);
+        port.call(&response, RpcApi::CCV_StreamQuery, stream);
 
         ThrowOn((response.payloadType != MessagePayloadType::MptData) ||
                 (response.data.payloadLength != sizeof(StreamQueryInformation)),
@@ -112,7 +116,7 @@ namespace SimuTrace
         StreamQueryInformation* desc =
             reinterpret_cast<StreamQueryInformation*>(response.data.payload);
 
-        std::unique_ptr<Stream> str(new ClientStream(stream, desc->descriptor,
+        std::unique_ptr<Stream> str(new StaticStream(stream, desc->descriptor,
                                                      *buffer, getSession()));
 
         Stream* pstr = str.get(); // Make a shortcut for the return value
@@ -121,36 +125,25 @@ namespace SimuTrace
         return pstr;
     }
 
-    void ClientStore::_replicateConfiguration(bool update)
+    void ClientStore::_replicateConfiguration()
     {
-        if (!update) {
-            _freeConfiguration();
-        }
+        // We only replicate the stream buffers to allow an early fail
+        // if the client does not have enough buffer space to hold the
+        // default stream buffer(s). Streams and other objects are
+        // replicated on-demand.
+        std::vector<BufferId> buffers;
+        _enumerateStreamBuffers(buffers);
 
-        try {
-            // We only replicate the stream buffers to allow an early fail
-            // if the client does not have enough buffer space to hold the
-            // default stream buffer(s). Streams and other objects are
-            // replicated on-demand.
+        // The server should already created a stream buffer for us. This
+        // exception should never be thrown with a good behaving server.
+        ThrowOn(buffers.empty(), Exception, "Expected at least one "
+            "stream buffer during replication of the session configuration, "
+            "but the server did not return one.");
 
-            std::vector<BufferId> buffers;
-            _enumerateStreamBuffers(buffers);
-
-            // The server should already created a stream buffer for us.
-            assert(!buffers.empty());
-
-            for (auto buffer : buffers) {
-                if (this->Store::_getStreamBuffer(buffer) == nullptr) {
-                    _replicateStreamBuffer(buffer);
-                }
+        for (auto buffer : buffers) {
+            if (this->Store::_getStreamBuffer(buffer) == nullptr) {
+                _replicateStreamBuffer(buffer);
             }
-
-        } catch (...) {
-            if (!update) {
-                _freeConfiguration();
-            }
-
-            throw;
         }
     }
 
@@ -161,7 +154,7 @@ namespace SimuTrace
         ClientPort& port = _getPort();
         std::unique_ptr<StreamBuffer> buffer = nullptr;
 
-        port.call(&response, RpcApi::CCV31_StreamBufferRegister, numSegments,
+        port.call(&response, RpcApi::CCV_StreamBufferRegister, numSegments,
                   static_cast<uint64_t>(segmentSize));
 
         BufferId id = static_cast<BufferId>(response.parameter0);
@@ -192,21 +185,50 @@ namespace SimuTrace
     std::unique_ptr<Stream> ClientStore::_createStream(StreamId id,
         StreamDescriptor& desc, BufferId buffer)
     {
+        assert(id == INVALID_STREAM_ID);
+
         Message response = {0};
         ClientPort& port = _getPort();
 
         StreamBuffer* buf = _getStreamBuffer(buffer);
         ThrowOnNull(buf, NotFoundException);
 
-        desc.hidden = false;
+        if (IsSet(desc.flags, SfDynamic)) {
+            const DynamicStreamDescriptor& dyndesc =
+                reinterpret_cast<DynamicStreamDescriptor&>(desc);
 
-        port.call(&response, RpcApi::CCV31_StreamRegister, &desc,
-                  sizeof(StreamDescriptor), buffer);
 
-        StreamId rid = static_cast<StreamId>(response.parameter0);
 
-        return std::unique_ptr<ClientStream>(
-                    new ClientStream(rid, desc, *buf, getSession()));
+
+            // For regular streams the server generates a valid id. For
+            // dynamic streams we have to do this on our own, as dynamic
+            // streams are local to the client. The ids must not collide!
+            // The server generates ids for regular streams in the lower
+            // positive integer range. We therefore generate the ids for
+            // dynamic streams in the high positive integer range. The
+            // limit for the number of streams (see Version.h) prevents a
+            // collision.
+            StreamId sid = --_dynamicStreamIdBoundary;
+
+        #ifdef _DEBUG
+            std::vector<StreamId> ids;
+            _enumerateStreams(ids, StreamEnumFilter::SefRegular);
+
+            StreamId max = *std::max_element(ids.cbegin(), ids.cend());
+            assert(max < sid);
+        #endif
+
+            return std::unique_ptr<Stream>(
+                    new DynamicStream(sid, dyndesc, *buf, getSession()));
+        } else {
+            port.call(&response, RpcApi::CCV_StreamRegister, &desc,
+                      sizeof(StreamDescriptor), buffer);
+
+            StreamId rid = static_cast<StreamId>(response.parameter0);
+
+            return std::unique_ptr<Stream>(
+                        new StaticStream(rid, desc, *buf, getSession()));
+        }
     }
 
     void ClientStore::_enumerateStreamBuffers(std::vector<BufferId>& out) const
@@ -214,7 +236,7 @@ namespace SimuTrace
         Message response = {0};
         ClientPort& port = _getPort();
 
-        port.call(&response, RpcApi::CCV31_StreamBufferEnumerate);
+        port.call(&response, RpcApi::CCV_StreamBufferEnumerate);
 
         uint32_t n = response.parameter0;
 
@@ -225,6 +247,7 @@ namespace SimuTrace
 
         if (n > 0) {
             assert(response.data.payload != nullptr);
+            assert(n <= SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS);
             BufferId* buffer = reinterpret_cast<BufferId*>(response.data.payload);
 
             std::vector<BufferId> ids(buffer, buffer + n);
@@ -235,13 +258,17 @@ namespace SimuTrace
     }
 
     void ClientStore::_enumerateStreams(std::vector<StreamId>& out,
-                                        bool includeHidden) const
+                                        StreamEnumFilter filter) const
     {
+        std::vector<StreamId> ids;
+
+        // Request the ids for the static streams. Since we are replicating
+        // static streams on-demand, we cannot just query our local store but
+        // must ask the server.
         Message response = {0};
         ClientPort& port = _getPort();
 
-        port.call(&response, RpcApi::CCV31_StreamEnumerate,
-                  (includeHidden) ? 1 : 0);
+        port.call(&response, RpcApi::CCV_StreamEnumerate, filter);
 
         uint32_t n = response.parameter0;
 
@@ -252,13 +279,23 @@ namespace SimuTrace
 
         if (n > 0) {
             assert(response.data.payload != nullptr);
+            assert(n <= SIMUTRACE_STORE_MAX_NUM_STREAMS);
             StreamId* buffer = reinterpret_cast<StreamId*>(response.data.payload);
 
-            std::vector<StreamId> ids(buffer, buffer + n);
-            std::swap(ids, out);
-        } else {
-            out.clear();
+            ids.assign(buffer, buffer + n);
         }
+
+        // Now add the dynamic streams that this client session possesses.
+        std::vector<Stream*> dynStreams;
+        this->Store::_enumerateStreams(dynStreams, StreamEnumFilter::SefDynamic);
+        for (auto stream : dynStreams) {
+            assert(IsSet(stream->getFlags(), StreamFlags::SfDynamic));
+            assert(!IsSet(stream->getFlags(), StreamFlags::SfHidden));
+
+            ids.push_back(stream->getId());
+        }
+
+        std::swap(ids, out);
     }
 
     StreamBuffer* ClientStore::_getStreamBuffer(BufferId id)
@@ -300,7 +337,7 @@ namespace SimuTrace
         // data we send here (and any other pending data), before closing the
         // server instance of the store.
         std::vector<Stream*> streams;
-        this->Store::_enumerateStreams(streams, true);
+        this->Store::_enumerateStreams(streams, StreamEnumFilter::SefAll);
 
         for (auto i = 0; i < streams.size(); ++i) {
             assert(streams[i] != nullptr);
@@ -311,7 +348,7 @@ namespace SimuTrace
 
         ClientPort& port = _getPort();
 
-        port.call(nullptr, RpcApi::CCV31_StoreClose);
+        port.call(nullptr, RpcApi::CCV_StoreClose);
     }
 
     ClientStore* ClientStore::create(ClientSession& session,

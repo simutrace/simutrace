@@ -31,9 +31,11 @@ namespace SimuTrace
     Store::Store(StoreId id, const std::string& name) :
         _configurationLocked(false),
         _id(id),
-        _name(name)
+        _name(name),
+        _numRegularStreams(0),
+        _numDynamicStreams(0)
     {
-        ThrowOn(id == INVALID_STORE_ID, ArgumentException);
+        ThrowOn(id == INVALID_STORE_ID, ArgumentException, "id");
     }
 
     Store::~Store()
@@ -60,12 +62,15 @@ namespace SimuTrace
 
     BufferId Store::_addStreamBuffer(std::unique_ptr<StreamBuffer>& buffer)
     {
+        assert(!_configurationLocked);
+
         assert(buffer != nullptr);
         StreamBuffer* buf = buffer.get();
 
         BufferId id = buffer->getId();
         assert(id != INVALID_BUFFER_ID);
         assert(_buffers.find(id) == _buffers.end());
+        assert(_buffers.size() < SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS);
 
         _buffers[id] = std::move(buffer);
 
@@ -83,6 +88,8 @@ namespace SimuTrace
 
     StreamId Store::_addStream(std::unique_ptr<Stream>& stream)
     {
+        assert(!_configurationLocked);
+
         assert(stream != nullptr);
         Stream* str = stream.get();
 
@@ -92,10 +99,22 @@ namespace SimuTrace
 
         _streams[id] = std::move(stream);
 
+        if (IsSet(str->getFlags(), StreamFlags::SfDynamic)) {
+            assert(_numDynamicStreams < SIMUTRACE_STORE_MAX_NUM_DYNAMIC_STREAMS);
+            _numDynamicStreams++;
+        } else {
+            assert(_numRegularStreams < SIMUTRACE_STORE_MAX_NUM_STREAMS);
+            _numRegularStreams++;
+        }
+
         const StreamTypeDescriptor& type = str->getType();
-        LogInfo("<store: %s> Registered %s stream "
+        LogInfo("<store: %s> Registered %s%s stream "
                 "<id: %d, name: '%s', type: %s, esize: %s (%s)>.",
-                _name.c_str(), (str->isHidden()) ? "private" : "public",
+                _name.c_str(),
+                IsSet(str->getFlags(), StreamFlags::SfHidden) ?
+                    "private" : "public",
+                IsSet(str->getFlags(), StreamFlags::SfDynamic) ?
+                    " dynamic" : "",
                 id, str->getName().c_str(),
                 guidToString(type.id).c_str(),
                 sizeToString(getEntrySize(&type)).c_str(),
@@ -108,8 +127,11 @@ namespace SimuTrace
     BufferId Store::_registerStreamBuffer(size_t segmentSize,
                                           uint32_t numSegments)
     {
-        ThrowOn(_buffers.size() > SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS,
-                InvalidOperationException);
+        ThrowOn(_configurationLocked, InvalidOperationException);
+        ThrowOn(_buffers.size() >= SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS,
+                Exception, stringFormat("Failed to register stream buffer. "
+                    "The number of stream buffers exceeds the maximum (%i).",
+                    SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS));
 
         auto buffer = _createStreamBuffer(segmentSize, numSegments);
 
@@ -119,8 +141,18 @@ namespace SimuTrace
     StreamId Store::_registerStream(StreamId id, StreamDescriptor& desc,
                                     BufferId buffer)
     {
-        ThrowOn(_streams.size() > SIMUTRACE_STORE_MAX_NUM_STREAMS,
-                InvalidOperationException);
+        ThrowOn(_configurationLocked, InvalidOperationException);
+        if (IsSet(desc.flags, StreamFlags::SfDynamic)) {
+            ThrowOn(_numDynamicStreams >= SIMUTRACE_STORE_MAX_NUM_DYNAMIC_STREAMS,
+                    Exception, stringFormat("Failed to register dynamic stream. "
+                        "The number of streams exceeds the maximum (%i).",
+                        SIMUTRACE_STORE_MAX_NUM_DYNAMIC_STREAMS));
+        } else {
+            ThrowOn(_numRegularStreams >= SIMUTRACE_STORE_MAX_NUM_STREAMS,
+                    Exception, stringFormat("Failed to register stream. "
+                        "The number of streams exceeds the maximum (%i).",
+                        SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS));
+        }
 
         auto stream = _createStream(id, desc, buffer);
 
@@ -139,32 +171,53 @@ namespace SimuTrace
         _streams.clear();
         _buffers.clear();
 
+        _numDynamicStreams = 0;
+        _numRegularStreams = 0;
+
         _configurationLocked = false;
     }
 
     void Store::_enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const
     {
-        out.clear();
-        out.reserve(_buffers.size());
+        std::vector<StreamBuffer*> buffers;
+        buffers.reserve(_buffers.size());
 
         for (auto& pair : _buffers) {
-            out.push_back(pair.second.get());
+            buffers.push_back(pair.second.get());
         }
+
+        std::swap(buffers, out);
     }
 
     void Store::_enumerateStreams(std::vector<Stream*>& out,
-                                  bool includeHidden) const
+                                  StreamEnumFilter filter) const
     {
-        out.clear();
-        out.reserve(_streams.size());
+        std::vector<Stream*> streams;
+        streams.reserve(_streams.size());
+
+        StreamFlags mask = StreamFlags::SfNone;
+        if (IsSet(filter, StreamEnumFilter::SefHidden)) {
+            mask = mask | StreamFlags::SfHidden;
+        }
+        if (IsSet(filter, StreamEnumFilter::SefDynamic)) {
+            mask = mask | StreamFlags::SfDynamic;
+        }
+
+        bool includeRegular = IsSet(filter, StreamEnumFilter::SefRegular);
+        static const StreamFlags notRegularMask = SfDynamic | SfHidden;
 
         for (auto& pair : _streams) {
             Stream* stream = pair.second.get();
+            StreamFlags flags = stream->getFlags();
 
-            if ((!stream->isHidden()) || includeHidden) {
-                out.push_back(stream);
+            if ( ((flags & mask) != 0) ||
+                (((flags & notRegularMask) == 0) && includeRegular)) {
+
+                streams.push_back(stream);
             }
         }
+
+        std::swap(streams, out);
     }
 
     StreamBuffer* Store::_getStreamBuffer(BufferId id)
@@ -191,8 +244,6 @@ namespace SimuTrace
                                          uint32_t numSegments)
     {
         LockScopeExclusive(_lock);
-        ThrowOn(_configurationLocked, InvalidOperationException);
-
         return _registerStreamBuffer(segmentSize, numSegments);
     }
 
@@ -200,8 +251,6 @@ namespace SimuTrace
                                    BufferId buffer)
     {
         LockScopeExclusive(_lock);
-        ThrowOn(_configurationLocked, InvalidOperationException);
-
         return _registerStream(INVALID_STREAM_ID, desc, buffer);
     }
 
@@ -212,36 +261,47 @@ namespace SimuTrace
     }
 
     void Store::enumerateStreams(std::vector<StreamId>& out,
-                                 bool includeHidden) const
+                                 StreamEnumFilter filter) const
     {
         LockScopeShared(_lock);
-        _enumerateStreams(out, includeHidden);
+        _enumerateStreams(out, filter);
     }
 
-    uint32_t Store::queryTotalStreamStats(StreamStatistics& stats,
-                                          uint64_t& uncompressedSize,
-                                          bool includeHidden) const
+    uint32_t Store::summarizeStreamStats(StreamStatistics& stats,
+                                         uint64_t& uncompressedSize,
+                                         StreamEnumFilter filter) const
     {
-        memset(&stats, 0, sizeof(StreamStatistics));
-        memset(&stats.ranges, static_cast<int>(INVALID_LARGE_OBJECT_ID),
+        StreamStatistics lstats;
+        uint64_t uncomprSize = 0;
+        memset(&lstats, 0, sizeof(StreamStatistics));
+        memset(&lstats.ranges, static_cast<int>(INVALID_LARGE_OBJECT_ID),
                sizeof(StreamRangeInformation));
-        uncompressedSize = 0;
+
+        if (IsSet(filter, StreamEnumFilter::SefDynamic)) {
+            filter = static_cast<StreamEnumFilter>(
+                filter ^ StreamEnumFilter::SefDynamic);
+        }
 
         std::vector<Stream*> streams;
-        this->_enumerateStreams(streams, includeHidden);
+        LockShared(_lock); {
+            this->_enumerateStreams(streams, filter);
+        } Unlock();
+
         for (const auto stream : streams) {
+            assert(!IsSet(stream->getFlags(), StreamFlags::SfDynamic));
+
             StreamQueryInformation info;
             stream->queryInformation(info);
 
-            stats.compressedSize += info.stats.compressedSize;
-            stats.entryCount     += info.stats.entryCount;
-            stats.rawEntryCount  += info.stats.rawEntryCount;
-            uncompressedSize     += info.stats.rawEntryCount *
+            lstats.compressedSize += info.stats.compressedSize;
+            lstats.entryCount     += info.stats.entryCount;
+            lstats.rawEntryCount  += info.stats.rawEntryCount;
+            uncomprSize           += info.stats.rawEntryCount *
                 getEntrySize(&info.descriptor.type);
 
             for (int i = 0; i < 3; ++i) {
                 Range& in  = info.stats.ranges.ranges[i];
-                Range& sum = stats.ranges.ranges[i];
+                Range& sum = lstats.ranges.ranges[i];
 
                 if (in.start < sum.start) {
                     sum.start = in.start;
@@ -254,6 +314,9 @@ namespace SimuTrace
                 }
             }
         }
+
+        stats = lstats;
+        uncompressedSize = uncomprSize;
 
         return static_cast<uint32_t>(streams.size());
     }

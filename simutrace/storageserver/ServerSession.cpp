@@ -181,7 +181,7 @@ namespace SimuTrace
     }
 
     void ServerSession::enumerateStreams(std::vector<Stream*>& out,
-                                         bool includeHidden) const
+                                         StreamEnumFilter filter) const
     {
         LockScopeShared(_storeLock);
 
@@ -190,7 +190,7 @@ namespace SimuTrace
 
         assert(isAlive());
 
-        store->enumerateStreams(out, includeHidden);
+        store->enumerateStreams(out, filter);
     }
 
     const Environment& ServerSession::getWorkerEnvironment() const

@@ -35,7 +35,7 @@ namespace SimuTrace
         DISABLE_COPY(ReaderWriterLock);
 
     #ifdef _DEBUG
-        // To ease lock debugging we map reader-writer locks 
+        // To ease lock debugging we map reader-writer locks
         // to critical sections in debug builds
         CriticalSection _lock;
     #else
@@ -46,7 +46,7 @@ namespace SimuTrace
         pthread_rwlock_t _lock;
     #endif
 
-    #endif        
+    #endif
     public:
         ReaderWriterLock();
         ~ReaderWriterLock();
@@ -62,4 +62,4 @@ namespace SimuTrace
 
 }
 
-#endif // READERWRITER_LOCK_H
+#endif

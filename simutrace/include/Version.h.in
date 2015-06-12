@@ -1,5 +1,5 @@
 /* This file is configured by CMake. Changes are lost!
- * To make changes see the respective .in file 
+ * To make changes see the respective .in file
  */
 
 /*
@@ -87,8 +87,9 @@
    against ill-behaving clients. You may increase these limits if you need
    to allocate more objects. However, remind that you cannot open more streams
    simultaneously than the stream buffer provides segments. */
-#define SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS 1
-#define SIMUTRACE_STORE_MAX_NUM_STREAMS       0xFFFF
+#define SIMUTRACE_STORE_MAX_NUM_STREAMBUFFERS   1
+#define SIMUTRACE_STORE_MAX_NUM_STREAMS         0xFFFF
+#define SIMUTRACE_STORE_MAX_NUM_DYNAMIC_STREAMS 0xFFFF
 
 /* Profiling Support --------------- */
 

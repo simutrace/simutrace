@@ -49,12 +49,15 @@ SORT_MEMBER_DOCS       = NO
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
 
-INPUT                  = @PROJECT_SOURCE_DIR@/simutrace/include/SimuTrace.h \
+INPUT                  = @PROJECT_SOURCE_DIR@/simutrace/include/SimuTraceX.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/include/SimuTraceXTypes.h \
+                         @PROJECT_SOURCE_DIR@/simutrace/include/SimuTrace.h \
                          @PROJECT_SOURCE_DIR@/simutrace/include/SimuTraceTypes.h \
                          @PROJECT_SOURCE_DIR@/simutrace/include/SimuStorTypes.h \
                          @PROJECT_SOURCE_DIR@/simutrace/include/SimuTraceEntryTypes.h \
                          @PROJECT_SOURCE_DIR@/simutrace/include/SimuBaseTypes.h \
-                         @PROJECT_SOURCE_DIR@/simutrace/libsimutrace/SimuTrace.cpp
+                         @PROJECT_SOURCE_DIR@/simutrace/libsimutrace/SimuTrace.cpp \
+                         @PROJECT_SOURCE_DIR@/simutrace/libsimutraceX/SimuTraceX.cpp
 
 FILE_PATTERNS          = *.c \
                          *.cpp \
@@ -76,6 +79,7 @@ EXCLUDE_SYMBOLS        = SimuTrace::_* \
                          TEMPORAL_* \
                          CLIENT_* \
                          MASTYPETABLE_* \
+                         StreamStateFlags \
                          StreamStateDescriptor \
                          _mastypeTable \
                          SegmentId \
@@ -111,8 +115,8 @@ HTML_OUTPUT            = html
 HTML_HEADER            = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/header.html
 HTML_FOOTER            = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/footer.html
 HTML_STYLESHEET        = @PROJECT_SOURCE_DIR@/simutrace/documentation/theme/theme.css
-HTML_EXTRA_STYLESHEET  = 
-HTML_EXTRA_FILES       = 
+HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_FILES       =
 
 GENERATE_TREEVIEW      = YES
 TREEVIEW_WIDTH         = 250

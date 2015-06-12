@@ -27,6 +27,11 @@
               Assembly=".net"
               KeyPath="yes"
               Vital="yes" />
+        <File Id="FILE_GAC_libsimutraceX_dll"
+              Name="$(var.libsimutraceX.TargetFileName)"
+              Source="$(var.libsimutraceX.TargetPath)"
+              CompanionFile="FILE_GAC_SimuTrace_Net_Interop_dll"
+              Vital="yes" />
         <File Id="FILE_GAC_libsimutrace_dll"
               Name="$(var.libsimutrace.TargetFileName)"
               Source="$(var.libsimutrace.TargetPath)"

@@ -113,8 +113,10 @@ extern "C"
                                            Simutrace due to an error in the
                                            communication with the server such
                                            as a malformed RPC message */
-
-        EcMax                         /*!< Internal, do not use. */
+        EcUser              = 0x005   /*!< The exception has been generated
+                                           due to an error in a user-supplied
+                                           callback routine
+                                           \since 3.2 */
     } ExceptionClass;
 
 
@@ -128,9 +130,7 @@ extern "C"
         EsUnknown    = 0x000,  /*!< The exception site is unknown*/
 
         EsClient     = 0x001,  /*!< The exception occurred on the client side*/
-        EsServer     = 0x002,  /*!< The exception occurred on the server side*/
-
-        EsMax                  /*!< Internal, do not use. */
+        EsServer     = 0x002   /*!< The exception occurred on the server side*/
     } ExceptionSite;
 
 
@@ -181,17 +181,16 @@ extern "C"
 
 
         /*! One or more arguments supplied to a function are not valid. See the
-            functions documentation for valid parameter values */
+            function's documentation for valid parameter values */
         RteArgumentException             = 0x020,
 
-        /*! One or more pointer arguments passed to a function were \c NULL and
-            are expected to point to valid data or buffer space. See the
-            functions documentation for more information */
+        /*! One or more pointer arguments passed to a function were \c NULL,
+            but are expected to point to valid data or buffer space. See the
+            function's documentation for more information */
         RteArgumentNullException         = 0x021,
 
-        /*! The values for one or more arguments passed to a function were not
-            in the valid range. See the functions documentation for valid
-            parameter values */
+        /*! The values for one or more arguments passed to a function were out
+            of bounds. See the function's documentation for valid values */
         RteArgumentOutOfBoundsException  = 0x022,
 
 
@@ -204,9 +203,11 @@ extern "C"
             default values */
         RteConfigurationException        = 0x031,
 
+        /*! The user-supplied callback raised an exception or returned an
+            error
 
-        /*! Internal, do not use.*/
-        RteMax
+            \since 3.2 */
+        RteUserCallbackException         = 0x032
     } RuntimeException;
 
 
@@ -225,10 +226,7 @@ extern "C"
             could not be interpreted. This can happen if the client and server
             are not compatible. Always use the same client and server version
             if possible */
-        NeRpcMessageMalformedException  = 0x001,
-
-        /*! Internal, do not use. */
-        NeMax
+        NeRpcMessageMalformedException  = 0x001
     } NetworkException;
 
 

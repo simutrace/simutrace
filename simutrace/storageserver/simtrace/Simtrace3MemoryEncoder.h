@@ -717,9 +717,8 @@ namespace Simtrace
             StreamDescriptor desc;
             memset(&desc, 0, sizeof(StreamDescriptor));
 
-            desc.hidden             = true;
+            desc.flags              = SfHidden;
             desc.type.entrySize     = 1;
-            desc.type.temporalOrder = false;
 
             assert(name.length() <= MAX_STREAM_NAME_LENGTH);
             memcpy(&desc.name, name.c_str(), name.length());
@@ -979,12 +978,15 @@ namespace Simtrace
 
             const StreamTypeDescriptor& desc = stream->getType();
             assert(desc.entrySize == sizeof(T));
-            assert(desc.arch32Bit == TypeInfo::arch32Bit);
+            assert((desc.flags & StreamTypeFlags::StfArch32Bit) ==
+                   (TypeInfo::arch32Bit & StreamTypeFlags::StfArch32Bit));
             assert(stream->getStreamBuffer().getSegmentSize() ==
                    MemoryLayout::segmentSize);
 
-            ThrowOn(desc.bigEndian, NotSupportedException);
-            ThrowOn(!desc.temporalOrder, NotSupportedException);
+            ThrowOn(IsSet(desc.flags, StreamTypeFlags::StfBigEndian),
+                    NotSupportedException);
+            ThrowOn(!IsSet(desc.flags, StreamTypeFlags::StfTemporalOrder),
+                    NotSupportedException);
 
             // Initialize profiling code, if necessary. The profiler gives us
             // stats on predictor usage when writing.

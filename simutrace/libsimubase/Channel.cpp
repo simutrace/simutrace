@@ -67,7 +67,8 @@ namespace SimuTrace
     size_t Channel::send(const void* data, size_t size)
     {
         ThrowOn(!isConnected(), InvalidOperationException);
-        ThrowOn((data == nullptr) || (size == 0), ArgumentNullException);
+        ThrowOn(data == nullptr, ArgumentNullException, "data");
+        ThrowOn(size == 0, ArgumentNullException, "size");
 
         size_t bytesSent = _send(data, size);
 
@@ -88,7 +89,8 @@ namespace SimuTrace
     size_t Channel::receive(void* data, size_t size)
     {
         ThrowOn(!isConnected(), InvalidOperationException);
-        ThrowOn((data == nullptr) || (size == 0), ArgumentNullException);
+        ThrowOn(data == nullptr, ArgumentNullException, "data");
+        ThrowOn(size == 0, ArgumentNullException, "size");
 
         size_t bytesReceived = _receive(data, size);
 

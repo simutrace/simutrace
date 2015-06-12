@@ -125,7 +125,7 @@ namespace SimuTrace
     std::string Directory::getDirectory(const std::string& path)
     {
         size_t position = path.rfind(_pathDelimiter);
-        ThrowOn(position == std::string::npos, ArgumentException);
+        ThrowOn(position == std::string::npos, ArgumentException, "path");
 
         return path.substr(0, position + 1);
     }
@@ -133,7 +133,7 @@ namespace SimuTrace
     std::string Directory::getFileName(const std::string& path)
     {
         size_t position = path.rfind(_pathDelimiter);
-        ThrowOn(position == std::string::npos, ArgumentException);
+        ThrowOn(position == std::string::npos, ArgumentException, "path");
 
         return path.substr(position + 1);
     }

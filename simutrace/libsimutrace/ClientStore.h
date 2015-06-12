@@ -36,13 +36,16 @@ namespace SimuTrace
     private:
         DISABLE_COPY(ClientStore);
 
+        StreamId _dynamicStreamIdBoundary;
+
         ClientStore(ClientSession& session, const std::string& name,
                     bool alwaysCreate, bool open);
 
         StreamBuffer* _replicateStreamBuffer(BufferId buffer);
         Stream* _replicateStream(StreamId stream);
 
-        void _replicateConfiguration(bool update);
+        void _replicateConfiguration();
+        void _updateStaticStreamIdBoundary(const std::vector<StreamId>& ids);
 
         virtual std::unique_ptr<StreamBuffer> _createStreamBuffer(
             size_t segmentSize, uint32_t numSegments) override;
@@ -51,7 +54,7 @@ namespace SimuTrace
 
         virtual void _enumerateStreamBuffers(std::vector<BufferId>& out) const override;
         virtual void _enumerateStreams(std::vector<StreamId>& out,
-                                       bool includeHidden) const override;
+                                       StreamEnumFilter filter) const override;
 
         virtual StreamBuffer* _getStreamBuffer(BufferId id) override;
         virtual Stream* _getStream(StreamId id) override;
