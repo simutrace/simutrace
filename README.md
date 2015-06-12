@@ -59,15 +59,19 @@ our white paper [Efficient Full System Memory Tracing with Simutrace](about:blan
 
 #### Binary Files
 
-Simutrace consists of three libraries and one executable:
+Simutrace consists of four libraries and one executable:
+
+<b>simustore(.exe)</b>: The server executable, containing all trace processing
+and storage functionality.
 
 <b>libsimutrace(.so/.dll)</b>: This is the client library offering the public
 C interface to Simutrace. This library needs to be used by all applications
 that want to use Simutrace. See http://simutrace.org/documentation for a
 documentation of the API.
 
-<b>simustore(.exe)</b>: The server executable, containing all trace processing
-and storage functionality.
+<b>libsimutraceX(.so/.dll)</b>: This is the client extensions library, which
+provides additions on top of the standard Simutrace API such as a stream
+multiplexer and helper functions.
 
 <b>libsimubase, libsimustore</b>: These are static libraries that encapsulate
 common code for the client library and the storage server. You won't see these
@@ -173,6 +177,7 @@ The repository has the following structure:
 |   `-- libconfig-1.4.9     <i>libconfig to parse configuration files</i>
 |
 |-- <b>samples</b>
+|   |-- csharp.memreplay    <i>Memory replay sample in c#</i>
 |   |-- csharp.simple       <i>Sample on how to use C# binding</i>
 |	|-- storemon            <i>Small monitoring app, which displays live stats</i>
 |   |                       <i>on the streams in a specified store</i>
@@ -190,6 +195,7 @@ The repository has the following structure:
     |-- libsimubase         <i>Internal platform abstraction library.</i>
     |-- libsimustor         <i>Internal tracing core library.</i>
     |-- <b>libsimutrace</b>        <i>Public client library.</i>
+    |-- <b>libsimutraceX</b>        <i>Public client extensions library.</i>
     `-- <b>storageserver</b>       <i>Trace storage and access server.</i>
         `-- simtrace        <i>simtrace (*.sim) storage format provider</i>
             |               <i>and type-specific trace encoders/decoders.</i>

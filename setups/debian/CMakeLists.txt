@@ -20,6 +20,8 @@ if(BUILD_DEBIAN)
     configure_file("copyright" "${DEBIAN}/copyright" COPYONLY)
     configure_file("libsimutrace.install" "${DEBIAN}/libsimutrace.install" COPYONLY)
     configure_file("libsimutrace-dev.install" "${DEBIAN}/libsimutrace-dev.install" COPYONLY)
+    configure_file("libsimutraceX.install" "${DEBIAN}/libsimutraceX.install" COPYONLY)
+    configure_file("libsimutraceX-dev.install" "${DEBIAN}/libsimutraceX-dev.install" COPYONLY)
     configure_file("simutrace-server.install" "${DEBIAN}/simutrace-server.install" COPYONLY)
     configure_file("rules" "${DEBIAN}/rules" COPYONLY)
 
