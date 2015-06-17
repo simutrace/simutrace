@@ -224,6 +224,8 @@ set(CFG_SERVER_MEMMGMT_POOLSIZE "4096" CACHE STRING "server.memmgmt.poolSize")
 set(CFG_SERVER_MEMMGMT_DISABLECACHE OFF CACHE BOOL "server.memmgmt.disableCache")
 set(CFG_SERVER_MEMMGMT_READAHEAD "4" CACHE STRING "server.memmgmt.readAhead")
 
+set(CFG_STORE_SIMTRACE_LOGSTREAMSTATS OFF CACHE BOOL "store.simtrace.logStreamStats")
+
 set(CFG_CLIENT_MEMMGMT_POOLSIZE "" CACHE STRING "client.memmgmt.poolSize")
 
 if(BUILD_SIMUTRACE_SERVER)
@@ -244,6 +246,12 @@ if(BUILD_SIMUTRACE_SERVER)
         set(_CFG_SERVER_MEMMGMT_DISABLECACHE "true")
     else()
         set(_CFG_SERVER_MEMMGMT_DISABLECACHE "false")
+    endif()
+
+    if(CFG_STORE_SIMTRACE_LOGSTREAMSTATS)
+        set(_CFG_STORE_SIMTRACE_LOGSTREAMSTATS "true")
+    else()
+        set(_CFG_STORE_SIMTRACE_LOGSTREAMSTATS "false")
     endif()
 
     if(CFG_CLIENT_MEMMGMT_POOLSIZE)

@@ -24,6 +24,7 @@
 #include "SimuStor.h"
 #include "../StreamEncoder.h"
 #include "../WorkItem.h"
+#include "../ScratchSegment.h"
 
 #include "Simtrace3Store.h"
 
@@ -40,11 +41,13 @@ namespace Simtrace
         DISABLE_COPY(Simtrace3Encoder);
 
         ServerStream* _stream;
+        bool _needScratch;
 
         struct WorkerContext;
 
         virtual void _encode(Simtrace3Frame& frame, SegmentId id,
-                             StreamSegmentId sequenceNumber) = 0;
+                             StreamSegmentId sequenceNumber,
+                             ScratchSegment* target) = 0;
         virtual void _decode(Simtrace3StorageLocation& location, SegmentId id,
                              StreamSegmentId sequenceNumber) = 0;
 
@@ -59,10 +62,10 @@ namespace Simtrace
 
     public:
         Simtrace3Encoder(ServerStore& store, const std::string& friendlyName,
-                         ServerStream* stream);
+                         ServerStream* stream, bool needScratch);
         virtual ~Simtrace3Encoder() override;
 
-        virtual void initialize(Simtrace3Frame& frame, bool isOpen);
+        virtual void initialize(Simtrace3Frame& frame, bool isOpen) { };
 
         virtual bool read(ServerStreamBuffer& buffer, SegmentId segment,
                           StreamAccessFlags flags, StorageLocation& location,

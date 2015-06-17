@@ -110,6 +110,62 @@ namespace Simtrace
 
     }
 
+    void Simtrace3Store::_openFrame(FrameDirectoryEntry& entry)
+    {
+        const FrameHeader& fheader = entry.framelink.frameHeader;
+
+        // Check if this is a zero frame (i.e., it contains meta data
+        // for the stream and no actual data). In that case, we just
+        // add the meta data to the stream (create it if it does not
+        // exist). Otherwise, we add the segment as data to the stream.
+        if (fheader.sequenceNumber == INVALID_STREAM_SEGMENT_ID) {
+            Simtrace3Frame frame;
+            _readFrame(frame, entry.framelink.offset, fheader.totalSize);
+
+            ThrowOn(!frame.validateHash(), Exception,
+                    "Corrupted metadata frame detected.");
+
+            // Check if we already registered this stream. If not
+            // create it from the frame.
+            ServerStream* stream =
+                static_cast<ServerStream*>(findStream(fheader.streamId));
+
+            if (stream == nullptr) {
+                stream = _openStream(frame);
+                assert(stream != nullptr);
+            }
+
+            // The zero frame should not contain data.
+            assert(frame.findAttribute(
+                    Simtrace3AttributeType::SatData) == nullptr);
+
+            // Inform the encoder about the meta data
+            Simtrace3Encoder& encoder =
+                static_cast<Simtrace3Encoder&>(stream->getEncoder());
+
+            encoder.initialize(frame, true);
+
+        } else {
+            // This is a data frame. Add the segment to its stream
+            ServerStream& stream =
+                static_cast<ServerStream&>(getStream(fheader.streamId));
+            Simtrace3Encoder& encoder =
+                static_cast<Simtrace3Encoder&>(stream.getEncoder());
+
+            Simtrace3Frame frame(fheader);
+
+            auto location = encoder.makeStorageLocation(frame);
+
+            Simtrace3StorageLocation* sim3location =
+                static_cast<Simtrace3StorageLocation*>(location.get());
+
+            sim3location->offset = entry.framelink.offset;
+            sim3location->size   = fheader.totalSize;
+
+            stream.addSegment(fheader.sequenceNumber, location);
+        }
+    }
+
     void Simtrace3Store::_openStore(const std::string& path)
     {
         _loading = true;
@@ -124,116 +180,38 @@ namespace Simtrace
             // TODO: Handle dirty stores
         }
 
-        if (_header->v3.directoryCount == 0) {
-            _loading = false;
+        if (_header->v3.directoryCount > 0) {
+            // For each directory, we iterate over its entries (i.e., frames)
+            // and add them to the corresponding stream. If the stream does not
+            // exist, we create it.
+            FileOffset dirOffset = _header->v3.directories[0];
+            ThrowOn(dirOffset == 0, Exception, "First directory link corrupted.");
 
-            // We are currently not support extending an existing store.
-            _readMode = true;
-        }
+            _mapDirectory(dirOffset);
 
-        // For each directory, we iterate over its entries (i.e., frames)
-        // and add them to the corresponding stream. If the stream does not
-        // exist, we create it.
+            uint32_t index = 0;
+            while (true) {
+                ThrowOn(index >= _header->v3.directoryCapacity, Exception,
+                        "Directory structure corrupted.");
 
-        ThrowOn(_header->v3.directories[0] == 0, Exception,
-                "First directory link corrupted.");
+                assert(_directory != nullptr);
+                FrameDirectoryEntry* entry = &_directory[index];
 
-        _mapDirectory(_header->v3.directories[0]);
-        assert(_directory != nullptr);
+                const uint32_t marker = entry->markerValue;
+                if (marker == SIMTRACE_V3_FRAME_MARKER) {
+                    _openFrame(*entry);
 
-        uint32_t index = 0;
-        while (true) {
-            ThrowOn(index >= _header->v3.directoryCapacity, Exception,
-                    "Directory structure corrupted.");
+                    index++;
+                } else if (marker == SIMTRACE_V3_DIRECTORY_LINK_MARKER) {
+                    _mapDirectory(entry->directoryLink.nextDirectory);
 
-            FrameDirectoryEntry* entry = &_directory[index];
-
-            const uint32_t marker = entry->markerValue;
-            if (marker == SIMTRACE_V3_FRAME_MARKER) {
-                const FrameHeader& fheader = entry->framelink.frameHeader;
-
-                // Check if this is a zero frame (i.e., it contains meta data
-                // for the stream and no actual data). In that case, we just
-                // add the meta data to the stream (create it if it does not
-                // exist). Otherwise, we add the segment as data to the stream.
-                if (fheader.sequenceNumber == INVALID_STREAM_SEGMENT_ID) {
-
-                    Simtrace3Frame frame;
-                    _readFrame(frame, entry->framelink.offset, fheader.totalSize);
-
-                    ThrowOn(!frame.validateHash(), Exception,
-                            "Corrupted meta data frame detected.");
-
-                    ServerStream* sstream =
-                        static_cast<ServerStream*>(findStream(fheader.streamId));
-
-                    // The stream does not exist. Create and register it first.
-                    if (sstream == nullptr) {
-                        AttributeHeaderDescription* attrDesc;
-                        attrDesc = frame.findAttribute(
-                            Simtrace3AttributeType::SatStreamDescription);
-
-                        ThrowOnNull(attrDesc, Exception, "Unable to find "
-                                    "stream description attribute.");
-
-                        StreamDescriptor* desc =
-                            reinterpret_cast<StreamDescriptor*>(attrDesc->buffer);
-
-                        // We are using the server's memory pool for hidden
-                        // streams and the shared memory pool for public ones.
-                        BufferId bufId =
-                            IsSet(desc->flags, StreamFlags::SfHidden) ?
-                            SERVER_BUFFER_ID : 0;
-
-                        std::unique_ptr<Stream> stream =
-                            this->ServerStore::_createStream(fheader.streamId,
-                                                             *desc, bufId);
-                        assert(stream != nullptr);
-
-                        sstream = static_cast<ServerStream*>(stream.get());
-
-                        this->_addStream(stream);
-                    }
-
-                    assert(frame.findAttribute(
-                           Simtrace3AttributeType::SatData) == nullptr);
-
-                    // Inform the encoder about the meta data
-                    Simtrace3Encoder& encoder =
-                        static_cast<Simtrace3Encoder&>(sstream->getEncoder());
-
-                    encoder.initialize(frame, true);
-
+                    index = 0;
                 } else {
-                    // This is a data frame. Add the segment to its stream
-                    ServerStream& stream =
-                        static_cast<ServerStream&>(getStream(fheader.streamId));
-                    Simtrace3Encoder& encoder =
-                        static_cast<Simtrace3Encoder&>(stream.getEncoder());
+                    assert(marker == 0);
 
-                    Simtrace3Frame frame(fheader);
-
-                    auto location = encoder.makeStorageLocation(frame);
-
-                    Simtrace3StorageLocation* sim3location =
-                        static_cast<Simtrace3StorageLocation*>(location.get());
-
-                    sim3location->offset = entry->framelink.offset;
-                    sim3location->size   = fheader.totalSize;
-
-                    stream.addSegment(fheader.sequenceNumber, location);
+                    // No further entries in the store
+                    break;
                 }
-
-                index++;
-            } else if (marker == SIMTRACE_V3_DIRECTORY_LINK_MARKER) {
-                _mapDirectory(entry->directoryLink.nextDirectory);
-
-                index = 0;
-            } else {
-                assert(marker == 0);
-
-                // No futher entries in the store
-                break;
             }
         }
 
@@ -253,9 +231,6 @@ namespace Simtrace
 
         _mapHeader();
         _initalizeHeader();
-
-        // Add the first directory to the store.
-        _addDirectory();
     }
 
     bool Simtrace3Store::_isDirty() const
@@ -347,36 +322,7 @@ namespace Simtrace
         _markClean();
 
         // Log some stats about the new store contents
-        StreamStatistics stats;
-        uint64_t usize, usizediv;
-        uint32_t nstreams = summarizeStreamStats(stats, usize, SefRegular);
-        usizediv = (usize > 0) ? usize : 1;
-
-        std::ostringstream str;
-        Timestamp dur = stats.ranges.endTime - stats.ranges.startTime;
-        str << "<store: " << this->getName()
-            << ">\n Streams: " << nstreams
-            << "\n Entries: " << stats.entryCount
-            << " (raw: " << stats.rawEntryCount
-            << ")\n Size: " << sizeToString(_header->v3.fileSize)
-            << " (uncomp.: " << sizeToString(usize)
-            << " ratio: " << (_header->v3.fileSize * 100) / usizediv
-            << "%)\n Wall Time"
-            << " (start: " << Clock::formatTimeIso8601(stats.ranges.startTime)
-            << " end: " << Clock::formatTimeIso8601(stats.ranges.endTime)
-            << " duration: " << Clock::formatDuration(dur)
-            << ")";
-
-        if (_header->v3.startCycle != INVALID_CYCLE_COUNT) {
-            assert(_header->v3.endCycle != INVALID_CYCLE_COUNT);
-
-            str << "\n Cycle Time"
-                << " (start: " << stats.ranges.startCycle
-                << " end: " << stats.ranges.endCycle
-                << ").";
-        }
-
-        LogInfo("%s", str.str().c_str());
+        _logStoreStats();
     }
 
     void Simtrace3Store::_mapDirectory(uint64_t offset)
@@ -502,6 +448,8 @@ namespace Simtrace
     FileOffset Simtrace3Store::_writeFrame(Simtrace3Frame& frame,
                                            uint64_t& uncompressedBytesWritten)
     {
+        assert(!_readMode && !_loading);
+
         // We first try to commit space in the store before we make
         // any changes. This guarantees us that we won't run out of
         // disk space half way in the frame submission. It also
@@ -586,6 +534,37 @@ namespace Simtrace
         return position;
     }
 
+    ServerStream* Simtrace3Store::_openStream(Simtrace3Frame& frame)
+    {
+        assert(_loading);
+
+        AttributeHeaderDescription* attrDesc = frame.findAttribute(
+            Simtrace3AttributeType::SatStreamDescription);
+
+        ThrowOnNull(attrDesc, Exception,
+                    "Unable to find stream description attribute.");
+
+        StreamDescriptor* desc =
+            reinterpret_cast<StreamDescriptor*>(attrDesc->buffer);
+
+        // We are using the server's memory pool for hidden
+        // streams and the shared memory pool for public ones.
+        BufferId bufId = IsSet(desc->flags, StreamFlags::SfHidden) ?
+            SERVER_BUFFER_ID : 0;
+
+        FrameHeader& header = frame.getHeader();
+        std::unique_ptr<Stream> stream =
+            this->ServerStore::_createStream(header.streamId, *desc, bufId);
+
+        assert(stream != nullptr);
+
+        ServerStream* sstream = static_cast<ServerStream*>(stream.get());
+
+        this->_addStream(stream);
+
+        return sstream;
+    }
+
     std::unique_ptr<Stream> Simtrace3Store::_createStream(StreamId id,
         StreamDescriptor& desc, BufferId buffer)
     {
@@ -615,6 +594,83 @@ namespace Simtrace
         }
 
         return stream;
+    }
+
+    void Simtrace3Store::_logStreamStats(std::ostringstream& str,
+                                         StreamStatistics& stats,
+                                         uint64_t size, uint64_t usize)
+    {
+        str << " Entries: " << stats.entryCount
+            << " (raw: " << stats.rawEntryCount
+            << ")";
+
+        str << std::endl << " Size: " << sizeToString(size);
+        if (stats.rawEntryCount > 0) {
+            uint64_t usizediv = (usize > 0) ? usize : 1;
+            str << " (uncomp.: " << sizeToString(usize)
+                << " ratio: " << (size * 100) / usizediv
+                << "%)";
+        }
+
+        str << std::endl << " Wall Time (";
+        if (stats.ranges.startTime != INVALID_TIME_STAMP) {
+            assert(stats.ranges.endTime != INVALID_TIME_STAMP);
+
+            str << "start: " << Clock::formatTimeIso8601(stats.ranges.startTime)
+                << " end: " << Clock::formatTimeIso8601(stats.ranges.endTime)
+                << " ";
+        }
+
+        Timestamp dur = stats.ranges.endTime - stats.ranges.startTime;
+        str << "duration: " << Clock::formatDuration(dur)
+            << ")";
+
+        if (stats.ranges.startCycle != INVALID_CYCLE_COUNT) {
+            assert(stats.ranges.endCycle != INVALID_CYCLE_COUNT);
+
+            str << std::endl << " Cycle Time"
+                << " (start: " << stats.ranges.startCycle
+                << " end: " << stats.ranges.endCycle
+                << ")";
+        }
+    }
+
+    void Simtrace3Store::_logStoreStats()
+    {
+        StreamQueryInformation info;
+
+        uint64_t usize;
+        uint32_t nstreams = summarizeStreamStats(info.stats, usize, SefRegular);
+
+        std::ostringstream str;
+
+        // Print store summary
+        str << "<store: " << this->getName() << ">" << std::endl
+            << " Streams: " << nstreams << std::endl;
+
+        _logStreamStats(str, info.stats, _header->v3.fileSize, usize);
+
+        // Print per-stream summary
+        if ((Configuration::get<bool>("store.simtrace.logStreamStats")) &&
+            (nstreams > 1)) {
+
+            std::vector<Stream*> streams;
+            this->Store::_enumerateStreams(streams, SefRegular);
+
+            for (auto stream : streams) {
+                stream->queryInformation(info);
+
+                str << std::endl
+                    << "---- Stream: " << stream->getName() << std::endl;
+
+                uint64_t size = info.stats.rawEntryCount *
+                    getEntrySize(&info.descriptor.type);
+
+                _logStreamStats(str, info.stats, info.stats.compressedSize, size);
+            }
+        }
+
+        LogInfo("%s", str.str().c_str());
     }
 
     FileOffset Simtrace3Store::commitFrame(Simtrace3Frame& frame)

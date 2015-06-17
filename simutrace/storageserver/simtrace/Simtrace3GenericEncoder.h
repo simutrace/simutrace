@@ -22,7 +22,7 @@
 #define SIMTRACE3_ZLIB_ENCODER_H
 
 #include "SimuStor.h"
-#include "../WorkItem.h"
+#include "../ScratchSegment.h"
 
 #include "Simtrace3Encoder.h"
 
@@ -39,7 +39,8 @@ namespace Simtrace
         static const int defaultCompressionLevel = 4;
 
         virtual void _encode(Simtrace3Frame& frame, SegmentId id,
-                             StreamSegmentId sequenceNumber) override;
+                             StreamSegmentId sequenceNumber,
+                             ScratchSegment* target) override;
         virtual void _decode(Simtrace3StorageLocation& location, SegmentId id,
                              StreamSegmentId sequenceNumber) override;
 

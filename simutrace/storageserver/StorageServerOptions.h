@@ -221,6 +221,19 @@ namespace Options
                     "(logical or physical) in the system.",
                     OPT_LONG_PREFIX "server.requestworkerpool.size");
 
+        //
+        // Simtrace Store
+        //
+
+        typeMap["store.simtrace.logStreamStats"] = libconfig::Setting::Type::TypeBoolean;
+        options.add("",
+                    false,
+                    0,
+                    0,
+                    "For new stores, enables detailed logging of per-stream "
+                    "statistics on store close.",
+                    OPT_LONG_PREFIX "store.simtrace.logStreamStats");
+
     };
 
 }

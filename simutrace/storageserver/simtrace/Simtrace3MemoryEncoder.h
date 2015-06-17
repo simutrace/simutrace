@@ -206,6 +206,9 @@ namespace Simtrace
             std::unique_ptr<byte*[]> _buffers;
 
             volatile uint32_t _usedBuffers;
+            // 0: never used, 1: empty, 2: used and valid
+            std::vector<int> _bufferEmpty;
+
             bool _isLoad;
 
             void _initialize(bool isLoad, StreamWait* wait)
@@ -260,16 +263,29 @@ namespace Simtrace
                             // back, we need to set the number of raw
                             // entries so the generic encoding knows the
                             // amount of valid data.
-                            ServerStreamBuffer& buffer =
-                                static_cast<ServerStreamBuffer&>(
-                                _streams[i]->getStreamBuffer());
-
-                            SegmentControlElement* ctrl =
-                                buffer.getControlElement(_segmentIds[i]);
-
                             assert(_usedBuffers <= _subSegmentCount);
-                            ctrl->rawEntryCount = static_cast<uint32_t>(
-                                _subSegmentSize * _usedBuffers);
+                            for (int j = _usedBuffers - 1; j >= 0; --j) {
+                                assert(_bufferEmpty[j] > 0);
+
+                                // We found the subsegment with the highest
+                                // index that contains valid data. Since we
+                                // cannot just save single subsegments we set
+                                // the valid data range to
+                                // [0; last valid subsegment]
+                                if (_bufferEmpty[j] == 2) {
+                                    ServerStreamBuffer& buffer =
+                                        static_cast<ServerStreamBuffer&>(
+                                        _streams[i]->getStreamBuffer());
+
+                                    SegmentControlElement* ctrl =
+                                        buffer.getControlElement(_segmentIds[i]);
+
+                                    ctrl->rawEntryCount = static_cast<uint32_t>(
+                                        _subSegmentSize * (j + 1));
+
+                                    break;
+                                }
+                            }
                         }
 
                         _streams[i]->close(SERVER_SESSION_ID, _sequenceNumber,
@@ -305,6 +321,7 @@ namespace Simtrace
                 _segmentIds(new SegmentId[_streams.size()]),
                 _buffers(new byte*[_streams.size()]),
                 _usedBuffers(0),
+                _bufferEmpty(subSegmentCount, 0),
                 _isLoad(false)
             {
                 assert(_sequenceNumber != INVALID_STREAM_SEGMENT_ID);
@@ -356,10 +373,14 @@ namespace Simtrace
                 ThrowOn(!_isLoad, InvalidOperationException);
             }
 
-            bool completeSubSegment()
+            bool completeSubSegment(uint32_t subSegmentIndex, bool empty)
             {
                 assert(_initialized);
                 assert(_usedBuffers < _subSegmentCount);
+                assert(subSegmentIndex < _subSegmentCount);
+                assert(_bufferEmpty[subSegmentIndex] == 0);
+
+                _bufferEmpty[subSegmentIndex] = empty ? 1 : 2;
 
                 uint32_t count = Interlocked::interlockedAdd(&_usedBuffers, 1);
                 if (count == _subSegmentCount - 1) {
@@ -430,6 +451,12 @@ namespace Simtrace
 
             std::map<StreamSegmentId, std::unique_ptr<BufferContext>> contexts;
             std::vector<ServerStream*> streams;
+
+            SegmentLine() :
+                subSegmentCount(0),
+                contexts(),
+                streams()
+            { }
         };
 
         // The SubSegmentContext represents a wrapper around the buffer
@@ -449,6 +476,16 @@ namespace Simtrace
             const StreamSegmentId _sequenceNumber;
 
             const bool _isLoad;
+
+            // The user can create holes in the memory stream (e.g., invalid
+            // sequence numbers) by an append, close append pattern. However,
+            // we must still know when sequence numbers have been used
+            // AND remained empty. Otherwise, if we only know that a sqn has
+            // been used we cannot detect if all subsegments (i.e. the full
+            // buffer context) remained empty. In that case, we would create
+            // an entire empty segment in the hidden stream, which would still
+            // be compressed and stored.
+            bool _isEmpty;
 
             BufferContext* _getBufferContext(SegmentLine& line, bool& created)
             {
@@ -483,7 +520,10 @@ namespace Simtrace
                                      SegmentLine& line,
                                      bool force = false)
             {
-                if (force || (*context)->completeSubSegment()) {
+                bool full = (*context)->completeSubSegment(
+                    _sequenceNumber % line.subSegmentCount, _isEmpty);
+
+                if (force || full) {
                     LockScope(_encoder._lock);
 
                     line.contexts.erase((*context)->getSequenceNumber());
@@ -609,6 +649,7 @@ namespace Simtrace
                 _startCycle(INVALID_CYCLE_COUNT),
                 _sequenceNumber(sequenceNumber),
                 _isLoad(isLoad),
+                _isEmpty(true),
                 entryBuffer(nullptr),
                 metaDataBuffer(nullptr)
             {
@@ -659,6 +700,11 @@ namespace Simtrace
                     _encoder._profiler->collect(profileContext);
                 }
             #endif
+            }
+
+            void markValid()
+            {
+                _isEmpty = false;
             }
 
             uint32_t getEntryCount()
@@ -717,8 +763,8 @@ namespace Simtrace
             StreamDescriptor desc;
             memset(&desc, 0, sizeof(StreamDescriptor));
 
-            desc.flags              = SfHidden;
-            desc.type.entrySize     = 1;
+            desc.flags          = SfHidden;
+            desc.type.entrySize = 1;
 
             assert(name.length() <= MAX_STREAM_NAME_LENGTH);
             memcpy(&desc.name, name.c_str(), name.length());
@@ -737,12 +783,14 @@ namespace Simtrace
         {
             line.subSegmentCount = subSegmentCount;
 
-            // Register the hidden streams. This will also write a zero frame
-            // per stream to the store, saving the stream's description.
+            // We have to establish a link to the associated hidden streams.
             for (uint32_t i = 0; i < streamCount; ++i) {
                 assert(assocStreams.streamCount < TypeInfo::totalStreamCount);
                 StreamId id = assocStreams.streams[assocStreams.streamCount];
 
+                // If the id is already set, this is an open operation and we
+                // only need to remember the stream. Otherwise, we have to
+                // register a new hidden stream.
                 if (id != INVALID_STREAM_ID) {
                     Stream* stream = _getStore().findStream(id);
 
@@ -756,6 +804,8 @@ namespace Simtrace
 
                     line.streams.push_back(static_cast<ServerStream*>(stream));
                 } else {
+                    // Register the hidden stream. This will also write a zero
+                    // frame to the store, saving the stream's description.
                     _registerHiddenStream(line.streams, i, stringFormat(
                                             "stream%d:%s%d", _getStream()->getId(),
                                             prefix, i));
@@ -821,6 +871,8 @@ namespace Simtrace
                                 assocStreams);
             }
 
+            // Add the second zero frame to the memory stream (see comment
+            // in initialize() for further information).
             if (assoc == nullptr) {
                 // We need to associate the hidden streams with the memory
                 // stream so we know from which hidden streams to read later
@@ -832,11 +884,27 @@ namespace Simtrace
                 Simtrace3Store& store = static_cast<Simtrace3Store&>(_getStore());
                 store.commitFrame(frame);
             }
+
+            _initialized = true;
+        }
+
+        inline void _ensureInitialized()
+        {
+            // We lazily create the hidden streams to avoid running into
+            // softlocks with the stream registering process. We do not need to
+            // perform locking on our own, because the server stream will do
+            // the job.
+            if (!_initialized) {
+                _initializeLines(nullptr);
+            }
         }
 
         virtual void _encode(Simtrace3Frame& frame, SegmentId id,
-                             StreamSegmentId sequenceNumber) override
+                             StreamSegmentId sequenceNumber,
+                             ScratchSegment* target) override
         {
+            assert(_initialized);
+
             SubSegmentContext ctx(*this, _getStream(), id, sequenceNumber, false);
 
             // Copy the start pointers for the data buffers. We need them later
@@ -847,7 +915,7 @@ namespace Simtrace
 
             // Create and initialize the predictors.
             // N.B. We create the cycle predictor with the data type and NOT
-            // with the cyclecount type. This may
+            // with the cyclecount type.
             std::unique_ptr<IpPredictor<AddressType>> ipPredictor(
                 new IpPredictor<AddressType>());
             std::unique_ptr<CyclePredictor<CycleCount, AddressType>> cyclePredictor(
@@ -904,7 +972,6 @@ namespace Simtrace
             // filled. Doing checks here all the time is thus in 99% useless
             // and we are better off with less compression of the single last
             // segment.
-
             for (uint32_t i = 0; i < TypeInfo::dataStreamCount; ++i) {
                 size_t usedSpace, remainingSpace;
 
@@ -916,11 +983,16 @@ namespace Simtrace
             size_t usedCycleSpace = (byte*)ctx.cycleDataBuffer - orgCycleBuffer;
             size_t remainingCycleSpace = MemoryLayout::cycleSubSegmentSize - usedCycleSpace;
             memset(ctx.cycleDataBuffer, MemoryLayout::fillChar, remainingCycleSpace);
+
+            // Mark the subsegment to contain valid data
+            ctx.markValid();
         }
 
         virtual void _decode(Simtrace3StorageLocation& location, SegmentId id,
                              StreamSegmentId sequenceNumber) override
         {
+            assert(_initialized);
+
             SubSegmentContext ctx(*this, _getStream(), id, sequenceNumber, true);
 
             CycleCount cycleCount = 0;
@@ -967,7 +1039,7 @@ namespace Simtrace
 
     public:
         Simtrace3MemoryEncoder(ServerStore& store, ServerStream* stream) :
-            Simtrace3Encoder(store, "Simtrace3 Memory Encoder", stream),
+            Simtrace3Encoder(store, "Simtrace3 Memory Encoder", stream, false),
             _initialized(false)
         {
             // If this is just an initialization to get the friendly name,
@@ -1010,11 +1082,38 @@ namespace Simtrace
 
         virtual void initialize(Simtrace3Frame& frame, bool isOpen) override
         {
+            assert(!_initialized);
+
+            // DEPENDENCY OF MEMORY STREAM AND HIDDEN STREAMS ----------
+            // When we create the memory stream, we cannot create the hidden
+            // streams for predictor ids etc., immediately. This is because the
+            // store is locked and will not allow us to register further
+            // streams (recursive lock acquisition). We therefore register the
+            // hidden streams on the first write to the memory stream.
+            // In consequence, when we are called by the store to supplement
+            // the zero frame of the memory stream before it is written to disk,
+            // we cannot add the associated streams attribute. We do not know
+            // the ids of the associated streams, because we have not created
+            // them, yet.
+            // We solve this by writing a second zero frame later, which lets
+            // us add the associated streams attribute to the memory stream.
+            // This also solves the requirement of _initializeLines() that
+            // the hidden streams must already be loaded. When we register
+            // the hidden streams, we write a zero frame for each one. Only
+            // then, we are writing the second zero frame for the memory stream.
+            // When loading, we interpret the frames in the order they were
+            // created and thus will load the hidden streams before calling
+            // this method again with the second zero frame.
+
             if (isOpen) {
                 AttributeHeaderDescription* attrDesc = frame.findAttribute(
                     Simtrace3AttributeType::SatAssociatedStreams);
 
-                if (attrDesc == nullptr) {
+                // The first zero frame of the memory stream will not contain
+                // the attribute and this is perfectly fine. Just return. We
+                // will also ignore any further zero frames after the second
+                // zero frame has initialized the encoder.
+                if ((attrDesc == nullptr) || (_initialized)) {
                     return;
                 }
 
@@ -1051,18 +1150,43 @@ namespace Simtrace
             _globalWaitContext.wait();
         }
 
+        virtual void drop(ServerStreamBuffer& buffer, SegmentId segment) override
+        {
+            _ensureInitialized();
+
+            // We have to recognize when a segment is dropped because we have
+            // to mark it as used but empty. Otherwise, we will not release the
+            // buffer contexts that contain the dropped sequence number until
+            // we close the store and thus perform a forced close. In addition,
+            // we fill the subsegment to facilitate compression later.
+            SegmentControlElement* ctrl = buffer.getControlElement(segment);
+            assert(ctrl->link.stream == _getStream()->getId());
+
+            SubSegmentContext ctx(*this, _getStream(), segment,
+                ctrl->link.sequenceNumber, false);
+
+            for (uint32_t i = 0; i < TypeInfo::idStreamCount; ++i) {
+                memset(ctx.idBuffers[i], MemoryLayout::fillChar,
+                    MemoryLayout::dataSubSegmentSize);
+            }
+
+            for (uint32_t i = 0; i < TypeInfo::dataStreamCount; ++i) {
+                memset(ctx.dataBuffers[i], MemoryLayout::fillChar,
+                    MemoryLayout::dataSubSegmentSize);
+            }
+
+            memset(ctx.cycleDataBuffer, MemoryLayout::fillChar,
+                MemoryLayout::cycleSubSegmentSize);
+            memset(ctx.metaDataBuffer, MemoryLayout::fillChar,
+                MemoryLayout::metaSubSegmentSize);
+        }
+
         virtual bool write(ServerStreamBuffer& buffer, SegmentId segment,
                            std::unique_ptr<StorageLocation>& locationOut) override
         {
-            // We lazily create the hidden streams to avoid running into
-            // softlocks with the stream registering process. We do not need to
-            // perform locking on our own, because the server stream will do
-            // the job.
-            if (!_initialized) {
-                _initializeLines(nullptr);
-                _initialized = true;
-            }
+            _ensureInitialized();
 
+            // Queue a work item to process the segment
             return this->Simtrace3Encoder::write(buffer, segment, locationOut);
         }
 

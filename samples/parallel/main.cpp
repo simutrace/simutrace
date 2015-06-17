@@ -320,21 +320,24 @@ int customReaderThreadMain(SessionId session)
         // handles will point to the beginning of the streams. We use the
         // sequential scan flag to enable read-ahead and non-polluting caching.
 
-        // Note: We use QSequenceNumber because Simutrace does not support
-        // reporting an OperationInProgress message for other query types, yet.
+        // Note: We use a sequence number based query because Simutrace does
+        // not support reporting an OperationInProgress message for other
+        // query types, yet. Using QNextValidSequenceNumber and -1 guarantees
+        // to start at the beginning of the stream, irrespective of the first
+        // valid sequence number.
 
         do {
             dataHandle = StStreamOpen(session, dataStream,
-                                        QueryIndexType::QSequenceNumber, 0,
-                                        StreamAccessFlags::SafSequentialScan,
-                                        nullptr);
+                                      QueryIndexType::QNextValidSequenceNumber,
+                                      -1, StreamAccessFlags::SafSequentialScan,
+                                      nullptr);
         } while (shouldRetry());
         ThrowOnNull(dataHandle, Exception);
 
         do {
             stringHandle = StStreamOpen(session, stringStream,
-                                        QueryIndexType::QSequenceNumber, 0,
-                                        StreamAccessFlags::SafSequentialScan,
+                                        QueryIndexType::QNextValidSequenceNumber,
+                                        -1, StreamAccessFlags::SafSequentialScan,
                                         nullptr);
         } while (shouldRetry());
         ThrowOnNull(stringHandle, Exception);

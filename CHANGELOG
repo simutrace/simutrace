@@ -1,3 +1,15 @@
+Version 3.2.1 Marc Rittinghaus <rittinghaus@kit.edu>  Wed, 17 Jun 2015 15:00:00 +0100
+
+- Store summary prints per-stream information with logStreamStats switch
+
+Bug Fixes:
+- Fixed build of libsimutraceX on MacOS X
+- Fixed debian packaging control files
+- Minor fixes in README
+- Fixed race condition in generic encoder, which can corrupt traces on recording
+- Fixed "append, close, append, write"-pattern in memory encoder
+
+
 Version 3.2.0 Marc Rittinghaus <rittinghaus@kit.edu>  Fri, 12 Jun 2015 15:00:00 +0100
 
 - Added switch to deactivate colored console output from server
@@ -13,7 +25,7 @@ Incompatible Changes:
 - StStreamOpen now only accepts read handles
 
 Bug Fixes:
-- Changed Simutrace.Net.Interop project to support in source-tree builds
+- Changed Simutrace.Net.Interop project to support in-source-tree builds
 - Improved exception handling
 - Added missing thread-safety for client stream operations (open, append, close, ...)
 - Small documentation fixes and clarifications

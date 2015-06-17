@@ -41,23 +41,25 @@ namespace Simtrace
 
     Simtrace3GenericEncoder::Simtrace3GenericEncoder(ServerStore& store,
                                                      ServerStream* stream) :
-        Simtrace3Encoder(store, "Simtrace3 LZMA Encoder", stream)
+        Simtrace3Encoder(store, "Simtrace3 LZMA Encoder", stream, true)
     {
         profileCreateProfiler();
     }
 
     void Simtrace3GenericEncoder::_encode(Simtrace3Frame& frame, SegmentId id,
-                                         StreamSegmentId sequenceNumber)
+                                          StreamSegmentId sequenceNumber,
+                                          ScratchSegment* target)
     {
+        assert(target != nullptr);
+
         StreamBuffer& buffer = _getStream()->getStreamBuffer();
         SegmentControlElement* ctrl = buffer.getControlElement(id);
-        ScratchSegment targetSeg;
 
         // Compress the input buffer. This may take considerable time!
-        void* targetBuffer = targetSeg.getBuffer();
+        void* targetBuffer = target->getBuffer();
         void* sourceBuffer = buffer.getSegment(id);
 
-        size_t targetLength = targetSeg.getLength();
+        size_t targetLength = target->getLength();
         size_t sourceLength = getEntrySize(&_getStream()->getType()) *
             ctrl->rawEntryCount;
 
@@ -102,9 +104,9 @@ namespace Simtrace
         size_t sourceLength = static_cast<size_t>(dataAttr->header.size);
 
         targetLength = Compression::lzmaDecompress(sourceBuffer,
-                                                    sourceLength,
-                                                    targetBuffer,
-                                                    targetLength);
+                                                   sourceLength,
+                                                   targetBuffer,
+                                                   targetLength);
 
         if (targetLength != dataAttr->header.uncompressedSize) {
             LogWarn("Size mismatch after decompression "

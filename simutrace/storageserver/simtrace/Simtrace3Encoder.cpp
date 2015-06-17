@@ -24,6 +24,7 @@
 #include "../ServerStore.h"
 #include "../ServerStream.h"
 #include "../ServerStreamBuffer.h"
+#include "../ScratchSegment.h"
 
 #include "../StorageServer.h"
 #include "../WorkItem.h"
@@ -58,9 +59,11 @@ namespace Simtrace
 
     Simtrace3Encoder::Simtrace3Encoder(ServerStore& store,
                                        const std::string& friendlyName,
-                                       ServerStream* stream) :
+                                       ServerStream* stream,
+                                       bool needScratch) :
         StreamEncoder(store, friendlyName),
-        _stream(stream)
+        _stream(stream),
+        _needScratch(needScratch)
     {
 
     }
@@ -90,11 +93,16 @@ namespace Simtrace
         assert(context.location == nullptr);
 
         try {
+            std::unique_ptr<ScratchSegment> target;
+            if (context.encoder._needScratch) {
+                target = std::unique_ptr<ScratchSegment>(new ScratchSegment());
+            }
+
             // Create the frame and add the data attribute
             Simtrace3Frame frame(stream, ctrl);
 
             context.encoder._encode(frame, context.segment,
-                                    ctrl->link.sequenceNumber);
+                                    ctrl->link.sequenceNumber, target.get());
 
             // Build a storage location and write the frame into the store
             auto location = context.encoder.makeStorageLocation(frame);
@@ -109,12 +117,14 @@ namespace Simtrace
             stream->completeSegment(ctrl->link.sequenceNumber, &location);
 
         } catch (const std::exception& e) {
+            std::string bids =
+                ServerStreamBuffer::bufferIdToString(context.buffer.getId());
 
-            LogError("<encoder: '%s'> Encoding of segment %d in buffer %d "
+            LogError("<encoder: '%s'> Encoding of segment %d in buffer %s "
                         "failed <stream: %d, sqn: %d>. Exception: '%s'. "
                         "The data will be discarded.",
                         context.encoder.getFriendlyName().c_str(),
-                        context.segment, context.buffer.getId(), stream->getId(),
+                        context.segment, bids.c_str(), stream->getId(),
                         ctrl->link.sequenceNumber, e.what());
 
             stream->completeSegment(ctrl->link.sequenceNumber, nullptr);
@@ -153,11 +163,13 @@ namespace Simtrace
             }
 
         } catch (const std::exception& e) {
+            std::string bids =
+                ServerStreamBuffer::bufferIdToString(context.buffer.getId());
 
-            LogError("<encoder: '%s'> Decoding of segment %d in buffer %d "
+            LogError("<encoder: '%s'> Decoding of segment %d in buffer %s "
                         "failed <stream: %d, sqn: %d>. Exception: '%s'.",
                         context.encoder.getFriendlyName().c_str(),
-                        context.segment, context.buffer.getId(), stream->getId(),
+                        context.segment, bids.c_str(), stream->getId(),
                         ctrl->link.sequenceNumber, e.what());
 
             if (!IsSet(context.flags, StreamAccessFlags::SafSynchronous)) {
@@ -171,11 +183,6 @@ namespace Simtrace
     ServerStream* Simtrace3Encoder::_getStream() const
     {
         return _stream;
-    }
-
-    void Simtrace3Encoder::initialize(Simtrace3Frame& frame, bool isOpen)
-    {
-
     }
 
     bool Simtrace3Encoder::write(ServerStreamBuffer& buffer,

@@ -84,11 +84,6 @@ namespace SimuTrace
     }
 #endif
 
-    inline std::string _getBufferIdString(BufferId id)
-    {
-        return (id == SERVER_BUFFER_ID) ? "'server'" : stringFormat("%d", id);
-    }
-
     struct Segment
     {
         CriticalSection lock;
@@ -316,7 +311,7 @@ namespace SimuTrace
                                                bool isScratch)
     {
         LogWarn("Delaying segment request. Stream buffer %s "
-                "exhausted <try: %d%s>.", _getBufferIdString(getId()).c_str(),
+                "exhausted <try: %d%s>.", bufferIdToString(getId()).c_str(),
                 tryCount, (isScratch) ? ", scratch" : "");
 
         const uint32_t maxRetryCount = Configuration::get<int>("server.memmgmt.retryCount");
@@ -339,7 +334,7 @@ namespace SimuTrace
 
         while (true) {
             LogMem("Requesting segment from buffer %s <try: %d, %s>.",
-                   _getBufferIdString(getId()).c_str(), tryCount,
+                   bufferIdToString(getId()).c_str(), tryCount,
                    _getRequestString(stream, sequenceNumber, location, flags).c_str());
 
             seg = _dequeueFromFreeList();
@@ -354,7 +349,7 @@ namespace SimuTrace
                 _prepareSegment(seg->id, stream, sequenceNumber);
 
                 LogMem("Allocated segment %d from buffer %s <try: %d, %s>",
-                       seg->id, _getBufferIdString(getId()).c_str(), tryCount,
+                       seg->id, bufferIdToString(getId()).c_str(), tryCount,
                        _getRequestString(stream, sequenceNumber, location, flags).c_str());
 
                 break;
@@ -629,11 +624,11 @@ namespace SimuTrace
         ThrowOn(!_testControlCookie(*control, seg), Exception,
                 stringFormat("Failed submitting segment %d to buffer %s. "
                              "The control cookie is invalid.",
-                             segment, _getBufferIdString(getId()).c_str()));
+                             segment, bufferIdToString(getId()).c_str()));
 
         LogMem("Submitting segment %d to buffer %s "
                "<rvc: %d, vc: %d, stream: %d, sqn: %d>.",
-               segment, _getBufferIdString(getId()).c_str(),
+               segment, bufferIdToString(getId()).c_str(),
                seg.control.rawEntryCount, seg.control.entryCount,
                seg.control.link.stream, seg.control.link.sequenceNumber);
 
@@ -641,15 +636,31 @@ namespace SimuTrace
         // we return the saved control element in getControlElement()
         seg.isSubmitted = true;
 
+        StreamEncoder& encoder = seg.stream->getEncoder();
+
         // If the segment does not contain any valid entries, we just drop it.
         if (seg.control.rawEntryCount == 0) {
             assert(seg.control.entryCount == 0);
 
-            LogWarn("Dropping empty segment %d in buffer %s. Did you forget "
-                    "to submit the entries <stream: %d, sqn: %d>?",
-                    segment, _getBufferIdString(getId()).c_str(),
-                    seg.control.link.stream, seg.control.link.sequenceNumber);
+            // We do not show this warning for hidden streams in Release builds.
+            // We expect writers of storage backends to know what they do.
+        #ifndef _DEBUG
+            if (!IsSet(seg.stream->getFlags(), StreamFlags::SfHidden)) {
+        #endif
+                LogWarn("Dropping empty segment %d in buffer %s. Did you forget "
+                        "to submit the entries <stream: %d, sqn: %d>?",
+                        segment, bufferIdToString(getId()).c_str(),
+                        seg.control.link.stream, seg.control.link.sequenceNumber);
+        #ifndef _DEBUG
+            }
+        #endif
 
+            // The stream will have a hole for the current sequence number.
+            // We therefore need to inform the encoder that there will be no
+            // data for the sequence number.
+            encoder.drop(*this, seg.id);
+
+            // Drop the segment
             _purgeSegment(segment);
 
             return true;
@@ -730,7 +741,7 @@ namespace SimuTrace
 
             LogDebug("Encoding segment %d in buffer %s "
                      "<stream: %d, sqn: %d, size: %s>.",
-                     segment, _getBufferIdString(getId()).c_str(),
+                     segment, bufferIdToString(getId()).c_str(),
                      seg.control.link.stream, seg.control.link.sequenceNumber,
                      sizeToString(validBufferLength).c_str());
 
@@ -739,8 +750,6 @@ namespace SimuTrace
             // write out any data, yet. The encoder may also perform its work
             // asynchronously. In that case we do not finish the segment here.
             // The encoder has to complete the segment at the stream!
-            StreamEncoder& encoder = seg.stream->getEncoder();
-
             completed = encoder.write(*this, segment, location);
             if (completed) {
                 if (location != nullptr) {
@@ -771,7 +780,7 @@ namespace SimuTrace
 
             LogError("Failed to encode segment %d in buffer %s "
                      "<stream: %d, sqn: %d>. Exception: '%s'.",
-                     segment, _getBufferIdString(getId()).c_str(),
+                     segment, bufferIdToString(getId()).c_str(),
                      seg.control.link.stream, seg.control.link.sequenceNumber,
                      e.what());
 
@@ -878,7 +887,7 @@ namespace SimuTrace
 
                 LogDebug("Decoding segment %d in buffer %s "
                          "<stream: %d, sqn: %d>.", seg->id,
-                         _getBufferIdString(getId()).c_str(),
+                         bufferIdToString(getId()).c_str(),
                          stream->getId(), sequenceNumber);
 
                 // This routine guarantees that the segment id is set BEFORE
@@ -909,7 +918,7 @@ namespace SimuTrace
 
                 LogError("Failed to decode segment %d in buffer %s "
                          "<stream: %d, sqn: %d>. Exception: '%s'.", seg->id,
-                         _getBufferIdString(getId()).c_str(), stream->getId(),
+                         bufferIdToString(getId()).c_str(), stream->getId(),
                          sequenceNumber, e.what());
 
                 throw;
@@ -986,7 +995,7 @@ namespace SimuTrace
                 ctrl->link.sequenceNumber) : "scratch";
 
         LogMem("Releasing segment %d to buffer %s <%s>.", segment,
-               _getBufferIdString(getId()).c_str(), streamStr.c_str());
+               bufferIdToString(getId()).c_str(), streamStr.c_str());
     #endif
 
         _freeSegment(segment, prefetch);
@@ -1014,7 +1023,7 @@ namespace SimuTrace
                 ctrl->link.sequenceNumber) : "scratch";
 
         LogMem("Purging segment %d of buffer %s <%s>.", segment,
-               _getBufferIdString(getId()).c_str(), streamStr.c_str());
+               bufferIdToString(getId()).c_str(), streamStr.c_str());
     #endif
 
         _purgeSegment(segment);
@@ -1052,7 +1061,7 @@ namespace SimuTrace
 
         LogMem("%s segment into buffer %s <stream: %d, sqn: %d>.",
                (prefetch) ? "Prefetching" : "Loading",
-               _getBufferIdString(getId()).c_str(), location.link.stream,
+               bufferIdToString(getId()).c_str(), location.link.stream,
                location.link.sequenceNumber);
 
         return _requestSegment(segment, &stream, location.link.sequenceNumber,
@@ -1092,7 +1101,7 @@ namespace SimuTrace
 
                 LogMem("Flushing cached segment %d in buffer %s "
                        "<store: %d, stream: %d, sqn: %d>.", seg->id,
-                       _getBufferIdString(getId()).c_str(), store,
+                       bufferIdToString(getId()).c_str(), store,
                        seg->stream->getId(),
                        seg->sequenceNumber);
 

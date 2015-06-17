@@ -104,6 +104,9 @@ namespace SimuTrace
             index(-1) { }
     };
 
+    template<MultiplexingRule rule, bool indirect, bool temporal>
+    int _getNextEntry(void* userData, void** entryOut);
+
     StreamMultiplexer::StreamMultiplexer(SessionId session,
         const std::string& name, MultiplexingRule rule, MultiplexerFlags flags,
         const std::vector<StreamId>& inputStreams) :

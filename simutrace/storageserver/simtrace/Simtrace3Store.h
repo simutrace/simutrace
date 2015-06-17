@@ -87,6 +87,7 @@ namespace Simtrace
 
         void _initializeEncoderMap();
 
+        void _openFrame(FrameDirectoryEntry& entry);
         void _openStore(const std::string& path);
         void _createStore(const std::string& path);
 
@@ -112,8 +113,14 @@ namespace Simtrace
         uint64_t _readFrame(Simtrace3Frame& frame,
                             FileOffset offset, size_t size);
 
+        ServerStream* _openStream(Simtrace3Frame& frame);
         virtual std::unique_ptr<Stream> _createStream(StreamId id,
             StreamDescriptor& desc, BufferId buffer) override;
+
+        void _logStreamStats(std::ostringstream& str,
+                             StreamStatistics& stats,
+                             uint64_t size, uint64_t usize);
+        void _logStoreStats();
     public:
         Simtrace3Store(StoreId store, const std::string& path);
         virtual ~Simtrace3Store() override;

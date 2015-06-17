@@ -52,6 +52,8 @@ namespace SimuTrace
 
         virtual void close(StreamWait* wait = nullptr) { };
 
+        virtual void drop(ServerStreamBuffer& buffer, SegmentId segment) { };
+
         virtual bool read(ServerStreamBuffer& buffer, SegmentId segment,
                           StreamAccessFlags flags, StorageLocation& location,
                           bool prefetch) = 0;

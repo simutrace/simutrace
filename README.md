@@ -89,8 +89,8 @@ by giving a short introduction on how to start Simutrace.
 
 ### Supported Platforms
 
-Simutrace supports Windows Vista+, Linux, and MacOSX 10.9+. Since trace 
-processing is a memory intensive task, we only support 64 bit operating system 
+Simutrace supports Windows Vista+, Linux, and MacOSX 10.9+. Since trace
+processing is a memory intensive task, we only support 64 bit operating system
 versions. We tested Simutrace on x86-64 hardware, only.
 
 For best performance, we recommend running the server on a system with at least
@@ -125,10 +125,10 @@ already on your system.</i>
 #### Step 2: Simutrace
 
 Download the latest version of Simutrace from http://simutrace.org/downloads.
-For Windows we provide msi installation packages. For rpm-based and deb-based 
+For Windows we provide msi installation packages. For rpm-based and deb-based
 Linux distributions you can add repositories to your packaging software from
 Launchpad and openSUSE Build Service. For all other supported platforms, we
-currently do not provide binary packages. You have to  
+currently do not provide binary packages. You have to
 [build from source](#building-from-source) for these systems.
 
 ### Building from Source
@@ -184,10 +184,10 @@ The repository has the following structure:
 |   |-- simple              <i>Very basic sample client in C</i>
 |   `-- parallel            <i>Sample client in C, which writes and reads</i>
 |                           <i>to/from a trace using multiple threads</i>
-|-- <b>setups</b>			<i>Setup and packaging projects and metadata</i>
+|-- <b>setups</b>                  <i>Setup and packaging projects and metadata</i>
 |
 `-- <b>simutrace</b>
-    |-- bindings            <i>Bindings for libsimutrace</i>
+    |-- bindings            <i>Bindings for Simutrace</i>
     |-- documentation       <i>Documentation source and theme.</i>
     |-- <b>include</b>             <i>Header files, use SimuTrace.h.</i>
     |   |-- simubase        <i>Internal headers for libsimubase.</i>
@@ -195,7 +195,7 @@ The repository has the following structure:
     |-- libsimubase         <i>Internal platform abstraction library.</i>
     |-- libsimustor         <i>Internal tracing core library.</i>
     |-- <b>libsimutrace</b>        <i>Public client library.</i>
-    |-- <b>libsimutraceX</b>        <i>Public client extensions library.</i>
+    |-- <b>libsimutraceX</b>       <i>Public client extensions library.</i>
     `-- <b>storageserver</b>       <i>Trace storage and access server.</i>
         `-- simtrace        <i>simtrace (*.sim) storage format provider</i>
             |               <i>and type-specific trace encoders/decoders.</i>
@@ -284,7 +284,7 @@ http://simutrace.org/.
 
 The documentation in Simutrace is automatically build from source using
 doxygen. On <b>Windows</b>, you will find the latest version of doxygen at
-http://www.doxygen.org. On <b>Linux</b>, install doxygen with your 
+http://www.doxygen.org. On <b>Linux</b>, install doxygen with your
 package management system. On Ubuntu 14.04 LTS you can enter:
 
     $ sudo apt-get install doxygen
@@ -418,6 +418,7 @@ header, leading to the following licensing model:
 | libsimubase   | LGPL    |
 | libsimustor   | LGPL    |
 | libsimutrace  | LGPL    |
+| libsimutraceX | LGPL    |
 | storageserver | GPL     |
 
 
