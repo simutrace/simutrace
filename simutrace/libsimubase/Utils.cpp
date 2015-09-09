@@ -211,6 +211,28 @@ namespace System {
         int result = ::pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
         ThrowOn(result != 0, PlatformException, result);
     }
+
+    void ignoreSignal(uint32_t signal)
+    {
+        struct sigaction act;
+        memset(&act, 0, sizeof(struct sigaction));
+
+        act.sa_handler = SIG_IGN;
+
+        int result = ::sigaction(signal, &act, nullptr);
+        ThrowOn(result != 0, PlatformException, result);
+    }
+
+    void restoreSignal(uint32_t signal)
+    {
+        struct sigaction act;
+        memset(&act, 0, sizeof(struct sigaction));
+
+        act.sa_handler = SIG_DFL;
+
+        int result = ::sigaction(signal, &act, nullptr);
+        ThrowOn(result != 0, PlatformException, result);
+    }
 #endif
 
 }

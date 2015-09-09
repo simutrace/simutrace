@@ -76,7 +76,7 @@ namespace SimuTrace
     Session::Reference Session::makeOwnerReference(Session* session)
     {
         return Reference(session, [](Session* instance){
-            SessionId id = instance->getLocalId();
+            SessionId id = instance->getId();
             (void)id; // Make compiler happy in release build
 
             delete instance;
@@ -114,7 +114,7 @@ namespace SimuTrace
         }
 
         LogInfo("Closing store '%s'.", _store->getName().c_str());
-        _store->detach(_localId);
+        _detachStore();
 
         _store = nullptr;
     }
@@ -204,7 +204,7 @@ namespace SimuTrace
 
         // The manager will free this session object. Do not access any members
         // after this point!
-        _manager._releaseSession(getLocalId());
+        _manager._releaseSession(getId());
     }
 
     void Session::close()
@@ -238,7 +238,7 @@ namespace SimuTrace
 
         // The manager will free this session object. Do not access any members
         // after this point!
-        _manager._releaseSession(getLocalId());
+        _manager._releaseSession(getId());
     }
 
     void Session::createStore(const std::string& specifier, bool alwaysCreate)
@@ -345,7 +345,7 @@ namespace SimuTrace
         return _peerApiVersion;
     }
 
-    SessionId Session::getLocalId() const
+    SessionId Session::getId() const
     {
         return _localId;
     }

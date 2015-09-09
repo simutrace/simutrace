@@ -49,7 +49,7 @@ namespace SimuTrace
             _arg(arg) { }
         Thread(ThreadMain main) :
             _main(main) { }
-        virtual ~Thread() { }
+        virtual ~Thread() override { }
 
         T& getArgument() { return _arg; }
         void setArgument(T& arg) { _arg = arg; }

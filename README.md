@@ -113,19 +113,19 @@ Note: The installation does not currently include extensions for a full system
 simulators to generate trace events from a simulation. For information on
 simulator extensions, please refer to http://simutrace.org.
 
-#### Step 1: Visual C++ Redistributable Package 2013 (Windows-only)
+#### Step 1: Visual C++ Redistributable Package 2015 (Windows-only)
 
 The Visual C++ Redistributable package installs run-time components that are
 required to run Simutrace. Download the package from Microsoft and follow the
 instructions given on the download page.
 
-<i>If you have Visual Studio 2013 installed, the required components are
+<i>If you have Visual Studio 2015 installed, the required components are
 already on your system.</i>
 
 #### Step 2: Simutrace
 
 Download the latest version of Simutrace from http://simutrace.org/downloads.
-For Windows we provide msi installation packages. For rpm-based and deb-based
+For Windows we provide MSI installation packages. For rpm-based and deb-based
 Linux distributions you can add repositories to your packaging software from
 Launchpad and openSUSE Build Service. For all other supported platforms, we
 currently do not provide binary packages. You have to
@@ -142,8 +142,8 @@ Simutrace uses CMake (2.8 or newer) to generate build files for the
 development tools available on your system.
 
 On <b>Windows</b>, download the latest CMake version from http://cmake.org. To
-build Simutrace, we use Microsoft Visual Studio 2013 (Visual C++). A free
-(express) version can be downloaded from Microsoft.
+build Simutrace, we use the latest version of Microsoft Visual Studio
+(Visual C++). A free (express) version can be downloaded from Microsoft.
 
 On <b>Linux</b>, you have to install cmake, the basic development tools such
 a C++11 compatible GCC (version 4.7 or higher) and make. Some distributions

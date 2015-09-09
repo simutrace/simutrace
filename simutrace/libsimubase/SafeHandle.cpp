@@ -100,4 +100,12 @@ namespace SimuTrace
         _handle = INVALID_HANDLE_VALUE;
     }
 
+    Handle SafeHandle::release()
+    {
+        Handle handle = _handle;
+        _handle = INVALID_HANDLE_VALUE;
+
+        return handle;
+    }
+
 }

@@ -74,6 +74,7 @@ namespace SimuTrace
         virtual Store::Reference _createStore(const std::string& specifier,
                                               bool alwaysCreate = false) = 0;
         virtual Store::Reference _openStore(const std::string& specifier) = 0;
+        virtual void _detachStore() = 0;
 
         virtual void _close() = 0;
 
@@ -115,7 +116,7 @@ namespace SimuTrace
         Stream& getStream(StreamId id) const;
 
         uint16_t getPeerApiVersion() const;
-        SessionId getLocalId() const;
+        SessionId getId() const;
 
         void applySetting(const std::string& setting);
 

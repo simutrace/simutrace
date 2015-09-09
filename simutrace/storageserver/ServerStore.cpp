@@ -39,7 +39,8 @@ namespace SimuTrace
 
     ServerStore::ServerStore(StoreId id, const std::string& name) :
         Store(id, name),
-        _referenceCount(1)
+        _referenceCount(1),
+        _references()
     {
         // The server store automatically creates a first stream buffer that
         // the client will map into its address space.
@@ -106,58 +107,12 @@ namespace SimuTrace
         bool sharedMemory = StorageServer::getInstance().hasLocalBindings();
         std::unique_ptr<StreamBuffer> buffer;
         BufferId id = _bufferIdAllocator.getNextId();
-    #ifdef _WIN32
-    #else
-        ThreadBase* thread;
-    #endif
 
         try {
-        #if defined(_WIN32)
             buffer = std::unique_ptr<ServerStreamBuffer>(
                 new ServerStreamBuffer(id, segmentSize, numSegments,
-                                       sharedMemory));
-        #else
-            thread = ThreadBase::getCurrentThread();
-            assert(thread != nullptr);
-
-            // In Linux, allocating a shared memory region can be successful,
-            // although the memory for the underlying tmpfs is exhausted. We
-            // therefore touch all pages when creating a memory region to avoid
-            // crashes on access later. To fetch exceptions, we need a pseudo
-            // try-catch block for SIGBUS signals.
-
-            SignalJumpBuffer jmp;
-            thread->setSignalJmpBuffer(&jmp);
-            if (!sigsetjmp(jmp.signalret, 1)) {
-
-                // Try to create and touch shared memory
-                buffer = std::unique_ptr<ServerStreamBuffer>(
-                    new ServerStreamBuffer(id, segmentSize, numSegments,
-                                           sharedMemory));
-                buffer->touch();
-
-            } else { // catch
-                const size_t bufferSize =
-                    ServerStreamBuffer::computeBufferSize(segmentSize,
-                                                          numSegments);
-
-                Throw(Exception, stringFormat("Failed to allocate %s of "
-                        "memory for stream buffer <id: %d, type: %s>. Increase "
-                        "the system's memory limits or reduce the "
-                        "stream buffer size (caution: this will also reduce "
-                        "the number of streams that can be accessed by the "
-                        "client at the same time).",
-                        sizeToString(bufferSize, SizeUnit::SuMiB).c_str(), id,
-                        (sharedMemory) ? "shared" : "private"));
-            }
-
-            thread->setSignalJmpBuffer(nullptr);
-        #endif
+                    sharedMemory));
         } catch (...) {
-        #if defined(_WIN32)
-        #else
-            thread->setSignalJmpBuffer(nullptr);
-        #endif
             _bufferIdAllocator.retireId(id);
 
             throw;
@@ -178,7 +133,8 @@ namespace SimuTrace
             buf = &StorageServer::getInstance().getMemoryPool();
         } else {
             buf = _getStreamBuffer(buffer);
-            ThrowOnNull(buf, NotFoundException);
+            ThrowOnNull(buf, NotFoundException,
+                        stringFormat("stream buffer with id %d", buffer));
         }
 
         if (id == INVALID_STREAM_ID) {
@@ -250,7 +206,7 @@ namespace SimuTrace
 
     void ServerStore::attach(SessionId session)
     {
-        LockScopeExclusive(_referenceLock);
+        LockScopeExclusive(_lock);
         ThrowOn(_findReference(session), InvalidOperationException);
 
         // The store might be closing at this moment
@@ -260,70 +216,79 @@ namespace SimuTrace
         _referenceCount++;
     }
 
-    void ServerStore::detach(SessionId session)
+    uint32_t ServerStore::detach(SessionId session)
     {
-        if (_referenceCount == 0) {
-            assert(false);
-            return;
-        }
+        LockScopeExclusive(_lock);
+        ThrowOn(_referenceCount == 0, InvalidOperationException);
 
-        uint32_t newRefCount = _referenceCount;
-        LockExclusive(_referenceLock); {
-            StreamWait wait;
+        StreamWait wait;
+    #ifdef _DEBUG
+        uint32_t savedRefCount = _referenceCount;
+    #endif
+        if (_referenceCount > 1) {
+            // When we enter this branch, a session closes its store
+            // reference. First check if the session holds a reference to
+            // this store.
 
-            if (_referenceCount > 1) {
-                // When we enter this branch, a session closes its store
-                // reference. First check if the session holds a reference to
-                // this store.
+            ThrowOn(!_findReference(session), InvalidOperationException);
 
-                ThrowOn(!_findReference(session), InvalidOperationException);
+            // The client leaves it to the server to finalize shared memory
+            // -based segments. We therefore, iterate over all streams to
+            // submit any pending changes or purge read segments.
+            // It is ok if new streams are registered after the enum,
+            // because the new streams cannot contain references from this
+            // session.
+            std::vector<Stream*> streams;
+            this->Store::_enumerateStreams(streams, SefRegular);
 
-                // The client leaves it to the server to finalize shared memory
-                // -based segments. We therefore, iterate over all streams to
-                // submit any pending changes or purge read segments.
-                // It is ok if new streams are registered after the enum,
-                // because the new streams cannot contain references from this
-                // session.
-                std::vector<Stream*> streams;
-                this->Store::_enumerateStreams(streams, SefRegular);
+            for (auto stream : streams) {
+                ServerStream* sstream = dynamic_cast<ServerStream*>(stream);
+                assert(sstream != nullptr);
 
-                for (auto stream : streams) {
-                    ServerStream* sstream = dynamic_cast<ServerStream*>(stream);
-                    assert(sstream != nullptr);
+                assert(sstream->getStreamBuffer().getId() != SERVER_BUFFER_ID);
 
-                    assert(sstream->getStreamBuffer().getId() != SERVER_BUFFER_ID);
-
-                    sstream->close(session, &wait, true);
-                }
-
-                LogInfo("<store: %s> Session %d rundown (%d pending "
-                        "segment(s)).", getName().c_str(), session,
-                        wait.getCount());
-
-                // Wait for the triggered operations to finish. Closing a store
-                // is a synchronous operation. Ignore any errors.
-                wait.wait();
-
-                // TODO: Add error handling for wait. What happens if a
-                // segment is still open?
-
-                _references.remove(session);
-
-                newRefCount = --_referenceCount;
-                session = SERVER_SESSION_ID;
+                sstream->close(session, &wait, true);
             }
 
-            if (_referenceCount == 1) {
-                SwapEnvironment(&StorageServer::getInstance().getEnvironment());
-                assert(_references.empty());
+            LogInfo("<store: %s> Session %d rundown (%d pending "
+                    "segment(s)).", getName().c_str(), session,
+                    wait.getCount());
 
-                // The store provider always holds the last reference to a
-                // store. In this phase we close all streams that have
-                // references from the imaginary server session, i.e.,
-                // references made by encoders. Since we do not know in which
-                // order we should close those streams, we let the encoders do
-                // it themselves.
-                ThrowOn(session != SERVER_SESSION_ID, InvalidOperationException);
+            // Wait for the triggered operations to finish. Closing a store
+            // is a synchronous operation. Ignore any errors.
+            wait.wait();
+
+            // TODO: Add error handling for wait. What happens if a
+            // segment is still open?
+
+            _references.remove(session);
+
+            --_referenceCount;
+        }
+
+        // Execution might fall through. Do not refactor to else if
+
+        if (_referenceCount == 1) {
+            SwapEnvironment(&StorageServer::getInstance().getEnvironment());
+            assert(_references.empty());
+
+            // The store provider always holds the last reference to a
+            // store. In case this is the last user session to the store
+            // we lock the configuration, write out any last data that
+            // the encoders might still hold and switch the store to
+            // read-only mode. If the store was already in read-only mode,
+            // the following operations should only close any references
+            // to (hidden) streams. Since we do not know in which order
+            // such encoder private streams should be closed, we let the
+            // encoders do the work. In case the close comes from the
+            // server session, we free the last reference and return.
+            // Streams and encoders should already be closed.
+            if (session == SERVER_SESSION_ID) {
+                assert(savedRefCount == 1);
+
+                _referenceCount = 0;
+            } else {
+                assert(savedRefCount > 1);
 
                 // Prevent any further configuration changes and invoke the
                 // close method of all encoder instances.
@@ -348,17 +313,10 @@ namespace SimuTrace
 
                 // TODO: Add error handling for wait. What happens if a
                 // segment is still open?
-
-                newRefCount = --_referenceCount;
             }
-        } Unlock();
-
-        // We need to release the lock before we delete ourselves with a
-        // call to the store manager's close method. After this call we must
-        // not touch anything within the class!
-        if (newRefCount == 0) {
-            StorageServer::getInstance().getStoreManager()._releaseStore(getId());
         }
+
+        return _referenceCount;
     }
 
     void ServerStore::enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const
@@ -381,7 +339,9 @@ namespace SimuTrace
         if (enc == nullptr) {
             // Fall back onto the default encoder
             enc = _findEncoder(_defaultEncoderTypeId);
-            ThrowOnNull(enc, NotFoundException);
+            ThrowOnNull(enc, NotFoundException,
+                        stringFormat("encoder for type %s",
+                            guidToString(type).c_str()));
         }
 
         return enc->factoryMethod;

@@ -48,7 +48,7 @@ struct config_setting_t; // fwd decl
 
 namespace libconfig {
 
-class LIBCONFIGXX_API ConfigException : public std::exception { };
+class LIBCONFIGXX_API ConfigException { };
 
 class Setting; // fwd decl
 

@@ -142,6 +142,7 @@ namespace SimuTrace
                                     BufferId buffer)
     {
         ThrowOn(_configurationLocked, InvalidOperationException);
+
         if (IsSet(desc.flags, StreamFlags::SfDynamic)) {
             ThrowOn(_numDynamicStreams >= SIMUTRACE_STORE_MAX_NUM_DYNAMIC_STREAMS,
                     Exception, stringFormat("Failed to register dynamic stream. "
@@ -161,9 +162,11 @@ namespace SimuTrace
 
     void Store::_lockConfiguration()
     {
-        _configurationLocked = true;
+        if (!_supportsWriteAfterOpen() && !_configurationLocked) {
+            _configurationLocked = true;
 
-        LogDebug("<store: %s> Locked configuration.", _name.c_str());
+            LogDebug("<store: %s> Locked configuration.", _name.c_str());
+        }
     }
 
     void Store::_freeConfiguration()
@@ -336,7 +339,8 @@ namespace SimuTrace
         LockScopeShared(_lock);
 
         StreamBuffer* buffer = _getStreamBuffer(id);
-        ThrowOnNull(buffer, NotFoundException);
+        ThrowOnNull(buffer, NotFoundException,
+                    stringFormat("stream buffer with id %d", id));
 
         return *buffer;
     }
@@ -346,7 +350,8 @@ namespace SimuTrace
         LockScopeShared(_lock);
 
         Stream* stream = _getStream(id);
-        ThrowOnNull(stream, NotFoundException);
+        ThrowOnNull(stream, NotFoundException,
+                    stringFormat("stream with id %d", id));
 
         return *stream;
     }

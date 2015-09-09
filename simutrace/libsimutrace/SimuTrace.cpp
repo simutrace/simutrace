@@ -559,7 +559,7 @@ namespace SimuTrace
                 cstream = reinterpret_cast<ClientStream*>(handle->stream);
 
                 assert((session == INVALID_SESSION_ID) ||
-                       (session == cstream->getSession().getLocalId()));
+                       (session == cstream->getSession().getId()));
                 assert((stream == INVALID_STREAM_ID) ||
                        (stream == cstream->getId()));
             }

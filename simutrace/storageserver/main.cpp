@@ -23,7 +23,19 @@
 
 using namespace SimuTrace;
 
+static int gargc;
+static const char** gargv;
+
+int ThreadMain(Thread<int>& t)
+{
+    return StorageServer::run(gargc, gargv);
+}
+
 int main(int argc, const char* argv[])
 {
-    return StorageServer::run(argc, argv);
+    gargc = argc;
+    gargv = argv;
+
+    Thread<int> t(ThreadMain);
+    return t.adopt();
 }

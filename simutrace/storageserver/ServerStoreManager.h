@@ -31,24 +31,29 @@ namespace SimuTrace
 
     class ServerStoreManager
     {
-        friend class ServerStore;
     private:
         struct StorePrefixDescriptor;
+        struct ServerStoreReference;
+        typedef std::map<StoreId, std::shared_ptr<ServerStoreReference>> StoreMap;
 
     private:
         DISABLE_COPY(ServerStoreManager);
 
         mutable ReaderWriterLock _lock;
 
-        IdAllocator<StoreId> _storeIdAllocator;
-        std::map<StoreId, Store::Reference> _stores;
+        uint32_t _persistentCache;
 
-        Store::Reference _createOrOpenStore(ServerSession& session,
+        IdAllocator<StoreId> _storeIdAllocator;
+        StoreMap _stores;
+
+        Store::Reference _createOrOpenStore(const ServerSession& session,
                                             const std::string& specifier,
                                             bool alwaysCreate,
                                             bool open);
 
-        void _releaseStore(StoreId store); // Called from within the store!
+        void _releaseStore(StoreMap::iterator& it);
+        void _evictStore();
+        void _closeStore(SessionId session, StoreId id);
 
         static void _getPrefixDescriptors(const StorePrefixDescriptor** out,
                                           uint32_t* outNumPrefixes);
@@ -69,11 +74,13 @@ namespace SimuTrace
         ServerStoreManager();
         ~ServerStoreManager();
 
-        Store::Reference createStore(ServerSession& session,
+        Store::Reference createStore(const ServerSession& session,
                                      const std::string& specifier,
                                      bool alwaysCreate);
-        Store::Reference openStore(ServerSession& session,
+        Store::Reference openStore(const ServerSession& session,
                                    const std::string& specifier);
+
+        void closeStore(SessionId session, StoreId id);
 
         static void enumerateStores(const ServerSession& session,
                                     std::vector<std::string>& out);

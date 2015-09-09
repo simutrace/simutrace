@@ -41,7 +41,6 @@ namespace SimuTrace
     private:
         DISABLE_COPY(ServerStore);
 
-        mutable ReaderWriterLock _referenceLock;
         uint32_t _referenceCount;
         std::list<SessionId> _references;
 
@@ -72,7 +71,7 @@ namespace SimuTrace
         virtual ~ServerStore() override;
 
         void attach(SessionId session);
-        virtual void detach(SessionId session) override;
+        uint32_t detach(SessionId session);
 
         void enumerateStreamBuffers(std::vector<StreamBuffer*>& out) const;
         void enumerateStreams(std::vector<Stream*>& out,

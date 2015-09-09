@@ -535,7 +535,7 @@ namespace System
         ssize_t bytesWritten = 0;
         ssize_t result;
 
-        System::maskSignal(SIGPIPE); {
+        System::ignoreSignal(SIGPIPE); {
     #endif
 
             do {
@@ -554,7 +554,7 @@ namespace System
 
                     // If error is interrupted system-call we just continue
                     if (error != EINTR) {
-                        System::unmaskSignal(SIGPIPE);
+                        System::restoreSignal(SIGPIPE);
 
                         Throw(PlatformException, error);
                     }
@@ -567,7 +567,7 @@ namespace System
                 #if defined(_WIN32)
                     Throw(PlatformException, ERROR_NO_DATA);
                 #else
-                    System::unmaskSignal(SIGPIPE);
+                    System::restoreSignal(SIGPIPE);
                     Throw(PlatformException, ECONNRESET);
                 #endif
                 }
@@ -577,7 +577,7 @@ namespace System
     #if defined(_WIN32)
     #else
         }
-        System::unmaskSignal(SIGPIPE);
+        System::restoreSignal(SIGPIPE);
     #endif
 
         ThrowOn(bytesWritten != size, Exception, "The amount of data written "
@@ -603,7 +603,7 @@ namespace System
         ssize_t bytesRead = 0;
         ssize_t result;
 
-        System::maskSignal(SIGPIPE); {
+        System::ignoreSignal(SIGPIPE); {
     #endif
 
             do {
@@ -622,7 +622,7 @@ namespace System
 
                     // If error is interrupted system-call we just continue
                     if (error != EINTR) {
-                        System::unmaskSignal(SIGPIPE);
+                        System::restoreSignal(SIGPIPE);
 
                         Throw(PlatformException, error);
                     }
@@ -635,7 +635,7 @@ namespace System
                 #if defined(_WIN32)
                     Throw(PlatformException, ERROR_NO_DATA);
                 #else
-                    System::unmaskSignal(SIGPIPE);
+                    System::restoreSignal(SIGPIPE);
                     Throw(PlatformException, ECONNRESET);
                 #endif
                 }
@@ -645,7 +645,7 @@ namespace System
     #if defined(_WIN32)
     #else
         }
-        System::unmaskSignal(SIGPIPE);
+        System::restoreSignal(SIGPIPE);
     #endif
 
         ThrowOn(bytesRead != size, Exception, "The amount of data read from "

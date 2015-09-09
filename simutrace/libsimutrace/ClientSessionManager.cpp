@@ -133,7 +133,8 @@ namespace SimuTrace
         SwapEnvironment(&_environment);
 
         ClientSession* cs = dynamic_cast<ClientSession*>(_getSession(session));
-        ThrowOnNull(cs, NotFoundException);
+        ThrowOnNull(cs, NotFoundException,
+                    stringFormat("session with id %d", session));
 
         uint16_t apiVersion = cs->getPeerApiVersion();
         std::unique_ptr<Port> port(new ClientPort(cs->getAddress()));

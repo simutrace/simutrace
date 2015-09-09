@@ -10,6 +10,7 @@ using System.Threading;
 
 namespace csharp.memreplay
 {
+    [Serializable]
     internal class SimutraceException : Exception
     {
         public SimutraceException() :
@@ -67,7 +68,7 @@ namespace csharp.memreplay
                 } else {
                     if ((!guid.Equals(Guid.Empty)) && (!guid.Equals(typeGuid))) {
                         throw new ReplayException(String.Format(
-                            "Expected type {0} for stream '{1}', but found {1}.",
+                            "Expected type {0} for stream '{1}', but found {2}.",
                             guid, name, typeGuid));
                     }
                 }

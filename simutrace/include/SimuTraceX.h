@@ -88,7 +88,9 @@ extern "C"
      *
      *  \returns The id the dynamic stream representing the created multiplexer.
      *           Read entries from the multiplexer by reading entries from the
-     *           stream with the returned id.
+     *           stream with the returned id. The id is INVALID_STREAM_ID on
+     *           error. For a more detailed error description call
+     *           StGetLastError().
      *
      *  \remarks The multiplexer will only be visible in the same session
      *           for the client that created the multiplexer.

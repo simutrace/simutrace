@@ -207,6 +207,19 @@ namespace SimuTrace
                       "The requested object could not be found.",
                       EcRuntime, code) {}
 
+        NotFoundException(LOC_PARAM const std::string& object) :
+            Exception(LOC_ARG
+                      stringFormat("The requested %s could not be found.",
+                        object.c_str()),
+                      EcRuntime, code) {}
+
+        NotFoundException(LOC_PARAM const std::string& object,
+                          const std::string& text) :
+            Exception(LOC_ARG
+                      stringFormat("The requested %s could not be found. %s",
+                        object.c_str(), text.c_str()),
+                      EcRuntime, code) {}
+
         ~NotFoundException() throw() {}
     };
 

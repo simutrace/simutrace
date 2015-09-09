@@ -50,6 +50,27 @@ namespace SimuTrace
     typedef struct _SignalJumpBuffer {
         sigjmp_buf signalret;
     } SignalJumpBuffer;
+
+#define SigTry() \
+    ThreadBase* thread; \
+    try { \
+        thread = ThreadBase::getCurrentThread(); \
+        assert(thread != nullptr); \
+        SignalJumpBuffer jmp; \
+        thread->setSignalJmpBuffer(&jmp); \
+        if (!sigsetjmp(jmp.signalret, 1)) {
+
+#define SigCatch() \
+        } else {
+
+#define SigEnd() \
+        } \
+        thread->setSignalJmpBuffer(nullptr); \
+    } catch (...) { \
+        thread->setSignalJmpBuffer(nullptr); \
+        throw; \
+    }
+
 #endif
 
     namespace System {
@@ -89,6 +110,7 @@ namespace SimuTrace
 
         // Starts the thread and calls run() in the context of the new thread
         void start();
+        int adopt();
 
     #if defined(_WIN32)
     #else
@@ -117,6 +139,9 @@ namespace SimuTrace
 
         // Returns the thread id
         unsigned long getId() const;
+
+        // Returns the return value of the thread
+        int getReturnValue() const;
 
         // The current thread will sleep for the specified milliseconds
         static void sleep(uint32_t ms);

@@ -141,7 +141,7 @@ namespace Options
                     1,
                     0,
                     "The size of the server internal memory pool to process "
-                    "stream segments in MiB. ",
+                    "stream segments in MiB.",
                     OPT_LONG_PREFIX "server.memmgmt.poolSize");
 
         typeMap["server.memmgmt.disableCache"] = libconfig::Setting::Type::TypeBoolean;
@@ -233,6 +233,27 @@ namespace Options
                     "For new stores, enables detailed logging of per-stream "
                     "statistics on store close.",
                     OPT_LONG_PREFIX "store.simtrace.logStreamStats");
+
+        typeMap["store.persistentCache"] = libconfig::Setting::Type::TypeInt;
+        options.add("0",
+                    false,
+                    1,
+                    0,
+                    "",
+                    OPT_LONG_PREFIX "store.persistentCache");
+
+        //
+        // Server-forced Client Settings
+        //
+
+        typeMap["client.memmgmt.poolSize"] = libconfig::Setting::Type::TypeInt;
+        options.add("4096",
+            false,
+            1,
+            0,
+            "The size of the client shared memory pool to back "
+            "stream segments in MiB.",
+            OPT_LONG_PREFIX "client.memmgmt.poolSize");
 
     };
 

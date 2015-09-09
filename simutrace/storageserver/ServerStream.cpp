@@ -322,6 +322,8 @@ namespace SimuTrace
             }
         }
 
+        assert(loc->location->rawEntryCount > 0);
+
         // Update remaining stream statistics
         _stats.compressedSize += loc->location->compressedSize;
 
@@ -734,6 +736,9 @@ namespace SimuTrace
         // It is valid to submit a written segment by closing it. In that case,
         // we need to update our append state.
         if (sqn == _lastAppendSequenceNumber) {
+            assert((_lastAppendIndex < INVALID_ENTRY_INDEX) ||
+                   (entryCount == 0));
+
             _lastAppendIndex += entryCount;
             _lastAppendSequenceNumber = INVALID_STREAM_SEGMENT_ID;
         }
@@ -1050,6 +1055,12 @@ namespace SimuTrace
             SegmentControlElement* ctrl = buffer.getControlElement(id);
             assert(ctrl != nullptr);
 
+            // When we add a segment to a stream, we do not know how many
+            // entries will be stored in the lower segments. We therefore
+            // invalidate the index. This will also prevent the completion
+            // code from adding the segment to the index tree!
+            // This can be useful if plain binary data should be stored in the
+            // segment and no equivalent of entries exist.
             ctrl->startIndex = INVALID_ENTRY_INDEX;
 
             _addSegmentLocation(new SegmentLocation(sqn, session, id));

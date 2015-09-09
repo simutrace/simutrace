@@ -145,7 +145,7 @@ namespace SimuTrace
 
             case MessagePayloadType::MptHandles: {
                 if ((handles.handleCount > 0) &&
-                    (handles.handles!= nullptr) &&
+                    (handles.handles != nullptr) &&
                     (IsSet(localFlags, LocalMessageFlags::LmfAllocationOwner))) {
 
                     for (auto i = 0; i < handles.handles->size(); ++i) {
@@ -156,7 +156,10 @@ namespace SimuTrace
                         }
 
                     #if defined(_WIN32)
-                        ::CloseHandle(handle);
+						if (handle == NULL) {
+							continue;
+						}
+						::CloseHandle(handle);
                     #else
                         ::close(handle);
                     #endif

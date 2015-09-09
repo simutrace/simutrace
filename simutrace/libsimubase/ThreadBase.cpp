@@ -131,6 +131,33 @@ namespace System
         setPriority(_priority);
     }
 
+    int ThreadBase::adopt()
+    {
+        ThrowOn(_state != TsIdle, InvalidOperationException);
+
+        _state = TsStarting;
+
+    #if defined(_WIN32)
+        _thread = ::GetCurrentThread();
+        _threadId = ::GetCurrentThreadId();
+    #else
+        _threadId = ::pthread_self();
+    #endif
+
+        setPriority(_priority);
+
+        ThreadStart(this);
+
+        // Release all association with the current thread to prevent
+        // the thread class from closing the thread on destruction.
+    #if defined(_WIN32)
+        _thread.release();
+    #endif
+        _threadId = INVALID_THREAD_ID;
+
+        return _retVal;
+    }
+
 #if defined(_WIN32)
 #else
     void ThreadBase::setSignalJmpBuffer(SignalJumpBuffer* jmp)
@@ -174,7 +201,7 @@ namespace System
 
     void ThreadBase::waitForThread() const
     {
-        if (!isRunning()) {
+        if (!isRunning() || isExecutingThread()) {
             return;
         }
 
@@ -247,6 +274,11 @@ namespace System
     #endif
     }
 
+    int ThreadBase::getReturnValue() const
+    {
+        return _retVal;
+    }
+
     void ThreadBase::sleep(uint32_t ms)
     {
     #if defined(_WIN32)
@@ -301,7 +333,10 @@ namespace System
 #endif
     {
         ThreadBase* th;
+        ThreadBase* oldTh;
+
         th = static_cast<ThreadBase*>(param);
+        oldTh = th->_currentThread;
         th->_currentThread = th;
 
     #if defined(_WIN32)
@@ -324,6 +359,7 @@ namespace System
     #endif
 
         th->_onFinalize();
+        th->_currentThread = oldTh;
         return retval;
     }
 

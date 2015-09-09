@@ -57,7 +57,7 @@ namespace SimuTrace
             LogWarn("The thread %d attached to session %d, but did not "
                     "detach. Ensure that all threads properly close their "
                     "association to a session before they exit.",
-                    _clients[i]->threadId, getLocalId());
+                    _clients[i]->threadId, getId());
 
             _detachFromContext(_clients[i]);
         }
@@ -69,7 +69,7 @@ namespace SimuTrace
 
     void ClientSession::_detachFromContext(ClientThreadContext* context)
     {
-        auto it = context->portMap.find(getLocalId());
+        auto it = context->portMap.find(getId());
         assert(it != context->portMap.end());
 
     #ifdef _DEBUG
@@ -193,7 +193,7 @@ namespace SimuTrace
         if (context != nullptr) {
             assert(context->threadId == ThreadBase::getCurrentThreadId());
 
-            ThrowOn(context->portMap.find(getLocalId()) != context->portMap.end(),
+            ThrowOn(context->portMap.find(getId()) != context->portMap.end(),
                     Exception, "The thread is already attached to the session.");
         }
 
@@ -206,7 +206,7 @@ namespace SimuTrace
 
         if (_clients.size() > 0) {
             cp->call(nullptr, RpcApi::CCV_SessionOpen, RPC_VERSION,
-                     getServerSideId());
+                     _serverSideId);
         }
 
         if (context == nullptr) {
@@ -217,7 +217,7 @@ namespace SimuTrace
         }
 
         // Transfer ownership of port.
-        context->portMap[getLocalId()] =
+        context->portMap[getId()] =
             std::unique_ptr<ClientPort>(static_cast<ClientPort*>(port.release()));
         _clients.push_back(context);
 
@@ -235,7 +235,7 @@ namespace SimuTrace
 
         assert(context->threadId == ThreadBase::getCurrentThreadId());
 
-        auto it = context->portMap.find(getLocalId());
+        auto it = context->portMap.find(getId());
         if (it == context->portMap.end()) {
             return false;
         }
@@ -271,6 +271,16 @@ namespace SimuTrace
         return Store::makeOwnerReference(ClientStore::open(*this, specifier));
     }
 
+    void ClientSession::_detachStore()
+    {
+        // The client does not need to do anything to detach from the store.
+        // Each client session has a dedicated instance of the client store.
+        // Just destroying the reference to the store in the session is
+        // enough (this will trigger the destructor of the client store).
+
+        return;
+    }
+
     void ClientSession::_close()
     {
         // This method should never be called, if the client correctly uses the
@@ -295,7 +305,7 @@ namespace SimuTrace
             _context = _clients[0];
 
         #ifdef _DEBUG
-            auto it = _context->portMap.find(getLocalId());
+            auto it = _context->portMap.find(getId());
             assert(it != _context->portMap.end());
             assert(it->second != nullptr);
             assert(it->second->isConnected());
@@ -344,16 +354,11 @@ namespace SimuTrace
         return _address;
     }
 
-    SessionId ClientSession::getServerSideId() const
-    {
-        return _serverSideId;
-    }
-
     ClientPort& ClientSession::getPort() const
     {
         ThrowOnNull(_context, InvalidOperationException);
 
-        auto it = _context->portMap.find(getLocalId());
+        auto it = _context->portMap.find(getId());
         ThrowOn(it == _context->portMap.end(), InvalidOperationException);
 
         assert(it->second != nullptr);

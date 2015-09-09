@@ -254,18 +254,18 @@ namespace SimuTrace
         // Set magic id to prevent mismatch
         *iov = UNIX_DOMAIN_SOCKET_MAGIC_ID;
 
-        System::maskSignal(SIGPIPE); {
+        System::ignoreSignal(SIGPIPE); {
 
             result = ::sendmsg(_endpoint, msg, 0);
             if (result < 0) {
                 int error = System::getLastErrorCode();
-                System::unmaskSignal(SIGPIPE);
+                System::restoreSignal(SIGPIPE);
 
                 Throw(PlatformException, error);
             }
 
         }
-        System::unmaskSignal(SIGPIPE);
+        System::restoreSignal(SIGPIPE);
 
         return result;
     }
@@ -275,18 +275,18 @@ namespace SimuTrace
     {
         ssize_t result;
 
-        System::maskSignal(SIGPIPE); {
+        System::ignoreSignal(SIGPIPE); {
 
             result = ::recvmsg(_endpoint, msg, 0);
             if (result < 0) {
                 int error = System::getLastErrorCode();
-                System::unmaskSignal(SIGPIPE);
+                System::restoreSignal(SIGPIPE);
 
                 Throw(PlatformException, error);
             }
 
         }
-        System::unmaskSignal(SIGPIPE);
+        System::restoreSignal(SIGPIPE);
 
         int* iov = static_cast<int*>(msg->msg_iov->iov_base);
         ThrowOn(*iov != UNIX_DOMAIN_SOCKET_MAGIC_ID, Exception,
@@ -395,7 +395,7 @@ namespace SimuTrace
         ssize_t bytesWritten = 0;
         ssize_t result;
 
-        System::maskSignal(SIGPIPE); {
+        System::ignoreSignal(SIGPIPE); {
 
             do {
                 void* buf = reinterpret_cast<void*>(
@@ -407,7 +407,7 @@ namespace SimuTrace
 
                     // If error is interrupted system-call we just continue
                     if (error != EINTR) {
-                        System::unmaskSignal(SIGPIPE);
+                        System::restoreSignal(SIGPIPE);
 
                         Throw(PlatformException, error);
                     }
@@ -415,7 +415,7 @@ namespace SimuTrace
                     bytesWritten += result;
                 } else {
                     assert(result == 0);
-                    System::unmaskSignal(SIGPIPE);
+                    System::restoreSignal(SIGPIPE);
 
                     Throw(PlatformException, ECONNRESET);
                 }
@@ -423,8 +423,7 @@ namespace SimuTrace
             } while((result < 0) || (bytesWritten < size));
 
         }
-        System::unmaskSignal(SIGPIPE);
-
+        System::restoreSignal(SIGPIPE);
     #endif
 
         ThrowOn(bytesWritten != size, Exception, "The amount of data written "
@@ -503,7 +502,7 @@ namespace SimuTrace
         ssize_t bytesRead = 0;
         ssize_t result;
 
-        System::maskSignal(SIGPIPE); {
+        System::ignoreSignal(SIGPIPE); {
 
             do {
                 void* buf = reinterpret_cast<void*>(
@@ -515,7 +514,7 @@ namespace SimuTrace
 
                     // If error is interrupted system-call we just continue
                     if (error != EINTR) {
-                        System::unmaskSignal(SIGPIPE);
+                        System::restoreSignal(SIGPIPE);
 
                         Throw(PlatformException, error);
                     }
@@ -523,7 +522,7 @@ namespace SimuTrace
                     bytesRead += result;
                 } else {
                     assert(result == 0);
-                    System::unmaskSignal(SIGPIPE);
+                    System::restoreSignal(SIGPIPE);
 
                     Throw(PlatformException, ECONNRESET);
                 }
@@ -531,7 +530,7 @@ namespace SimuTrace
             } while ((result < 0) || (bytesRead < size));
 
         }
-        System::unmaskSignal(SIGPIPE);
+        System::restoreSignal(SIGPIPE);
     #endif
 
         return bytesRead;

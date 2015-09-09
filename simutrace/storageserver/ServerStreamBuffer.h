@@ -167,12 +167,6 @@ namespace SimuTrace
         void flushStandbyList(StoreId store = INVALID_STORE_ID);
 
         SegmentControlElement* getControlElement(SegmentId segment) const;
-
-        inline static std::string bufferIdToString(BufferId id)
-        {
-            return (id == SERVER_BUFFER_ID) ?
-                "'server'" : stringFormat("%d", id);
-        }
     };
 
 }

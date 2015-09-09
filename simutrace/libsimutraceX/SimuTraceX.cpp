@@ -102,7 +102,8 @@ namespace SimuTrace
                 }
             }
 
-            ThrowOn(result == INVALID_STREAM_ID, NotFoundException);
+            ThrowOn(result == INVALID_STREAM_ID, NotFoundException,
+                    stringFormat("stream with name '%s'", name));
         } API_CATCH(result, INVALID_STREAM_ID);
 
         return result;

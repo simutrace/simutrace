@@ -31,7 +31,7 @@ namespace SimuTrace
 {
     public static partial class NativeX
     {
-        static private class NativeMethodsX
+        static private class NativeMethods
         {
             private const string libsimutraceX = "libsimutraceX";
 

@@ -76,7 +76,7 @@ namespace SimuTrace
         public static uint StXStreamFindByName(uint session, string name,
             out Native.StreamQueryInformation info)
         {
-            return NativeMethodsX.StXStreamFindByName(session, name, out info);
+            return NativeMethods.StXStreamFindByName(session, name, out info);
         }
 
 
@@ -94,6 +94,77 @@ namespace SimuTrace
         {
             Native.StreamQueryInformation info;
             return StXStreamFindByName(session, name, out info);
+        }
+
+
+        /// <summary>
+        /// Writes a string to the supplied variable data stream
+        /// </summary>
+        /// <param name="handle">Handle to a variable data stream that should
+        ///     store the stream.</param>
+        /// <param name="str">The string to save.</param>
+        /// <param name="reference">A output variable to receive the reference
+        ///     to the string in the stream if successful.</param>
+        /// <returns>The length of the string if successful, -1 otherwise.
+        ///     </returns>
+        public static int StXWriteString(ref IntPtr handle, string str,
+            out ulong reference)
+        {
+            int len;
+
+            GCHandle strh = new GCHandle();
+            try {
+                strh = GCHandle.Alloc(str, GCHandleType.Pinned);
+
+                len = Native.StWriteVariableData(ref handle,
+                    strh.AddrOfPinnedObject(), (IntPtr)str.Length,
+                    out reference).ToInt32();
+            } finally {
+                if (strh.IsAllocated) {
+                    strh.Free();
+                }
+            }
+
+            return len;
+        }
+
+
+        /// <summary>
+        /// Reads a string from the supplied variable data stream
+        /// </summary>
+        /// <param name="handle">Handle to the variable data stream that
+        ///     contains the string.</param>
+        /// <param name="reference">The reference to the string that was
+        ///     returned by StWriteVariableData() during recording.</param>
+        /// <param name="str">Output variable for the requested string.</param>
+        /// <returns>The length of the requested string, if successful,
+        ///     -1 otherwise. For a more detailed error description call
+        ///     StGetLastError().</returns>
+        public static int StXReadString(ref IntPtr handle, ulong reference,
+            out string str)
+        {
+            str = String.Empty;
+
+            int length = Native.StReadVariableData(ref handle, reference,
+                IntPtr.Zero).ToInt32();
+            if (length == -1) {
+                return -1;
+            }
+
+            IntPtr buffer = Marshal.AllocHGlobal(length);
+            try {
+                int length2 = Native.StReadVariableData(ref handle,
+                    reference, buffer).ToInt32();
+                if (length2 != length) {
+                    return -1;
+                }
+
+                str = Marshal.PtrToStringAnsi(buffer, length);
+            } finally {
+                Marshal.FreeHGlobal(buffer);
+            }
+
+            return length;
         }
 
 
@@ -124,7 +195,7 @@ namespace SimuTrace
                 ids = GCHandle.Alloc(inputStreams, GCHandleType.Pinned);
                 uint count = (uint)inputStreams.Length;
 
-                return NativeMethodsX.StXMultiplexerCreate(session, name,
+                return NativeMethods.StXMultiplexerCreate(session, name,
                     rule, flags, ids.AddrOfPinnedObject(), count);
             } finally {
                 if (ids.IsAllocated) {

@@ -78,7 +78,7 @@
    effectiveness, decompression speed and segment submission rate. Changing the
    value will break compatibility with traces generated with a different
    segment size, that is, you will no longer be able to open these traces! */
-#define SIMUTRACE_MEMMGMT_SEGMENT_SIZE 64
+#define SIMUTRACE_MEMMGMT_SEGMENT_SIZE @BUILD_CONFIG_MEMMGMT_SEGMENT_SIZE@
 #define SIMUTRACE_MEMMGMT_MAX_NUM_SEGMENTS_PER_BUFFER 1024
 
 /* The following defines provide per-object limits for the number of instances
@@ -95,13 +95,18 @@
 
 /* Enables general support for profiling code within Simutrace. To enable
    profiling, uncomment the respective define. */
-//#define SIMUTRACE_PROFILING_ENABLE
-#ifdef SIMUTRACE_PROFILING_ENABLE
+#if (@_BUILD_CONFIG_PROFILING_ENABLE@ == 1)
+#define SIMUTRACE_PROFILING_ENABLE
 
-/* Enables profiling of VPC4 compression code. This will output predictor
+/* Enables profiling of general and VPC4 compression code. This will output
    stats during compression. */
+#if (@_BUILD_CONFIG_PROFILING_SIMTRACE3_GENERIC_COMPRESSION_ENABLE@ == 1)
 #define SIMUTRACE_PROFILING_SIMTRACE3_GENERIC_COMPRESSION_ENABLE
+#endif
+
+#if (@_BUILD_CONFIG_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE@ == 1)
 #define SIMUTRACE_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE
+#endif
 
 #endif
 

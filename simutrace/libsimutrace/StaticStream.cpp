@@ -48,9 +48,19 @@ namespace SimuTrace
         if (buffer.isMaster()) {
             size_t size;
 
+            // Since our RPC interface does not support scatter/gather I/O, we
+            // send the whole segment here and not just the used part plus the
+            // control element. The assumption is that in the common case we
+            // will have to send full segments anyway and thus do not transfer
+            // unnecessary data here.
             payload = buffer.getSegmentAsPayload(segment, size);
             *lengthOut = static_cast<uint32_t>(size);
+
+            assert(buffer.dbgSanityCheck(segment, getType().entrySize) < 2);
         } else {
+
+            // We use shared memory, the server already has the data and we
+            // do not need to send it over network.
             payload = nullptr;
             *lengthOut = 0;
         }
@@ -136,6 +146,16 @@ namespace SimuTrace
 
         SegmentId id = static_cast<SegmentId>(msg.data.parameter1);
         msg.data.payload = buffer.getControlElement(id);
+
+    #ifdef _DEBUG
+        // For debugging builds we clear the whole data area of the segment
+        // with 0xCD (clean memory) to allow for later checks if the user
+        // filled the segment in the correct way. If we use shared memory, the
+        // server has already done the job for us.
+        if (buffer.isMaster()) {
+            buffer.dbgSanityFill(id, false);
+        }
+    #endif
     }
 
     void StaticStream::_payloadAllocatorRead(Message& msg, bool free, void* args)

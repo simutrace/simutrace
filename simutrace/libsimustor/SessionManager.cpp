@@ -84,7 +84,8 @@ namespace SimuTrace
                                            uint16_t peerApiVersion)
     {
         Session* s = _getSession(session);
-        ThrowOnNull(s, NotFoundException);
+        ThrowOnNull(s, NotFoundException,
+                    stringFormat("session with id %d", session));
 
         assert(_canCreateSession);
 
@@ -136,7 +137,7 @@ namespace SimuTrace
         out.reserve(_sessions.size());
 
         for (auto& pair : _sessions) {
-            out.push_back(pair.second->getLocalId());
+            out.push_back(pair.second->getId());
         }
     }
 
@@ -145,7 +146,8 @@ namespace SimuTrace
         LockScopeShared(_lock);
 
         Session* session = _getSession(id);
-        ThrowOnNull(session, NotFoundException);
+        ThrowOnNull(session, NotFoundException,
+                    stringFormat("session with id %d", id));
 
         return *session;
     }

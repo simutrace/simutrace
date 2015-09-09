@@ -1335,9 +1335,9 @@ extern "C"
      *                   stream.
      *
      *  \param destinationBuffer Pointer to a buffer receiving the
-     *                           variable-sized data. The buffer needs provide
-     *                           enough space. Supply \c NULL to determine
-     *                           the length of the data.
+     *                           variable-sized data. The buffer needs to
+     *                           provide enough space. Supply \c NULL to
+     *                           determine the length of the data.
      *
      *  \returns The length of the referenced variable-sized data in bytes, if
      *           successful, \c -1 otherwise. For a more detailed error

@@ -99,7 +99,7 @@ namespace SimuTrace
         }
 
         assert(index != _workers.size());
-        SessionId session = worker->getSession().getLocalId();
+        SessionId session = worker->getSession().getId();
 
         // Release the worker instance. After this point, no member of this
         // class may be accessed!
@@ -129,6 +129,15 @@ namespace SimuTrace
         ServerStoreManager& mgr = StorageServer::getInstance().getStoreManager();
 
         return mgr.openStore(*this, specifier);
+    }
+
+    void ServerSession::_detachStore()
+    {
+        ServerStoreManager& mgr = StorageServer::getInstance().getStoreManager();
+        Store* store = _getStore();
+        assert(store != nullptr);
+
+        mgr.closeStore(getId(), store->getId());
     }
 
     void ServerSession::_close()

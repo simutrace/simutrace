@@ -56,6 +56,7 @@ include_directories("${PROJECT_SOURCE_DIR}/simutrace/include")
 # Build settings --------------------------------------------------------------
 
 set(BUILD_SAMPLES OFF CACHE BOOL "Build Samples")
+set(BUILD_TESTS OFF CACHE BOOL "Build Tests")
 set(BUILD_LIBSIMUTRACE ON CACHE BOOL "Build Client Library")
 set(BUILD_LIBSIMUTRACEX ON CACHE BOOL "Build Extensions Library")
 set(BUILD_SIMUTRACE_SERVER ON CACHE BOOL "Build Storage Server")
@@ -74,6 +75,26 @@ endif()
 set(BUILD_SRCTARBALL ON CACHE BOOL "Build source tarball")
 set(BUILD_OPENSUSE_OSC ON CACHE BOOL "Build package data for openSUSE build service")
 set(BUILD_DEBIAN ON CACHE BOOL "Build package data for debian")
+
+set(BUILD_CONFIG_MEMMGMT_SEGMENT_SIZE "64" CACHE STRING "Stream buffer segment size in MiB")
+set(BUILD_CONFIG_PROFILING_SIMTRACE3_GENERIC_COMPRESSION_ENABLE OFF CACHE BOOL "Enable Simtrace3 generic compression profiling")
+set(BUILD_CONFIG_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE OFF CACHE BOOL "Enable Simtrace3 VPC4 predictor profiling")
+
+set(_BUILD_CONFIG_PROFILING_ENABLE "0")
+if(BUILD_CONFIG_PROFILING_SIMTRACE3_GENERIC_COMPRESSION_ENABLE)
+    set(_BUILD_CONFIG_PROFILING_ENABLE "1")
+    set(_BUILD_CONFIG_PROFILING_SIMTRACE3_GENERIC_COMPRESSION_ENABLE "1")
+else()
+    set(_BUILD_CONFIG_PROFILING_SIMTRACE3_GENERIC_COMPRESSION_ENABLE "0")
+endif()
+
+if(BUILD_CONFIG_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE)
+    set(_BUILD_CONFIG_PROFILING_ENABLE "1")
+    set(_BUILD_CONFIG_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE "1")
+else()
+    set(_BUILD_CONFIG_PROFILING_SIMTRACE3_VPC4_PREDICTORS_ENABLE "0")
+endif()
+
 
 # Macros ----------------------------------------------------------------------
 
@@ -168,6 +189,9 @@ add_subdirectory(samples/parallel)
 add_subdirectory(samples/storemon)
 add_subdirectory(samples/csharp.simple)
 add_subdirectory(samples/csharp.memreplay)
+
+# Tests
+add_subdirectory(tests/tst_appendclose)
 
 # Documentation
 add_subdirectory(simutrace/documentation)

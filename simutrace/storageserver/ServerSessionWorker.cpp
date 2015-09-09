@@ -94,7 +94,7 @@ namespace SimuTrace
         msg.setupEmpty();
         msg.sequenceNumber = _port->getLastSequenceNumber();
         msg.response.status = RpcApi::SC_Success;
-        msg.parameter0 = _session.getLocalId();
+        msg.parameter0 = _session.getId();
 
         _port->ret(msg);
     }
@@ -308,7 +308,7 @@ namespace SimuTrace
         // At this point the control element already needs to be
         // updated via shared memory or through a payload allocator.
 
-        sqn = stream.append(session.getLocalId(), &seg);
+        sqn = stream.append(session.getId(), &seg);
 
         try {
             if (ctx.worker.channelSupportsSharedMemory() ||
@@ -326,7 +326,7 @@ namespace SimuTrace
 
         } catch (...) {
             assert(sqn != INVALID_STREAM_SEGMENT_ID);
-            stream.close(session.getLocalId(), sqn, nullptr, true);
+            stream.close(session.getId(), sqn, nullptr, true);
 
             throw;
         }
@@ -350,7 +350,7 @@ namespace SimuTrace
             session.getStream(id));
 
         if (closeSqn != INVALID_STREAM_SEGMENT_ID) {
-            stream.close(session.getLocalId(), closeSqn, nullptr);
+            stream.close(session.getId(), closeSqn, nullptr);
         }
 
         // Do the open query
@@ -365,13 +365,15 @@ namespace SimuTrace
         // call is synchronous. However, the open may be performed
         // asynchronously, despite the specified flag. This may be the case if
         // there is already a read in progress. We then need to wait for it to
-        // finish.
+        // finish. Since we are always specifying an output offset, the open()
+        // will perform the wait for us (in order to have the segment data
+        // available for entry offset search).
         query->flags = static_cast<StreamAccessFlags>(
             query->flags | StreamAccessFlags::SafSynchronous);
 
         ctx.worker._wait.reset();
 
-        sqn = stream.open(session.getLocalId(), query->type,
+        sqn = stream.open(session.getId(), query->type,
                           query->value, query->flags, &seg,
                           &offset, &ctx.worker._wait);
 
@@ -396,8 +398,13 @@ namespace SimuTrace
                               static_cast<uint32_t>(offset));
                 }
             } else {
-                // If the channel does not support shared memory, we send whole
-                // segment to the client.
+                // If the channel does not support shared memory, we send the
+                // whole segment to the client.
+                // Since our RPC interface does not support scatter/gather I/O,
+                // we send the whole segment and not just the used part plus
+                // the control element. The assumption is that in the common
+                // case we will have to send full segments anyway and thus do
+                // not transfer unnecessary data here.
 
                 size_t size;
                 void* segment = buffer.getSegmentAsPayload(seg, size);
@@ -415,7 +422,7 @@ namespace SimuTrace
 
         } catch (...) {
             assert(sqn != INVALID_STREAM_SEGMENT_ID);
-            stream.close(session.getLocalId(), sqn, nullptr, true);
+            stream.close(session.getId(), sqn, nullptr, true);
 
             throw;
         }
@@ -436,7 +443,7 @@ namespace SimuTrace
         // At this point the control element already needs to be
         // updated via shared memory or through a payload allocator.
 
-        stream.close(session.getLocalId(), sseg);
+        stream.close(session.getId(), sseg);
         return true;
     }
 
@@ -476,13 +483,13 @@ namespace SimuTrace
 
                 SegmentId seg = stream.getBufferMapping(sqn);
 
-                size_t lineSize;
+                size_t maxSize;
 
                 // This will throw if the mapping is not established, because
                 // then seg is INVALID_SEGMENT_ID.
-                msg.data.payload = buffer.getSegmentAsPayload(seg, lineSize);
+                msg.data.payload = buffer.getSegmentAsPayload(seg, maxSize);
 
-                ThrowOn(msg.data.payloadLength != lineSize,
+                ThrowOn(msg.data.payloadLength != maxSize,
                         RpcMessageMalformedException);
 
                 break;

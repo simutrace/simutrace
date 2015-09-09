@@ -61,8 +61,6 @@ namespace SimuTrace
     public:
         virtual ~ClientStore() override;
 
-        virtual void detach(SessionId session) override;
-
         static ClientStore* create(ClientSession& session,
                                    const std::string& name,
                                    bool alwaysCreate);

@@ -84,8 +84,11 @@ namespace SimuTrace
     #else
         void maskSignal(uint32_t signal);
         void unmaskSignal(uint32_t signal);
+        void ignoreSignal(uint32_t signal);
+        void restoreSignal(uint32_t signal);
     #endif
     }
+
 
     //
     // Others

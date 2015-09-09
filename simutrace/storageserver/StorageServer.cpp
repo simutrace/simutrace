@@ -637,11 +637,9 @@ namespace SimuTrace
         // Free the global memory pool
         _memoryPool = nullptr;
 
-
         // At this point, only the main thread should be left. It is now safe
         // to delete the session manager.
         _sessionManager = nullptr;
-
 
         // Reset the environment. Do not use Read-/WriteConfig from this point
         // on. This deactivates logging to our log category. The server's
@@ -677,8 +675,9 @@ namespace SimuTrace
             throw;
         }
 
-        // The last binding is managed by the main thread
-        _bindingThreadMain(*_bindings[_bindings.size() - 1]->thread);
+        // The last binding is managed by the main thread. We let the main
+        // thread adopt the thread object and run the main routine.
+        _bindings[_bindings.size() - 1]->thread->adopt();
     }
 
     void StorageServer::_setWorkspace(const std::string& workspace)

@@ -98,6 +98,17 @@ namespace SimuTrace
 
     }
 
+    byte* StreamBuffer::_getFence(SegmentId segment) const
+    {
+        return reinterpret_cast<byte*>(getControlElement(segment)) +
+            sizeof(SegmentControlElement);
+    }
+
+    size_t StreamBuffer::_getFenceSize() const
+    {
+        return _lineSize - _segmentSize - sizeof(SegmentControlElement);
+    }
+
     size_t StreamBuffer::_computeLineSize(size_t segmentSize)
     {
         // We want each segment to be page-aligned. We therefore add padding
@@ -117,7 +128,34 @@ namespace SimuTrace
         return segmentSize + ((sizeof(SegmentControlElement) + pageSize - 1) & mask);
     }
 
-    void StreamBuffer::touch()
+    byte StreamBuffer::_testMemory(byte* buffer, size_t size)
+    {
+        if (size == 0) {
+            return 0x00;
+        }
+
+        // We take the first char in the buffer and check if all bytes in the
+        // buffer are the same. If not, we do not have a fully filled area and
+        // return 0.
+        byte chr = *buffer;
+        for (size_t pos = 0; pos < size; ++pos, ++buffer) {
+            if (*buffer != chr) {
+                return 0x00;
+            }
+        }
+
+        // We are only interested in fully filled areas with one of our special
+        // characters. If the area is filled with something else, return 0.
+        if ((chr != FENCE_MEMORY_FILL) && (chr != DEAD_MEMORY_FILL) &&
+            (chr != CLEAR_MEMORY_FILL)) {
+            return 0x00;
+        }
+
+        // The area is filled with a debug char. Return which.
+        return chr;
+    }
+
+    void StreamBuffer::_touch()
     {
         _buffer->touch();
     }
@@ -174,6 +212,113 @@ namespace SimuTrace
             _buffer->getBuffer() + offset);
     }
 
+    void StreamBuffer::dbgSanityFill(SegmentId segment, bool dead)
+    {
+        // Fill the segment data area with the special debug char that
+        // indicates allocated but unused or dead memory. Fill the area behind
+        // the control element (the fence) with the fence char. This area must
+        // not be modified.
+        byte chr = (dead) ? DEAD_MEMORY_FILL : CLEAR_MEMORY_FILL;
+        memset(getSegment(segment), chr, getSegmentSize());
+        memset(_getFence(segment), FENCE_MEMORY_FILL, _getFenceSize());
+    }
+
+    int StreamBuffer::dbgSanityCheck(SegmentId segment, uint32_t entrySize) const
+    {
+        const SegmentControlElement* control = getControlElement(segment);
+        int errorLevel = 0;
+
+        if (isVariableEntrySize(entrySize) == _true) {
+            entrySize = getSizeHint(entrySize);
+        }
+
+        if (entrySize > 0) {
+            // In debug builds we filled the segment with 0xCD (clean memory)
+            // when issued to the user. We now check if the computed valid
+            // buffer length according to the number of entries matches the
+            // portion of the segment that has been overwritten. Otherwise, we
+            // print a warning, because this indicates that the user forgot to
+            // submit entries or submitted to many.
+            size_t validBufferLength = entrySize * control->rawEntryCount;
+            byte* cmppos = getSegment(segment) + validBufferLength;
+
+            // The last written entry should at least have a single byte that
+            // is not 0xCD. We do not perform the check if the buffer is empty
+            // or if the buffer is not indexed. In the latter case, we cannot
+            // assume a simple entry-based data structure and should not
+            // try to interpret anything.
+            if ((validBufferLength > 0) &&
+                (control->startIndex != INVALID_ENTRY_INDEX)) {
+                assert(validBufferLength >= entrySize);
+
+                byte chr = _testMemory(cmppos - entrySize, entrySize);
+                assert(chr != FENCE_MEMORY_FILL);
+                assert(chr != DEAD_MEMORY_FILL);
+
+                if (chr == CLEAR_MEMORY_FILL) {
+                    LogWarn("Segment sanity check failed. Segment %d of buffer %s "
+                            "seems to contain less entries than specified in the "
+                            "control segment <stream: %d, sqn: %d, rec: %d, ec: %d>.",
+                            segment, bufferIdToString(_id).c_str(),
+                            control->link.stream, control->link.sequenceNumber,
+                            control->rawEntryCount, control->entryCount);
+
+                    errorLevel = 1;
+                }
+            }
+
+            // Check if the area behind the last submitted entry has been touched
+            if (validBufferLength < _segmentSize) {
+                byte chr = _testMemory(cmppos, _segmentSize - validBufferLength);
+                assert(chr != FENCE_MEMORY_FILL);
+                assert(chr != DEAD_MEMORY_FILL);
+
+                if (chr != CLEAR_MEMORY_FILL) {
+                    LogWarn("Segment sanity check failed. Segment %d of buffer %s "
+                        "has been modified beyond the last submitted entry "
+                        "<stream: %d, sqn: %d, rec: %d, ec: %d>.",
+                        segment, bufferIdToString(_id).c_str(),
+                        control->link.stream, control->link.sequenceNumber,
+                        control->rawEntryCount, control->entryCount);
+
+                    errorLevel = 1;
+                }
+            }
+        } else {
+            assert(_segmentSize != 0);
+
+            // If the entrySize is 0, we expect the segment to be dead
+            byte chr = _testMemory(getSegment(segment), _segmentSize);
+            assert(chr != FENCE_MEMORY_FILL);
+            assert(chr != CLEAR_MEMORY_FILL);
+
+            if (chr != DEAD_MEMORY_FILL) {
+                LogError("Segment sanity check failed. Segment %d of buffer %s "
+                         "has been modified while being marked as free.",
+                         segment, bufferIdToString(_id).c_str());
+
+                errorLevel = 1;
+            }
+        }
+
+        // Check if the area behind the control element has been touched
+        size_t fenceSize = _getFenceSize();
+        assert(fenceSize != 0);
+
+        byte chr = _testMemory(_getFence(segment), fenceSize);
+        if (chr != FENCE_MEMORY_FILL) {
+            LogError("Segment sanity check failed. The control fence of "
+                     "segment %d in buffer %d has been corrupted "
+                     "<stream: %d, sqn: %d>.",
+                     segment, bufferIdToString(_id).c_str(),
+                     control->link.stream, control->link.sequenceNumber);
+
+            errorLevel = 2;
+        }
+
+        return errorLevel;
+    }
+
     BufferId StreamBuffer::getId() const
     {
         return _id;
@@ -207,12 +352,6 @@ namespace SimuTrace
     uint32_t StreamBuffer::getNumSegments() const
     {
         return _numSegments;
-    }
-
-    size_t StreamBuffer::computeBufferSize(size_t segmentSize,
-                                           uint32_t numSegments)
-    {
-        return numSegments * _computeLineSize(segmentSize);
     }
 
 }

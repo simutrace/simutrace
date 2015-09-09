@@ -52,8 +52,10 @@ namespace SimuTrace
             rawEntryCount(ctrl.rawEntryCount)
         {
             assert(ctrl.rawEntryCount > 0);
-            ranges.startIndex = ctrl.startIndex;
-            ranges.endIndex = ctrl.startIndex + ctrl.rawEntryCount - 1;
+            if (ctrl.startIndex != INVALID_ENTRY_INDEX) {
+                ranges.startIndex = ctrl.startIndex;
+                ranges.endIndex = ctrl.startIndex + ctrl.rawEntryCount - 1;
+            }
             ranges.startCycle = ctrl.startCycle;
             ranges.endCycle = ctrl.endCycle;
             ranges.startTime = ctrl.startTime;
@@ -109,6 +111,8 @@ namespace SimuTrace
         virtual void _enumerateStreams(std::vector<StreamId>& out,
                                        StreamEnumFilter filter) const = 0;
 
+        virtual bool _supportsWriteAfterOpen() const { return false; }
+
         void _lockConfiguration();
         void _freeConfiguration();
 
@@ -127,8 +131,6 @@ namespace SimuTrace
         virtual Stream* _getStream(StreamId id);
     public:
         virtual ~Store();
-
-        virtual void detach(SessionId session) = 0;
 
         BufferId registerStreamBuffer(size_t segmentSize, uint32_t numSegments);
         StreamId registerStream(StreamDescriptor& desc, BufferId buffer);

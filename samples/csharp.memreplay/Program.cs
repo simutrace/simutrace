@@ -7,12 +7,14 @@ using System.Windows.Forms;
 
 namespace csharp.memreplay
 {
+    [Serializable]
     internal class CommandLineException : Exception
     {
         public CommandLineException(string message) :
             base(message) { }
     }
 
+    [Serializable]
     internal class ReplayException : Exception
     {
         public ReplayException(string message) :

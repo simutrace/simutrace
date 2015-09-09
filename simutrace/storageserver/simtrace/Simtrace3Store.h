@@ -56,6 +56,9 @@ namespace Simtrace
                 (header.startIndex != INVALID_ENTRY_INDEX)) {
                 ranges.startIndex = header.startIndex;
                 ranges.endIndex   = header.startIndex + header.entryCount - 1;
+            } else {
+                assert(ranges.startIndex == INVALID_ENTRY_INDEX);
+                assert(ranges.endIndex == INVALID_ENTRY_INDEX);
             }
 
             ranges.startTime = header.startTime;

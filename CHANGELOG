@@ -1,3 +1,18 @@
+Version 3.2.2 Marc Rittinghaus <rittinghaus@kit.edu>  Wed, 31 Jul 2015 15:30:00 +0100
+
+- Improved locking in store manager
+- Stores can remain cached in memory even if last reference is closed (store.persistentCache)
+- New string read/write helper functions for .Net binding
+- Improved NotFoundExceptions
+- Added sanity checks in debug builds to detect stream buffer corruptions
+- Added test code for memory encoder
+
+Bug Fixes:
+- Fixed error message in replay sample
+- Fixed unused segment fill in memory encoder
+- Fixed critical error where server dies on Linux when a com. channel breaks
+
+
 Version 3.2.1 Marc Rittinghaus <rittinghaus@kit.edu>  Wed, 17 Jun 2015 15:00:00 +0100
 
 - Store summary prints per-stream information with logStreamStats switch

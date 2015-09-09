@@ -32,6 +32,10 @@ namespace SimuTrace
     class StreamBuffer
     {
     private:
+        static const byte FENCE_MEMORY_FILL = (byte)0xFD;
+        static const byte CLEAR_MEMORY_FILL = (byte)0xCD;
+        static const byte DEAD_MEMORY_FILL  = (byte)0xDD;
+    private:
         DISABLE_COPY(StreamBuffer);
 
         const BufferId _id;
@@ -42,10 +46,13 @@ namespace SimuTrace
         const size_t _lineSize;
         const uint32_t _numSegments;
 
-        static size_t _computeLineSize(size_t segmentSize);
+        byte* _getFence(SegmentId segment) const;
+        size_t _getFenceSize() const;
 
-        void _prepareSegment(SegmentId id, StreamId owner);
-        SegmentId _submitAndRequest(SegmentId segment, StreamId stream);
+        static size_t _computeLineSize(size_t segmentSize);
+        static byte _testMemory(byte* buffer, size_t size);
+    protected:
+        void _touch();
     public:
         StreamBuffer(BufferId id, size_t segmentSize, uint32_t numSegments,
                      bool sharedMemory);
@@ -53,12 +60,13 @@ namespace SimuTrace
                      Handle& buffer);
         virtual ~StreamBuffer();
 
-        void touch();
-
         byte* getSegmentAsPayload(SegmentId segment, size_t& outSize) const;
         byte* getSegment(SegmentId segment) const;
         byte* getSegmentEnd(SegmentId segment, uint32_t entrySize) const;
         SegmentControlElement* getControlElement(SegmentId segment) const;
+
+        void dbgSanityFill(SegmentId segment, bool dead);
+        int dbgSanityCheck(SegmentId segment, uint32_t entrySize) const;
 
         BufferId getId() const;
         bool isMaster() const;
@@ -69,8 +77,11 @@ namespace SimuTrace
         size_t getSegmentSize() const;
         uint32_t getNumSegments() const;
 
-        static size_t computeBufferSize(size_t segmentSize,
-                                        uint32_t numSegments);
+        inline static std::string bufferIdToString(BufferId id)
+        {
+            return (id == SERVER_BUFFER_ID) ?
+                "'server'" : stringFormat("%d", id);
+        }
     };
 
 }

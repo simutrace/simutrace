@@ -51,6 +51,8 @@ namespace SimuTrace
         bool isValid() const;
 
         void close();
+
+        Handle release();
     };
 
 }

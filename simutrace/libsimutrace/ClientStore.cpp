@@ -55,7 +55,30 @@ namespace SimuTrace
 
     ClientStore::~ClientStore()
     {
+        try {
+            // We first flush all streams to get any pending data to the server.
+            // Afterwards, we can close the store. The server will process the
+            // data we send here (and any other pending data), before closing
+            // the server instance of the store.
+            std::vector<Stream*> streams;
+            this->Store::_enumerateStreams(streams, StreamEnumFilter::SefAll);
 
+            for (auto i = 0; i < streams.size(); ++i) {
+                assert(streams[i] != nullptr);
+                ClientStream* stream = reinterpret_cast<ClientStream*>(streams[i]);
+
+                stream->flush();
+            }
+
+            ClientPort& port = _getPort();
+
+            port.call(nullptr, RpcApi::CCV_StoreClose);
+        } catch (const std::exception& e) {
+            // There is nothing we can do about it. So just log a message and
+            // destroy the client store.
+            LogError("Could not rundown store. Data may have been lost. "
+                     "The exception is '%s'", e.what());
+        }
     }
 
     StreamBuffer* ClientStore::_replicateStreamBuffer(BufferId buffer)
@@ -111,7 +134,9 @@ namespace SimuTrace
         assert(response.data.payload != nullptr);
 
         StreamBuffer* buffer = _getStreamBuffer(response.parameter0);
-        ThrowOn(buffer == nullptr, NotFoundException);
+        ThrowOnNull(buffer, NotFoundException,
+                    stringFormat("stream buffer with id %d",
+                     response.parameter0));
 
         StreamQueryInformation* desc =
             reinterpret_cast<StreamQueryInformation*>(response.data.payload);
@@ -191,14 +216,12 @@ namespace SimuTrace
         ClientPort& port = _getPort();
 
         StreamBuffer* buf = _getStreamBuffer(buffer);
-        ThrowOnNull(buf, NotFoundException);
+        ThrowOnNull(buf, NotFoundException,
+                    stringFormat("stream buffer with id %d", buffer));
 
         if (IsSet(desc.flags, SfDynamic)) {
             const DynamicStreamDescriptor& dyndesc =
                 reinterpret_cast<DynamicStreamDescriptor&>(desc);
-
-
-
 
             // For regular streams the server generates a valid id. For
             // dynamic streams we have to do this on our own, as dynamic
@@ -326,29 +349,6 @@ namespace SimuTrace
         }
 
         return stream;
-    }
-
-    void ClientStore::detach(SessionId session)
-    {
-        LockScopeExclusive(_lock);
-
-        // We first flush all streams to get any pending data to the server.
-        // Afterwards, we can close the store. The server will process the
-        // data we send here (and any other pending data), before closing the
-        // server instance of the store.
-        std::vector<Stream*> streams;
-        this->Store::_enumerateStreams(streams, StreamEnumFilter::SefAll);
-
-        for (auto i = 0; i < streams.size(); ++i) {
-            assert(streams[i] != nullptr);
-            ClientStream* stream = reinterpret_cast<ClientStream*>(streams[i]);
-
-            stream->flush();
-        }
-
-        ClientPort& port = _getPort();
-
-        port.call(nullptr, RpcApi::CCV_StoreClose);
     }
 
     ClientStore* ClientStore::create(ClientSession& session,

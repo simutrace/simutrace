@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
         // ensure that the server is running on the same host and is listening
         // on the default local binding (.simutrace). This binding works on
         // Windows and Linux.
-        SessionId session = StSessionCreate("local:/tmp/.simutrace");
+        session = StSessionCreate("local:/tmp/.simutrace");
         ThrowOn(session == INVALID_SESSION_ID);
 
         // We now have a connection to the server. The next step is to create a

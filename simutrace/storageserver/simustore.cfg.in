@@ -41,20 +41,20 @@ server: {
 
     /* An optional file to output the log to. The log will be appended, not
        replaced. The file log is not affected by the quiet setting (-l). */
-    logfile = "@CFG_SERVER_LOGFILE@";
+    logfile = "@CONFIG_SERVER_LOGFILE@";
 
     /* The detail level of logging (-v). Value in the range [0;6], with higher
        values delivering more details. The values correspond to:
        0 = Fatal, 1 = Error, 2 = Warning, 3 = Information, 4 = Debug,
        5 = Memory Debug, 6 = Rpc Debug. Levels 4+ require a debug build. */
-    loglevel = @CFG_SERVER_LOGLEVEL@;
+    loglevel = @CONFIG_SERVER_LOGLEVEL@;
 
     /* If set, terminal log output will not be colored.
        Since 3.2.0 */
-    logNoColor = @_CFG_SERVER_LOGNOCOLOR@
+    logNoColor = @_CONFIG_SERVER_LOGNOCOLOR@
 
     /* If set, the server won't print output to stdout (-q). */
-    quiet = @_CFG_SERVER_QUIET@;
+    quiet = @_CONFIG_SERVER_QUIET@;
 
 
     // ===== Environment =====
@@ -62,7 +62,7 @@ server: {
     /* Path to workspace (-w). Will be used as base for relative file paths
        (e.g., for trace files). If not set, the current working directory (CWD)
        of the process is used. */
-    workspace = "@CFG_SERVER_WORKSPACE@";
+    workspace = "@CONFIG_SERVER_WORKSPACE@";
     //workspace = "/home/myuser/myproject/";
 
 
@@ -72,7 +72,7 @@ server: {
        can be separated by ','. For more details on the binding syntax refer to
        the StSessionCreate() function in the public API documentation.
        Note: the given pipe path is also valid on Windows. */
-    bindings = "@CFG_SERVER_BINDINGS@";
+    bindings = "@CONFIG_SERVER_BINDINGS@";
     //bindings = "local:/tmp/.simutrace,socket:*:5341";
 
 
@@ -82,7 +82,7 @@ server: {
            compression/decompression, the server needs to allocate temporary
            memory, which is satisfied from the internal pool. The pool size
            also limits the amount of trace data, which can be cached in RAM. */
-        poolSize = @CFG_SERVER_MEMMGMT_POOLSIZE@;
+        poolSize = @CONFIG_SERVER_MEMMGMT_POOLSIZE@;
 
         /* If the server cannot allocate memory from its internal pool or
            a store's memory pool, the allocator will retry the operation.
@@ -94,7 +94,7 @@ server: {
         /* If set, disables caching of trace data in the server. This reduces
            memory consumption, but also heavily harms performance for complex
            compressors such as the built-in memory trace compressor. */
-        disableCache = @_CFG_SERVER_MEMMGMT_DISABLECACHE@;
+        disableCache = @_CONFIG_SERVER_MEMMGMT_DISABLECACHE@;
 
         /* The number of 64 MiB segments in a stream to read in speculatively
            ahead of the user's request when using sequential scan access. This
@@ -104,7 +104,7 @@ server: {
            Note: While read-ahead greatly improves sequential read performance,
            it also requires a lot of memory. Ensure to configure the pool sizes
            appropriately high. */
-        readAhead = @CFG_SERVER_MEMMGMT_READAHEAD@;
+        readAhead = @CONFIG_SERVER_MEMMGMT_READAHEAD@;
     };
 
 
@@ -137,12 +137,25 @@ server: {
 
 // ======================= Store Settings ========================
 store: {
+    /* The number of stores the server keeps cached in memory. If all sessions
+       that reference a particular store are closed, the server will usually
+       also close the store. This will flush all cached data in memory
+       associated with the store. Opening and reading the same data again thus
+       will require to read the data from disk and process it
+       (e.g., decompress) again. Persistent caching keeps stores open in
+       the background and preserve cached data. The value indicates the number
+       of stores that will be kept open (zero disables the feature). Note that
+       per cached store the server will keep a buffer of the client
+       pool size (client.memmgmt.poolSize).
+       Since 3.2.2 */
+    persistentCache = @CONFIG_STORE_PERSISTENT_CACHE@;
+
     // ===== Simtrace =====
     simtrace: {
         /* For new stores, enables detailed logging of per-stream
            statistics on store close.
            Since 3.2.1 */
-        logStreamStats = @_CFG_STORE_SIMTRACE_LOGSTREAMSTATS@;
+        logStreamStats = @_CONFIG_STORE_SIMTRACE_LOGSTREAMSTATS@;
     };
 };
 
@@ -159,6 +172,6 @@ client: {
            be helpful when choosing a different pool size without having to
            add a call to StSessionSetConfiguration() in the client ahead of
            store creation. */
-        @_CFG_CLIENT_MEMMGMT_POOLSIZE@
+        @_CONFIG_CLIENT_MEMMGMT_POOLSIZE@
     };
 };

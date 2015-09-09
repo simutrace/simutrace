@@ -136,13 +136,28 @@ namespace SimuTrace
         assert(_standbyIndex.empty());
 
     #ifdef _DEBUG
+    #if defined(_WIN32)
+    #else
+        SigTry() {
+        // If the stream buffer is destroyed because we landed in a
+        // SIGBUS error when touching the buffer right after creation,
+        // we will run into another SIGBUS error here. Since the
+        // destructor must not fail, we catch and ignore the error.
+    #endif
         for (uint32_t i = 0; i < getNumSegments(); ++i) {
             Segment& seg = _segments[i];
 
             // Check that the segment is free and not in the standby list
             assert(seg.flags == SegmentFlags::SgfFree);
             assert(seg.prev == nullptr);
+
+            assert(dbgSanityCheck(seg.id, 0) == 0);
         }
+    #if defined (_WIN32)
+    #else
+        } SigCatch() {
+        } SigEnd();
+    #endif
     #endif
 
         delete [] _segments;
@@ -159,27 +174,64 @@ namespace SimuTrace
         uint32_t segCount = getNumSegments();
         _segments = new Segment[segCount];
 
-        // Setup a linked list of segment headers. We take elements from
-        // the linked list, when they are requested and put them at the front
-        // when they are freed. This way, we get a free segment in O(1) and
-        // reuse segments as soon as possible, thus stabilizing the working
-        // set on low to medium load.
-        for (uint32_t i = 0; i < segCount; ++i) {
-            Segment& seg = _segments[i];
+    #if defined(_WIN32)
+    #else
+        // In Linux, allocating a shared memory region can be successful,
+        // although the memory for the underlying shared memory is
+        // exhausted. We therefore touch all pages when creating a memory
+        // region to avoid crashes on access later. To fetch exceptions, we
+        // need a pseudo try-catch block for SIGBUS signals.
+        SigTry() {
+    #endif
+            // Setup a linked list of segment headers. We take elements from
+            // the linked list, when they are requested and put them at the
+            // front when they are freed. This way, we get a free segment in
+            // O(1) and reuse segments as soon as possible, thus stabilizing
+            // the working set on low to medium load.
+            for (uint32_t i = 0; i < segCount; ++i) {
+                Segment& seg = _segments[i];
 
-            seg.next = (i == segCount - 1) ? nullptr : &_segments[i + 1];
-            seg.prev = nullptr;
+                seg.next = (i == segCount - 1) ? nullptr : &_segments[i + 1];
+                seg.prev = nullptr;
 
-            seg.id = static_cast<SegmentId>(i);
-            seg.flags = SegmentFlags::SgfFree;
+                seg.id = static_cast<SegmentId>(i);
+                seg.flags = SegmentFlags::SgfFree;
 
-            seg.stream = nullptr;
-            seg.sequenceNumber = INVALID_STREAM_SEGMENT_ID;
+                seg.stream = nullptr;
+                seg.sequenceNumber = INVALID_STREAM_SEGMENT_ID;
 
-            seg.isSubmitted = false;
+                seg.isSubmitted = false;
 
-            memset(&seg.control, 0, sizeof(SegmentControlElement));
-        }
+                memset(&seg.control, 0, sizeof(SegmentControlElement));
+
+            #ifdef _DEBUG
+                // Initialize the segments by marking them as DEAD
+                dbgSanityFill(seg.id, true);
+            #endif
+            }
+
+        #if !defined(_DEBUG) && !defined(_WIN32)
+            // Touching the memory is only needed on Linux to ensure that if
+            // we use shared memory, the memory is really usable (-> SIGBUS).
+            // However, in debug builds we do not want to touch because
+            // the sanity fill already served that purpose and a touch would
+            // destroy the sanity pattern.
+            _touch();
+        #endif
+
+    #if defined(_WIN32)
+    #else
+        } SigCatch() {
+            Throw(Exception, stringFormat("Failed to allocate %s of "
+                    "memory for stream buffer <id: %d>. Increase the system's "
+                    "memory limits or reduce the stream buffer size (caution: "
+                    "this will also reduce the number of streams that can be "
+                    "accessed by the client at the same time). See "
+                    "--server.memmgmt.poolSize and --client.memmgmt.poolSize.",
+                    sizeToString(getBufferSize(), SizeUnit::SuMiB).c_str(),
+                    getId()));
+        } SigEnd();
+    #endif
 
         _freeHead = &_segments[0];
     }
@@ -247,6 +299,8 @@ namespace SimuTrace
         seg->flags = SegmentFlags::SgfInUse;
         seg->next  = nullptr;
 
+        assert(dbgSanityCheck(seg->id, 0) == 0);
+
         return seg;
     }
 
@@ -255,6 +309,10 @@ namespace SimuTrace
         assert(IsSet(segment.flags, SegmentFlags::SgfInUse));
         assert(segment.next == nullptr);
         assert(segment.prev == nullptr);
+
+    #ifdef _DEBUG
+        dbgSanityFill(segment.id, true);
+    #endif
 
         segment.stream = nullptr;
         segment.sequenceNumber = INVALID_STREAM_SEGMENT_ID;
@@ -305,6 +363,10 @@ namespace SimuTrace
         assert((stream == nullptr) || (sequenceNumber != INVALID_STREAM_SEGMENT_ID));
         seg->stream         = stream;
         seg->sequenceNumber = sequenceNumber;
+
+    #ifdef _DEBUG
+        dbgSanityFill(segment, false);
+    #endif
     }
 
     bool ServerStreamBuffer::_handleContention(uint32_t tryCount,
@@ -529,7 +591,8 @@ namespace SimuTrace
         // writeable segments this should already be true.
         seg.isSubmitted = true;
 
-        if (IsSet(seg.flags, SegmentFlags::SgfCacheable) && _enableCache) {
+        if (IsSet(seg.flags, SegmentFlags::SgfCacheable) && _enableCache &&
+            (seg.control.rawEntryCount > 0)) {
 
             if (prefetch) {
                 // If this is a prefetch free, we add the corresponding flag to
@@ -627,16 +690,24 @@ namespace SimuTrace
                              segment, bufferIdToString(getId()).c_str()));
 
         LogMem("Submitting segment %d to buffer %s "
-               "<rvc: %d, vc: %d, stream: %d, sqn: %d>.",
+               "<stream: %d, sqn: %d, rec: %d, ec: %d>.",
                segment, bufferIdToString(getId()).c_str(),
-               seg.control.rawEntryCount, seg.control.entryCount,
-               seg.control.link.stream, seg.control.link.sequenceNumber);
+               seg.control.link.stream, seg.control.link.sequenceNumber,
+               seg.control.rawEntryCount, seg.control.entryCount);
 
         // Mark the segment as submitted so the caller cannot resubmit it and
         // we return the saved control element in getControlElement()
         seg.isSubmitted = true;
 
         StreamEncoder& encoder = seg.stream->getEncoder();
+
+        // We only need to process writable segments. If a segment is read-only
+        // we can free it, potentially adding it to the standby list.
+        if (IsSet(seg.flags, SegmentFlags::SgfReadOnly)) {
+            _freeSegment(segment);
+
+            return true;
+        }
 
         // If the segment does not contain any valid entries, we just drop it.
         if (seg.control.rawEntryCount == 0) {
@@ -660,16 +731,12 @@ namespace SimuTrace
             // data for the sequence number.
             encoder.drop(*this, seg.id);
 
+            // Since no entries are in the buffer, the true entry size is not
+            // required. However, taking 0 would check for a dead segment.
+            assert(dbgSanityCheck(segment, 1) < 2);
+
             // Drop the segment
             _purgeSegment(segment);
-
-            return true;
-        }
-
-        // We only need to process writable segments. If a segment is read-only
-        // we can free it, potentially adding it to the standby list.
-        if (IsSet(seg.flags, SegmentFlags::SgfReadOnly)) {
-            _freeSegment(segment);
 
             return true;
         }
@@ -693,7 +760,7 @@ namespace SimuTrace
                      (seg.control.entryCount != seg.control.rawEntryCount)) ||
                     (seg.control.entryCount > seg.control.rawEntryCount),
                     Exception, stringFormat("Invalid number of entries in "
-                    "control element for stream %d <sqn: %d, bid: %d>.",
+                    "control element for stream %d <sqn: %d, seg: %d>.",
                     seg.control.link.stream, seg.control.link.sequenceNumber,
                     segment));
 
@@ -707,6 +774,7 @@ namespace SimuTrace
             // element is NOT updated.
             if (IsSet(desc.flags, StreamTypeFlags::StfTemporalOrder)) {
                 assert(!isVariableEntrySize(desc.entrySize));
+                assert(seg.control.startIndex != INVALID_ENTRY_INDEX);
 
                 // The cycle count is only 48 bits wide. We therefore use a
                 // mask to cut off any unrelated data.
@@ -738,6 +806,8 @@ namespace SimuTrace
             }
 
             seg.control.cookie = _computeControlCookie(seg.control, seg);
+
+            assert(dbgSanityCheck(segment, getEntrySize(&desc)) < 2);
 
             LogDebug("Encoding segment %d in buffer %s "
                      "<stream: %d, sqn: %d, size: %s>.",
@@ -896,20 +966,23 @@ namespace SimuTrace
 
                 completed = encoder.read(*this, seg->id, flags, *location,
                                          prefetch);
-                assert((!completed) ||
-                       ((control->startCycle == location->ranges.startCycle) &&
-                        (control->endCycle == location->ranges.endCycle) &&
-                        (control->startIndex == location->ranges.startIndex) &&
-                        ((control->startIndex == INVALID_ENTRY_INDEX) ||
-                         (control->entryCount == location->getEntryCount())) &&
-                        (control->rawEntryCount == location->rawEntryCount) &&
-                        (control->startTime == location->ranges.startTime) &&
-                        (control->endTime == location->ranges.endTime)));
 
-                // If the encoder should perform a synchronous read, we expect
-                // the operation to be completed.
-                assert(completed ||
-                       !IsSet(flags, StreamAccessFlags::SafSynchronous));
+            #ifdef _DEBUG
+                if (completed) {
+                    assert(control->startCycle == location->ranges.startCycle);
+                    assert(control->endCycle == location->ranges.endCycle);
+                    assert(control->startIndex == location->ranges.startIndex);
+                    assert((control->startIndex == INVALID_ENTRY_INDEX) ||
+                           (control->entryCount == location->getEntryCount()));
+                    assert(control->rawEntryCount == location->rawEntryCount);
+                    assert(control->startTime == location->ranges.startTime);
+                    assert(control->endTime == location->ranges.endTime);
+                } else {
+                    // If the encoder should perform a synchronous read, we
+                    // expect the operation to be completed.
+                    assert(!IsSet(flags, StreamAccessFlags::SafSynchronous));
+                }
+            #endif
 
             } catch (const std::exception& e) {
                 segment = INVALID_SEGMENT_ID;

@@ -52,6 +52,7 @@ namespace SimuTrace
         virtual Store::Reference _createStore(const std::string& specifier,
                                               bool alwaysCreate) override;
         virtual Store::Reference _openStore(const std::string& specifier) override;
+        virtual void _detachStore() override;
 
         virtual void _close() override;
 
@@ -68,7 +69,6 @@ namespace SimuTrace
         StreamId registerDynamicStream(DynamicStreamDescriptor& desc);
 
         const std::string& getAddress() const;
-        SessionId getServerSideId() const;
         ClientPort& getPort() const;
     };
 

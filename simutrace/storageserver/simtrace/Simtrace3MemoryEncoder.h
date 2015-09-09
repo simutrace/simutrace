@@ -143,36 +143,36 @@ namespace Simtrace
             // only a single data field in each hidden stream. We thus have
             // space to map multiple source segments to one hidden stream
             // segment. For 64 bit, we get for example 4 sub segments.
-            static const size_t dataSubSegmentSize =
-                maxEntryCount * sizeof(DataType);
             static const uint32_t dataSubSegmentCount =
-                static_cast<uint32_t>(segmentSize / dataSubSegmentSize);
+                static_cast<uint32_t>(segmentSize / (maxEntryCount * sizeof(DataType)));
+            static const size_t dataSubSegmentSize =
+                segmentSize / dataSubSegmentCount;
 
             // We always use 64 bits for the cycle counts and 16 bits for the
             // meta data.
-            static const size_t cycleSubSegmentSize =
-                maxEntryCount * sizeof(CycleCount);
             static const uint32_t cycleSubSegmentCount =
-                static_cast<uint32_t>(segmentSize / cycleSubSegmentSize);
+                static_cast<uint32_t>(segmentSize / (maxEntryCount * sizeof(CycleCount)));
+            static const size_t cycleSubSegmentSize =
+                segmentSize / cycleSubSegmentCount;
 
-            static const size_t metaSubSegmentSize =
-                maxEntryCount * sizeof(uint16_t);
             static const uint32_t metaSubSegmentCount =
-                static_cast<uint32_t>(segmentSize / metaSubSegmentSize);
+                static_cast<uint32_t>(segmentSize / (maxEntryCount * sizeof(uint16_t)));
+            static const size_t metaSubSegmentSize =
+                segmentSize / metaSubSegmentCount;
 
             // The predictor ids take even less space than the data fields
             // (just one byte). We therefore can fit more source segments into
             // a single segment of a hidden stream.
         #ifdef VPC_HALF_BYTE_ENCODING
-            static const size_t idSubSegmentSize =
-                (maxEntryCount * sizeof(byte)) / 2;
+            static const uint32_t idSubSegmentCount =
+                static_cast<uint32_t>(segmentSize / ((maxEntryCount * sizeof(byte)) / 2));
         #else
-            static const size_t idSubSegmentSize =
-                maxEntryCount * sizeof(byte);
+            static const uint32_t idSubSegmentCount =
+                static_cast<uint32_t>(segmentSize / (maxEntryCount * sizeof(byte)));
         #endif
 
-            static const uint32_t idSubSegmentCount =
-                static_cast<uint32_t>(segmentSize / idSubSegmentSize);
+            static const size_t idSubSegmentSize =
+                segmentSize / idSubSegmentCount;
 
             // This char is used to fill unused space in sub segments to
             // improve second stage compression
@@ -264,6 +264,7 @@ namespace Simtrace
                             // entries so the generic encoding knows the
                             // amount of valid data.
                             assert(_usedBuffers <= _subSegmentCount);
+                            int validSubSegmentCount = 0;
                             for (int j = _usedBuffers - 1; j >= 0; --j) {
                                 assert(_bufferEmpty[j] > 0);
 
@@ -273,6 +274,8 @@ namespace Simtrace
                                 // the valid data range to
                                 // [0; last valid subsegment]
                                 if (_bufferEmpty[j] == 2) {
+                                    validSubSegmentCount = j + 1;
+
                                     ServerStreamBuffer& buffer =
                                         static_cast<ServerStreamBuffer&>(
                                         _streams[i]->getStreamBuffer());
@@ -281,9 +284,25 @@ namespace Simtrace
                                         buffer.getControlElement(_segmentIds[i]);
 
                                     ctrl->rawEntryCount = static_cast<uint32_t>(
-                                        _subSegmentSize * (j + 1));
+                                        _subSegmentSize * validSubSegmentCount);
+
+                                    // No indexing for hidden streams
+                                    assert(ctrl->startIndex == INVALID_ENTRY_INDEX);
 
                                     break;
+                                }
+                            }
+
+                            // For all empty sub segments we perform
+                            // a fill to clear any previous data from the
+                            // segment to improve compression.
+                            for (int j = 0; j < validSubSegmentCount - 1; ++j) {
+                                assert(_bufferEmpty[j] > 0);
+
+                                if (_bufferEmpty[j] < 2) {
+                                    memset(_buffers[i] + j * _subSegmentSize,
+                                           MemoryLayout::fillChar,
+                                           _subSegmentSize);
                                 }
                             }
                         }
@@ -477,11 +496,11 @@ namespace Simtrace
 
             const bool _isLoad;
 
-            // The user can create holes in the memory stream (e.g., invalid
-            // sequence numbers) by an append, close append pattern. However,
+            // The user can create holes in the memory stream (i.e., invalid
+            // sequence numbers) by an append, close, append pattern. However,
             // we must still know when sequence numbers have been used
             // AND remained empty. Otherwise, if we only know that a sqn has
-            // been used we cannot detect if all subsegments (i.e. the full
+            // been used we cannot detect if all subsegments (i.e., the full
             // buffer context) remained empty. In that case, we would create
             // an entire empty segment in the hidden stream, which would still
             // be compressed and stored.
@@ -596,7 +615,10 @@ namespace Simtrace
 
             void _mapSubSegments()
             {
-                assert(sizeof(_contexts) / sizeof(BufferContext*) >= 3);
+                static_assert((!TypeInfo::arch32Bit &&
+                    (sizeof(_contexts) / sizeof(BufferContext*) >= 3)) ||
+                    (sizeof(_contexts) / sizeof(BufferContext*) >= 4),
+                    "Number of contexts too small");
 
                 metaDataBuffer =
                     _contexts[0]->template getSubSegment<uint16_t>(0,
@@ -615,8 +637,6 @@ namespace Simtrace
                 }
 
                 if (TypeInfo::arch32Bit) {
-                    assert(sizeof(_contexts) / sizeof(BufferContext*) >= 4);
-
                     cycleDataBuffer =
                         _contexts[3]->template getSubSegment<CycleCount>(
                             0, _sequenceNumber);
@@ -821,7 +841,11 @@ namespace Simtrace
 
         void _initializeLines(AssociatedStreams* assoc)
         {
-            assert(sizeof(_lines) / sizeof(SegmentLine) >= 3);
+            static_assert((!TypeInfo::arch32Bit &&
+                (sizeof(_lines) / sizeof(SegmentLine) >= 3)) ||
+                (sizeof(_lines) / sizeof(SegmentLine) >= 4),
+                "Number of lines too small");
+
             AssociatedStreams assocStreams;
 
             if (assoc != nullptr) {
@@ -850,7 +874,6 @@ namespace Simtrace
                             assocStreams);
 
             if (TypeInfo::arch32Bit) {
-                assert(sizeof(_lines) / sizeof(SegmentLine) >= 4);
 
                 // Not predicted data (Ip, Addr, (Data))
                 _initializeLine(_lines[2], "data",
@@ -914,8 +937,6 @@ namespace Simtrace
             byte* orgCycleBuffer = (byte*)ctx.cycleDataBuffer;
 
             // Create and initialize the predictors.
-            // N.B. We create the cycle predictor with the data type and NOT
-            // with the cyclecount type.
             std::unique_ptr<IpPredictor<AddressType>> ipPredictor(
                 new IpPredictor<AddressType>());
             std::unique_ptr<CyclePredictor<CycleCount, AddressType>> cyclePredictor(
@@ -1050,8 +1071,8 @@ namespace Simtrace
 
             const StreamTypeDescriptor& desc = stream->getType();
             assert(desc.entrySize == sizeof(T));
-            assert((desc.flags & StreamTypeFlags::StfArch32Bit) ==
-                   (TypeInfo::arch32Bit & StreamTypeFlags::StfArch32Bit));
+            assert(IsSet(desc.flags, StreamTypeFlags::StfArch32Bit) ==
+                   TypeInfo::arch32Bit);
             assert(stream->getStreamBuffer().getSegmentSize() ==
                    MemoryLayout::segmentSize);
 
@@ -1157,28 +1178,14 @@ namespace Simtrace
             // We have to recognize when a segment is dropped because we have
             // to mark it as used but empty. Otherwise, we will not release the
             // buffer contexts that contain the dropped sequence number until
-            // we close the store and thus perform a forced close. In addition,
-            // we fill the subsegment to facilitate compression later.
+            // we close the store and thus perform a forced close. We create
+            // a sub segment context, which will touch the sub segment and leave
+            // it empty.
             SegmentControlElement* ctrl = buffer.getControlElement(segment);
             assert(ctrl->link.stream == _getStream()->getId());
 
             SubSegmentContext ctx(*this, _getStream(), segment,
                 ctrl->link.sequenceNumber, false);
-
-            for (uint32_t i = 0; i < TypeInfo::idStreamCount; ++i) {
-                memset(ctx.idBuffers[i], MemoryLayout::fillChar,
-                    MemoryLayout::dataSubSegmentSize);
-            }
-
-            for (uint32_t i = 0; i < TypeInfo::dataStreamCount; ++i) {
-                memset(ctx.dataBuffers[i], MemoryLayout::fillChar,
-                    MemoryLayout::dataSubSegmentSize);
-            }
-
-            memset(ctx.cycleDataBuffer, MemoryLayout::fillChar,
-                MemoryLayout::cycleSubSegmentSize);
-            memset(ctx.metaDataBuffer, MemoryLayout::fillChar,
-                MemoryLayout::metaSubSegmentSize);
         }
 
         virtual bool write(ServerStreamBuffer& buffer, SegmentId segment,
